@@ -529,9 +529,7 @@ tr:hover td { background: #f8fafc; }
     <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-light)">
       Belum punya akun? <a href="#" onclick="doRegister()" style="color:var(--primary);font-weight:700">Daftar</a>
     </p>
-    <div class="alert alert-info" style="margin-top:14px">
-      ✅ <strong>Supabase sudah terkonfigurasi.</strong> Silakan daftar akun baru atau langsung masuk.
-    </div>
+
   </div>
 </div>
 
@@ -544,12 +542,10 @@ tr:hover td { background: #f8fafc; }
     <div style="margin-bottom:20px;">
       <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--primary)">🔗 Koneksi Supabase</h3>
       <div class="form-group">
-        <label class="form-label">Supabase URL</label>
-        <input type="url" id="cfgUrl" class="form-control" placeholder="https://xxx.supabase.co">
+        <!-- Supabase fields hidden -->
       </div>
       <div class="form-group">
-        <label class="form-label">Supabase Anon Key</label>
-        <input type="text" id="cfgKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        <!-- Supabase key hidden -->
       </div>
     </div>
     
@@ -639,6 +635,16 @@ tr:hover td { background: #f8fafc; }
       <span class="icon">💙</span> Bimbingan Wali
     </div>
     
+    <div class="nav-label">UMMI</div>
+    <div class="nav-item" onclick="showPage('ummi7')">
+      <span class="icon">📗</span> Pembayaran UMMI 7
+    </div>
+    <div class="nav-item" onclick="showPage('ummi8')">
+      <span class="icon">📘</span> Pembayaran UMMI 8
+    </div>
+    <div class="nav-item" onclick="showPage('ummi9')">
+      <span class="icon">📙</span> Pembayaran UMMI 9
+    </div>
     <div class="nav-label">Lainnya</div>
     <div class="nav-item" onclick="showPage('integrasi')">
       <span class="icon">🔗</span> Integrasi ASN
@@ -661,10 +667,9 @@ tr:hover td { background: #f8fafc; }
     <span class="burger" onclick="toggleSidebar()">☰</span>
     <div class="topbar-title">
       <span id="pageTitle">Dashboard</span>
-      <span class="topbar-sub" id="pageSubtitle"> · APEL JUMBO</span>
     </div>
     <div class="topbar-actions">
-      <span id="userEmail" style="font-size:12px;color:var(--text-light)"></span>
+      <span id="guruTopbar" style="font-size:12px;color:var(--text-light);font-weight:600"></span>
     </div>
   </div>
 
@@ -674,9 +679,23 @@ tr:hover td { background: #f8fafc; }
       <div class="section-header">
         <div>
           <div class="section-title">Dashboard</div>
-          <div class="section-sub">Ringkasan data pembelajaran hari ini</div>
+          <div class="section-sub" id="dashGreeting">Selamat datang di APEL JUMBO</div>
         </div>
         <span id="dashDate" style="font-size:13px;color:var(--text-light);font-weight:600"></span>
+      </div>
+      <!-- Guru Info Card -->
+      <div id="guruInfoCard" class="card" style="margin-bottom:20px;display:none">
+        <div style="display:flex;align-items:center;gap:18px">
+          <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#6366f1);display:flex;align-items:center;justify-content:center;font-size:24px;color:white;font-weight:800;flex-shrink:0" id="guruAvatar">G</div>
+          <div style="flex:1">
+            <div style="font-size:18px;font-weight:800;color:var(--text)" id="dashGuruNama">-</div>
+            <div style="font-size:12px;color:var(--text-light);margin-top:2px" id="dashGuruWali">-</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--text-light)">Tahun Pelajaran</div>
+            <div style="font-size:13px;font-weight:700;color:var(--primary)" id="dashTP">-</div>
+          </div>
+        </div>
       </div>
       <div class="grid grid-4" id="statCards" style="margin-bottom:24px"></div>
       <div class="grid grid-2">
@@ -727,9 +746,7 @@ tr:hover td { background: #f8fafc; }
           <div class="progress-bar"><div class="progress-fill" id="uploadProgressBar" style="width:0%"></div></div>
         </div>
       </div>
-      <div class="alert alert-info" style="margin-bottom:12px;font-size:12px">
-  💡 <strong>Upload Excel:</strong> Download template terlebih dahulu, isi data, lalu upload. Kolom KELAS harus sesuai dengan nama kelas yang sudah dibuat di Pengaturan.
-</div>
+      
 <div class="card">
         <div class="table-wrap">
           <table>
@@ -1003,13 +1020,9 @@ tr:hover td { background: #f8fafc; }
           <div id="setLogoPreviewWrap" style="margin-bottom:16px">
             <img id="setLogoPreview" src="" style="height:70px;border-radius:10px;border:1px solid var(--border);display:none">
           </div>
-          <div class="card-header" style="margin-top:10px"><span class="card-title">👤 Koneksi Supabase</span></div>
-          <div class="form-group" style="margin-top:14px">
-            <label class="form-label">Supabase URL</label>
+          <!-- Supabase config hidden from UI, still saved internally -->
+          <div style="display:none">
             <input type="text" id="setSupaUrl" class="form-control">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Anon Key</label>
             <input type="text" id="setSupaKey" class="form-control">
           </div>
           <div class="form-group">
@@ -1019,6 +1032,10 @@ tr:hover td { background: #f8fafc; }
           <div class="form-group">
             <label class="form-label">Kelas yang Diampu (Wali)</label>
             <input type="text" id="setWali" class="form-control" placeholder="Kelas 7A">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tahun Pelajaran</label>
+            <input type="text" id="setTP" class="form-control" placeholder="2025/2026">
           </div>
         </div>
       </div>
@@ -1063,8 +1080,8 @@ tr:hover td { background: #f8fafc; }
       </div>
 
       <div class="card" style="margin-top:20px">
-        <div class="card-header"><span class="card-title">🗄️ Setup Database (SQL)</span></div>
-        <div class="alert alert-warning">Jalankan SQL berikut di Supabase SQL Editor untuk membuat tabel yang diperlukan.</div>
+      <div class="card" style="margin-top:20px;display:none">
+        
         <textarea class="form-control" rows="12" readonly id="sqlSetup" style="font-family:monospace;font-size:11px;background:#f8fafc"></textarea>
         <button class="btn btn-outline" style="margin-top:10px" onclick="copySql()">📋 Salin SQL</button>
       </div>
@@ -1074,6 +1091,88 @@ tr:hover td { background: #f8fafc; }
 </div><!-- /main -->
 
 <!-- ===================== MODALS ===================== -->
+
+
+    <!-- ===== UMMI 7 ===== -->
+    <div id="page-ummi7" class="page">
+      <div id="ummi7-content"></div>
+    </div>
+    <!-- ===== UMMI 8 ===== -->
+    <div id="page-ummi8" class="page">
+      <div id="ummi8-content"></div>
+    </div>
+    <!-- ===== UMMI 9 ===== -->
+    <div id="page-ummi9" class="page">
+      <div id="ummi9-content"></div>
+    </div>
+
+    <!-- Modal Pembayaran UMMI -->
+    <div class="modal-overlay" id="modalUmmi">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <h3 id="modalUmmiTitle">Input Pembayaran UMMI</h3>
+          <button class="btn-close" onclick="closeModal('modalUmmi')">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ummiEditId">
+          <input type="hidden" id="ummiLevel">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nama Siswa</label>
+              <select id="ummiSiswa" class="form-control"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tanggal Bayar</label>
+              <input type="date" id="ummiTgl" class="form-control">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Semester</label>
+              <select id="ummiSemester" class="form-control">
+                <option value="Ganjil">Ganjil</option>
+                <option value="Genap">Genap</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tahun Pelajaran</label>
+              <input type="text" id="ummiTP" class="form-control" placeholder="2025/2026">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bulan</label>
+              <select id="ummiBulan" class="form-control">
+                <option>Juli</option><option>Agustus</option><option>September</option>
+                <option>Oktober</option><option>November</option><option>Desember</option>
+                <option>Januari</option><option>Februari</option><option>Maret</option>
+                <option>April</option><option>Mei</option><option>Juni</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select id="ummiStatus" class="form-control">
+                <option value="Lunas">Lunas</option>
+                <option value="Belum Lunas">Belum Lunas</option>
+                <option value="Cicilan">Cicilan</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nominal (Rp)</label>
+            <input type="number" id="ummiNominal" class="form-control" placeholder="0" step="1000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Catatan</label>
+            <input type="text" id="ummiCatatan" class="form-control" placeholder="Keterangan tambahan...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('modalUmmi')">Batal</button>
+          <button class="btn btn-primary" onclick="saveUmmi()">Simpan</button>
+        </div>
+      </div>
+    </div>
 
 <!-- Modal Tambah Siswa -->
 <div class="modal-overlay" id="modalSiswa">
@@ -1355,6 +1454,8 @@ function applyConfig() {
     document.getElementById('setSupaKey').value = CONFIG.supaKey || '';
     document.getElementById('setGuru').value = CONFIG.guru || '';
     document.getElementById('setWali').value = CONFIG.wali || '';
+    const setTP = document.getElementById('setTP');
+    if (setTP) setTP.value = CONFIG.tahunPelajaran || '';
     if (CONFIG.logo) {
       const img = document.getElementById('setLogoPreview');
       img.src = CONFIG.logo; img.style.display = 'block';
@@ -1417,7 +1518,7 @@ async function doLogout() {
 async function afterLogin() {
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('setupPage').classList.add('hide');
-  document.getElementById('userEmail').textContent = currentUser.email;
+  document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
   showPage('dashboard');
@@ -1493,10 +1594,13 @@ function savePengaturan() {
   CONFIG.supaKey = document.getElementById('setSupaKey').value.trim();
   CONFIG.guru = document.getElementById('setGuru').value.trim();
   CONFIG.wali = document.getElementById('setWali').value.trim();
+  CONFIG.tahunPelajaran = document.getElementById('setTP').value.trim();
   if (CONFIG._pendingLogo) { CONFIG.logo = CONFIG._pendingLogo; delete CONFIG._pendingLogo; }
   localStorage.setItem('apel_config', JSON.stringify(CONFIG));
   initSupabase();
   applyConfig();
+  const gt = document.getElementById('guruTopbar');
+  if (gt) gt.textContent = CONFIG.guru || '';
   toast('Pengaturan berhasil disimpan!', 'success');
 }
 
@@ -1579,6 +1683,20 @@ function getSiswaName(id) { return (APP_DATA.siswa.find(s=>s.id==id)||{}).nama |
 
 // ===================== DASHBOARD =====================
 async function loadDashboard() {
+  // Show guru info card
+  const guruNama = CONFIG.guru || '';
+  const guruWali = CONFIG.wali || '';
+  const tp = CONFIG.tahunPelajaran || '';
+  if (guruNama) {
+    document.getElementById('guruInfoCard').style.display = 'block';
+    document.getElementById('dashGuruNama').textContent = guruNama;
+    document.getElementById('dashGuruWali').textContent = guruWali ? `Wali Kelas: ${guruWali}` : 'Guru Mata Pelajaran';
+    document.getElementById('dashTP').textContent = tp || `${new Date().getFullYear()}/${new Date().getFullYear()+1}`;
+    document.getElementById('guruAvatar').textContent = guruNama.charAt(0).toUpperCase();
+    const jam = new Date().getHours();
+    const sapa = jam < 11 ? 'Selamat Pagi' : jam < 15 ? 'Selamat Siang' : jam < 18 ? 'Selamat Sore' : 'Selamat Malam';
+    document.getElementById('dashGreeting').textContent = `${sapa}, ${guruNama.split(' ')[0]}! 👋`;
+  }
   const cards = [
     { label: 'Total Siswa', val: APP_DATA.siswa.length, icon: '👨‍🎓', color: '#ebf5ff', iconColor: '#1a56db' },
     { label: 'Siswa Bimbingan', val: APP_DATA.siswa.filter(s=>s.bimbingan==1).length, icon: '💙', color: '#fce7f3', iconColor: '#db2777' },
@@ -1835,12 +1953,10 @@ async function loadRekapAbsen() {
 
 // ===================== NILAI =====================
 function updateNilaiMapel() {
-  const kelasId = document.getElementById('nilaiKelas')?.value;
-  const jadwalKelas = APP_DATA.jadwal.filter(j=>j.kelas_id==kelasId);
-  const mapelIds = [...new Set(jadwalKelas.map(j=>j.mapel_id))];
-  const mapels = APP_DATA.mapel.filter(m=>mapelIds.includes(m.id));
   const el = document.getElementById('nilaiMapel');
-  if (el) el.innerHTML = mapels.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('') || '<option value="">-- tidak ada mapel --</option>';
+  if (el) el.innerHTML = APP_DATA.mapel.length 
+    ? APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('') 
+    : '<option value="">-- tambah mapel di Pengaturan --</option>';
 }
 
 async function loadSiswaNilai() {
@@ -1887,12 +2003,10 @@ async function simpanNilai(kelasId, mapelId, kategori) {
 
 // ===================== REKAP NILAI =====================
 function updateRekapMapel() {
-  const kelasId = document.getElementById('rekapNilaiKelas')?.value;
-  const jadwalKelas = APP_DATA.jadwal.filter(j=>j.kelas_id==kelasId);
-  const mapelIds = [...new Set(jadwalKelas.map(j=>j.mapel_id))];
-  const mapels = APP_DATA.mapel.filter(m=>mapelIds.includes(m.id));
   const el = document.getElementById('rekapNilaiMapel');
-  if (el) el.innerHTML = mapels.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  if (el) el.innerHTML = APP_DATA.mapel.length
+    ? APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('')
+    : '<option value="">-- tambah mapel di Pengaturan --</option>';
   loadRekapNilai();
 }
 
@@ -2423,6 +2537,253 @@ async function cetakBimbingan() {
   doc.save('catatan-bimbingan.pdf'); toast('PDF berhasil diunduh!', 'success');
 }
 
+
+// ===================== UMMI PEMBAYARAN =====================
+
+function renderUmmiPage(level) {
+  const levelMap = { 'ummi7': '7', 'ummi8': '8', 'ummi9': '9' };
+  const lvl = levelMap[level] || level;
+  const colors = { '7': '#059669', '8': '#1a56db', '9': '#d97706' };
+  const color = colors[lvl] || '#1a56db';
+  const icons = { '7': '📗', '8': '📘', '9': '📙' };
+  
+  // Filter siswa for this level based on kelas name containing the level number
+  const siswaTingkat = APP_DATA.siswa.filter(s => {
+    const kelasName = getKelasName(s.kelas_id);
+    return kelasName.includes(lvl);
+  });
+  
+  const html = `
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:20px">
+      <button class="btn btn-primary" onclick="showAddUmmi('${lvl}')">+ Input Pembayaran</button>
+      <button class="btn btn-print" onclick="cetakUmmi('${lvl}')">🖨️ Cetak PDF</button>
+    </div>
+    
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Filter Kelas</label>
+          <select id="ummiFilterKelas${lvl}" class="form-control" onchange="loadUmmiData('${lvl}')">
+            <option value="">Semua Kelas ${lvl}</option>
+            ${APP_DATA.kelas.filter(k=>k.nama.includes(lvl)).map(k=>`<option value="${k.id}">${k.nama}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Filter Bulan</label>
+          <select id="ummiFilterBulan${lvl}" class="form-control" onchange="loadUmmiData('${lvl}')">
+            <option value="">Semua Bulan</option>
+            ${['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'].map(b=>`<option>${b}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Filter Semester</label>
+          <select id="ummiFilterSemester${lvl}" class="form-control" onchange="loadUmmiData('${lvl}')">
+            <option value="">Semua Semester</option>
+            <option>Ganjil</option><option>Genap</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="grid grid-3" style="margin-bottom:20px" id="ummiSummary${lvl}">
+      <div class="stat-card"><div class="stat-icon" style="background:#d1fae5"><span style="font-size:20px">✅</span></div><div class="stat-info"><h3 id="ummiLunas${lvl}" style="color:#059669">0</h3><p>Sudah Lunas</p></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fee2e2"><span style="font-size:20px">⏳</span></div><div class="stat-info"><h3 id="ummiBelum${lvl}" style="color:#e02424">0</h3><p>Belum Lunas</p></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fef3c7"><span style="font-size:20px">💰</span></div><div class="stat-info"><h3 id="ummiTotal${lvl}" style="color:#d97706;font-size:16px">Rp 0</h3><p>Total Terkumpul</p></div></div>
+    </div>
+
+    <!-- Rekap table by siswa x bulan -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Rekap Pembayaran per Siswa</span>
+      </div>
+      <div class="table-wrap">
+        <table id="ummiTable${lvl}">
+          <thead>
+            <tr>
+              <th>Nama Siswa</th>
+              <th>Kelas</th>
+              <th style="text-align:center">Juli</th>
+              <th style="text-align:center">Agustus</th>
+              <th style="text-align:center">September</th>
+              <th style="text-align:center">Oktober</th>
+              <th style="text-align:center">November</th>
+              <th style="text-align:center">Desember</th>
+              <th style="text-align:center">Januari</th>
+              <th style="text-align:center">Februari</th>
+              <th style="text-align:center">Maret</th>
+              <th style="text-align:center">April</th>
+              <th style="text-align:center">Mei</th>
+              <th style="text-align:center">Juni</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="ummiTbody${lvl}"><tr><td colspan="14" style="text-align:center;padding:30px;color:var(--text-light)">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  document.getElementById(`${level}-content`).innerHTML = html;
+  loadUmmiData(lvl);
+}
+
+async function loadUmmiData(lvl) {
+  const kelasFilter = document.getElementById(`ummiFilterKelas${lvl}`)?.value;
+  const bulanFilter = document.getElementById(`ummiFilterBulan${lvl}`)?.value;
+  const semesterFilter = document.getElementById(`ummiFilterSemester${lvl}`)?.value;
+  
+  let query = db.from('ummi').select('*').eq('level', lvl);
+  if (bulanFilter) query = query.eq('bulan', bulanFilter);
+  if (semesterFilter) query = query.eq('semester', semesterFilter);
+  const { data: ummiRecords } = await query;
+  const records = ummiRecords || [];
+  
+  // Get siswa for this level
+  let siswaLevel = APP_DATA.siswa.filter(s => getKelasName(s.kelas_id).includes(lvl));
+  if (kelasFilter) siswaLevel = siswaLevel.filter(s => s.kelas_id == kelasFilter);
+  
+  const bulanList = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
+  
+  const tbody = document.getElementById(`ummiTbody${lvl}`);
+  if (!tbody) return;
+  
+  let lunas = 0, belum = 0, total = 0;
+  
+  tbody.innerHTML = siswaLevel.length ? siswaLevel.map(s => {
+    const siswaRec = records.filter(r => r.siswa_id == s.id);
+    const bulanCells = bulanList.map(bl => {
+      const rec = siswaRec.find(r => r.bulan === bl);
+      if (rec) {
+        const dot = rec.status === 'Lunas' ? '🟢' : rec.status === 'Cicilan' ? '🟡' : '🔴';
+        const tgl = rec.tanggal ? new Date(rec.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}) : '-';
+        return `<td style="text-align:center;font-size:11px"><span title="${rec.status}">${dot}</span><br><span style="color:var(--text-light)">${tgl}</span></td>`;
+      }
+      return `<td style="text-align:center;color:#cbd5e1;font-size:16px">·</td>`;
+    });
+    // Count
+    const siswaLunas = siswaRec.filter(r=>r.status==='Lunas').length;
+    const siswaBelum = bulanList.length - siswaLunas;
+    lunas += siswaLunas; total += siswaRec.reduce((a,r)=>a+(r.nominal||0),0);
+    return `<tr>
+      <td><strong>${s.nama}</strong></td>
+      <td>${getKelasName(s.kelas_id)}</td>
+      ${bulanCells.join('')}
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="showAddUmmi('${lvl}', ${s.id})" title="Tambah bayar">+</button>
+        <button class="btn btn-sm btn-danger" onclick="hapusUmmiSiswa(${s.id},'${lvl}')" title="Hapus data">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--text-light)">Tidak ada siswa untuk UMMI ${lvl}</td></tr>`;
+  
+  belum = siswaLevel.length * 12 - lunas;
+  const el_lunas = document.getElementById(`ummiLunas${lvl}`);
+  const el_belum = document.getElementById(`ummiBelum${lvl}`);
+  const el_total = document.getElementById(`ummiTotal${lvl}`);
+  if (el_lunas) el_lunas.textContent = lunas;
+  if (el_belum) el_belum.textContent = Math.max(0, belum);
+  if (el_total) el_total.textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+function showAddUmmi(lvl, preSiswaId = null) {
+  document.getElementById('ummiLevel').value = lvl;
+  document.getElementById('ummiEditId').value = '';
+  document.getElementById('ummiTgl').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ummiTP').value = CONFIG.tahunPelajaran || `${new Date().getFullYear()}/${new Date().getFullYear()+1}`;
+  
+  // Filter siswa for this level
+  const siswaTingkat = APP_DATA.siswa.filter(s => getKelasName(s.kelas_id).includes(lvl));
+  document.getElementById('ummiSiswa').innerHTML = siswaTingkat.map(s => 
+    `<option value="${s.id}" ${preSiswaId==s.id?'selected':''}>${s.nama} (${getKelasName(s.kelas_id)})</option>`
+  ).join('') || '<option value="">-- tidak ada siswa --</option>';
+  
+  document.getElementById('modalUmmiTitle').textContent = `Input Pembayaran UMMI ${lvl}`;
+  document.getElementById('ummiNominal').value = '';
+  document.getElementById('ummiCatatan').value = '';
+  openModal('modalUmmi');
+}
+
+async function saveUmmi() {
+  const lvl = document.getElementById('ummiLevel').value;
+  const row = {
+    siswa_id: document.getElementById('ummiSiswa').value,
+    level: lvl,
+    tanggal: document.getElementById('ummiTgl').value,
+    bulan: document.getElementById('ummiBulan').value,
+    semester: document.getElementById('ummiSemester').value,
+    tahun_pelajaran: document.getElementById('ummiTP').value,
+    status: document.getElementById('ummiStatus').value,
+    nominal: parseInt(document.getElementById('ummiNominal').value) || 0,
+    catatan: document.getElementById('ummiCatatan').value,
+    user_id: currentUser.id
+  };
+  if (!row.siswa_id) return toast('Pilih siswa terlebih dahulu', 'error');
+  
+  // Check if already exists for this siswa+bulan+level, upsert
+  const { data: existing } = await db.from('ummi').select('id')
+    .eq('siswa_id', row.siswa_id).eq('bulan', row.bulan).eq('level', lvl);
+  
+  let err;
+  if (existing && existing.length > 0) {
+    const res = await db.from('ummi').update(row).eq('id', existing[0].id);
+    err = res.error;
+  } else {
+    const res = await db.from('ummi').insert(row);
+    err = res.error;
+  }
+  if (err) return toast(err.message, 'error');
+  toast(`Pembayaran UMMI ${lvl} disimpan! ✅`, 'success');
+  closeModal('modalUmmi');
+  loadUmmiData(lvl);
+}
+
+async function hapusUmmiSiswa(siswaId, lvl) {
+  if (!confirm('Hapus semua data pembayaran UMMI siswa ini?')) return;
+  const { error } = await db.from('ummi').delete().eq('siswa_id', siswaId).eq('level', lvl);
+  if (error) return toast(error.message, 'error');
+  toast('Data dihapus', 'success');
+  loadUmmiData(lvl);
+}
+
+function cetakUmmi(lvl) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('landscape');
+  const kop = getKopData();
+  doc.setFillColor(26,86,219); doc.rect(0,0,297,25,'F');
+  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text(`REKAP PEMBAYARAN UMMI ${lvl}`, 148,12,{align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`${kop.school} | T.P. ${CONFIG.tahunPelajaran||''}`, 148,19,{align:'center'});
+  doc.setTextColor(30,30,30);
+  
+  const bulanList = ['Juli','Agus','Sep','Okt','Nov','Des','Jan','Feb','Mar','Apr','Mei','Jun'];
+  const rows = [];
+  const tbody = document.getElementById(`ummiTbody${lvl}`);
+  if (tbody) {
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = [...tr.querySelectorAll('td')];
+      if (cells.length > 2) {
+        const nama = cells[0]?.textContent.trim() || '';
+        const kelas = cells[1]?.textContent.trim() || '';
+        const bulanData = cells.slice(2, 14).map(td => td.textContent.trim().replace('·','').replace('🟢','L').replace('🔴','BL').replace('🟡','C').trim() || '-');
+        rows.push([nama, kelas, ...bulanData]);
+      }
+    });
+  }
+  
+  doc.autoTable({
+    startY: 30,
+    head: [['Nama Siswa', 'Kelas', ...bulanList]],
+    body: rows,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [26,86,219] },
+    columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 15 } }
+  });
+  doc.setFontSize(7); doc.setTextColor(180,180,180);
+  doc.text('Created & Developed by D.D Candra', 148, 200, {align:'center'});
+  doc.save(`rekap-ummi-${lvl}.pdf`);
+  toast('PDF UMMI berhasil diunduh!', 'success');
+}
+
 // ===================== SQL SETUP =====================
 function setSqlSetup() {
   const sql = `-- ============================================
@@ -2582,7 +2943,8 @@ function showPage(name) {
     'dashboard':'Dashboard','siswa':'Data Siswa','jadwal':'Jadwal Mengajar',
     'absensi':'Input Absensi','absenRekap':'Rekap Absensi','nilai':'Input Nilai',
     'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
-    'integrasi':'Integrasi ASN','pengaturan':'Pengaturan'
+    'integrasi':'Integrasi ASN','pengaturan':'Pengaturan',
+    'ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
   // Mark nav active by matching inner text
@@ -2595,6 +2957,9 @@ function showPage(name) {
   // Page-specific actions
   if (name==='pengaturan') { applyConfig(); renderKelasTbody(); renderMapelTbody(); setSqlSetup(); }
   if (name==='nilaiRekap') updateRekapMapel();
+  if (name==='ummi7') renderUmmiPage('ummi7');
+  if (name==='ummi8') renderUmmiPage('ummi8');
+  if (name==='ummi9') renderUmmiPage('ummi9');
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
