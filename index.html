@@ -354,18 +354,107 @@ tr:hover td { background: #f8fafc; }
 #toast.error { background: var(--danger); }
 
 /* LOGIN */
+/* ======= LOGIN PAGE ======= */
 #loginPage {
   position: fixed; inset: 0;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1a56db 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1a237e 50%, #1a56db 100%);
   display: flex; align-items: center; justify-content: center;
-  z-index: 1000;
+  z-index: 1000; overflow: hidden;
 }
 #loginPage.hide { display: none; }
-.login-card { background: white; border-radius: 22px; padding: 40px 38px; width: 380px; box-shadow: 0 40px 100px rgba(0,0,0,0.4); }
-.login-logo { text-align: center; margin-bottom: 24px; }
-.login-logo .app-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #1a56db, #6366f1); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; color: white; font-weight: 900; margin-bottom: 14px; }
-.login-logo h1 { font-size: 24px; font-weight: 800; color: var(--text); }
-.login-logo p { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+/* Animated background orbs */
+#loginPage::before, #loginPage::after {
+  content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.25; animation: orb 8s ease-in-out infinite;
+}
+#loginPage::before { width: 500px; height: 500px; background: #6366f1; top: -120px; left: -120px; }
+#loginPage::after { width: 400px; height: 400px; background: #1a56db; bottom: -100px; right: -80px; animation-delay: -4s; }
+@keyframes orb { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,-20px) scale(1.08)} }
+
+.login-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 28px; padding: 44px 42px; width: 400px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+  position: relative; z-index: 2;
+  animation: cardIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(40px) scale(0.95)} to{opacity:1;transform:none} }
+
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo .app-icon {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, #fff3 0%, #ffffff22 100%);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 20px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 32px; margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(26,86,219,0.3);
+  animation: iconFloat 3s ease-in-out infinite;
+}
+@keyframes iconFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.login-logo h1 { font-size: 26px; font-weight: 800; color: white; letter-spacing:-0.5px; }
+.login-logo p { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 5px; }
+
+/* Floating input fields */
+.float-group {
+  position: relative; margin-bottom: 24px;
+}
+.float-group input {
+  width: 100%; padding: 18px 16px 8px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 14px; font-size: 15px; font-weight: 500;
+  color: white; outline: none;
+  transition: all 0.25s ease;
+  font-family: var(--font);
+}
+.float-group input::placeholder { color: transparent; }
+.float-group input:focus {
+  background: rgba(255,255,255,0.13);
+  border-color: rgba(255,255,255,0.55);
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.08);
+  transform: translateY(-2px);
+}
+.float-group label {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.55);
+  pointer-events: none; transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  transform-origin: left;
+}
+.float-group input:focus ~ label,
+.float-group input:not(:placeholder-shown) ~ label {
+  top: 10px; transform: translateY(0) scale(0.78);
+  color: rgba(255,255,255,0.85); font-weight: 600;
+}
+.float-group .field-icon {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; opacity: 0.5; pointer-events: none; transition: opacity 0.2s;
+}
+.float-group input:focus ~ .field-icon { opacity: 0.9; }
+
+.btn-login {
+  width: 100%; padding: 15px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #ffffff22, #ffffff0a);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  border-radius: 14px; font-size: 15px; font-weight: 700; color: white;
+  font-family: var(--font); letter-spacing: 0.3px;
+  transition: all 0.22s ease; position: relative; overflow: hidden;
+  margin-top: 6px;
+}
+.btn-login::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, #1a56db, #6366f1);
+  opacity: 0; transition: opacity 0.22s;
+}
+.btn-login:hover::before { opacity: 1; }
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(26,86,219,0.4); }
+.btn-login:active { transform: translateY(0) scale(0.98); }
+.btn-login span { position: relative; z-index: 1; }
+.login-footer { text-align: center; margin-top: 18px; font-size: 13px; color: rgba(255,255,255,0.5); }
+.login-footer a { color: rgba(255,255,255,0.9); font-weight: 700; text-decoration: none; }
+.login-footer a:hover { color: white; }
 
 /* SETUP / CONFIG */
 #setupPage {
@@ -418,6 +507,84 @@ tr:hover td { background: #f8fafc; }
 .integration-url { font-size: 10px; color: var(--text-light); word-break: break-all; }
 .integration-del { position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; color: var(--danger); font-size: 14px; opacity: 0; transition: opacity 0.15s; }
 .integration-card:hover .integration-del { opacity: 1; }
+/* ======= CARD CLICK ANIMATIONS ======= */
+.stat-card, .card, .integration-card, .nav-item {
+  transition: all 0.2s cubic-bezier(0.34,1.3,0.64,1);
+}
+.stat-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 36px rgba(26,86,219,0.14); }
+.stat-card:active { transform: scale(0.97); }
+.card { transition: box-shadow 0.2s, transform 0.2s; }
+
+/* Nav item click ripple */
+.nav-item { position: relative; overflow: hidden; }
+.nav-item::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0.08); opacity: 0;
+  transition: opacity 0.15s;
+}
+.nav-item:active::after { opacity: 1; }
+.nav-item:active { transform: scale(0.97); }
+
+/* Page transition */
+.page { animation: pageIn 0.3s ease both; }
+@keyframes pageIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+
+/* ======= INTEGRATION GRID REDESIGN ======= */
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.integration-card {
+  background: var(--card);
+  border-radius: 18px;
+  border: 1.5px solid var(--border);
+  padding: 22px 16px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  text-align: center; cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.3,0.64,1);
+  text-decoration: none; color: var(--text);
+  position: relative; overflow: hidden;
+}
+.integration-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--primary-light), transparent);
+  opacity: 0; transition: opacity 0.25s;
+}
+.integration-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 16px 40px rgba(26,86,219,0.18);
+}
+.integration-card:hover::before { opacity: 1; }
+.integration-card:active { transform: scale(0.97); }
+.integration-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary-light), #dbeafe);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; position: relative; z-index: 1;
+  transition: transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+  overflow: hidden;
+}
+.integration-card:hover .integration-icon { transform: scale(1.15) rotate(-5deg); }
+.integration-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.integration-name { font-size: 13px; font-weight: 700; position: relative; z-index: 1; }
+.integration-url { font-size: 10px; color: var(--text-light); position: relative; z-index: 1; }
+.integration-actions {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 4px; opacity: 0;
+  transition: opacity 0.18s; z-index: 2;
+}
+.integration-card:hover .integration-actions { opacity: 1; }
+.integration-del, .integration-edit {
+  width: 26px; height: 26px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 12px; display: flex; align-items: center; justify-content: center;
+}
+.integration-del { background: #fee2e2; color: #e02424; }
+.integration-edit { background: #dbeafe; color: #1a56db; }
+.integration-del:hover { background: #e02424; color: white; }
+.integration-edit:hover { background: #1a56db; color: white; }
+
 
 /* KOP SURAT */
 .kop-preview {
@@ -515,21 +682,22 @@ tr:hover td { background: #f8fafc; }
       <h1>APEL JUMBO</h1>
       <p>Aplikasi Pengelolaan Elektronik Guru</p>
     </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input type="email" id="loginEmail" class="form-control" placeholder="email@sekolah.sch.id">
+    <div class="float-group">
+      <input type="email" id="loginEmail" placeholder="email" autocomplete="email">
+      <label>Email</label>
+      <span class="field-icon">✉️</span>
     </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input type="password" id="loginPass" class="form-control" placeholder="••••••••">
+    <div class="float-group">
+      <input type="password" id="loginPass" placeholder="password" autocomplete="current-password">
+      <label>Password</label>
+      <span class="field-icon">🔒</span>
     </div>
-    <button class="btn btn-primary btn-lg" style="width:100%" onclick="doLogin()">
-      <span id="loginBtnText">Masuk</span>
+    <button class="btn-login" onclick="doLogin()">
+      <span id="loginBtnText">Masuk →</span>
     </button>
-    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-light)">
-      Belum punya akun? <a href="#" onclick="doRegister()" style="color:var(--primary);font-weight:700">Daftar</a>
+    <p class="login-footer">
+      Belum punya akun? <a href="#" onclick="doRegister()">Daftar sekarang</a>
     </p>
-
   </div>
 </div>
 
@@ -1362,25 +1530,40 @@ tr:hover td { background: #f8fafc; }
 <div class="modal-overlay" id="modalIntegrasi">
   <div class="modal">
     <div class="modal-header">
-      <h3>Tambah Link Integrasi ASN</h3>
+      <h3>Tambah Link ASN</h3>
       <button class="btn-close" onclick="closeModal('modalIntegrasi')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Nama Layanan</label>
-        <input type="text" id="integrasiNama" class="form-control" placeholder="cth: MyASN, e-Kinerja">
+      <input type="hidden" id="integrasiEditId">
+      <input type="hidden" id="integrasiLogoB64">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nama Layanan</label>
+          <input type="text" id="integrasiNama" class="form-control" placeholder="cth: MyASN, e-Kinerja">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ikon (Emoji)</label>
+          <input type="text" id="integrasiIkon" class="form-control" placeholder="🏛️">
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">URL / Link</label>
         <input type="url" id="integrasiUrl" class="form-control" placeholder="https://myasn.bkn.go.id">
       </div>
       <div class="form-group">
-        <label class="form-label">Ikon (Emoji)</label>
-        <input type="text" id="integrasiIkon" class="form-control" placeholder="cth: 🏛️ 📊 💼">
-      </div>
-      <div class="form-group">
         <label class="form-label">Deskripsi Singkat</label>
         <input type="text" id="integrasiDesc" class="form-control" placeholder="Deskripsi layanan...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo / Gambar (Opsional)</label>
+        <div style="display:flex;align-items:center;gap:14px">
+          <label class="btn btn-outline" style="cursor:pointer;margin:0;font-size:12px">
+            📁 Pilih Gambar
+            <input type="file" accept="image/*" style="display:none" onchange="handleIntegLogoUpload(this)">
+          </label>
+          <img id="integrasiLogoPreview" src="" alt="preview" style="height:44px;width:44px;border-radius:10px;object-fit:cover;border:1.5px solid var(--border);display:none">
+          <span style="font-size:11px;color:var(--text-light)">PNG/JPG, akan menggantikan emoji</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2182,31 +2365,87 @@ const defaultIntegrasi = [
 
 function renderIntegrasi() {
   const links = APP_DATA.integrasi.length ? APP_DATA.integrasi : defaultIntegrasi;
-  document.getElementById('integrasiGrid').innerHTML = links.map((l,i)=>`
-    <a href="${l.url}" target="_blank" class="integration-card" onclick="void(0)">
-      <div class="integration-icon">${l.ikon||'🔗'}</div>
+  document.getElementById('integrasiGrid').innerHTML = links.map((l,i)=>{
+    // Icon: custom logo image > emoji > default
+    const iconHtml = l.logo_base64 
+      ? `<img src="${l.logo_base64}" alt="${l.nama}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+      : (l.ikon||'🔗');
+    const actions = l.id ? `
+      <div class="integration-actions">
+        <button class="integration-edit" onclick="event.stopPropagation();event.preventDefault();editIntegrasi(${l.id})" title="Edit">✏️</button>
+        <button class="integration-del" onclick="event.stopPropagation();event.preventDefault();deleteIntegrasi(${l.id})" title="Hapus">✕</button>
+      </div>` : '';
+    return `
+    <div class="integration-card" onclick="window.open('${l.url}','_blank')">
+      <div class="integration-icon">${iconHtml}</div>
       <div class="integration-name">${l.nama}</div>
-      <div class="integration-url">${l.deskripsi||l.desc||l.url}</div>
-      ${l.id?`<button class="integration-del" onclick="event.preventDefault();deleteIntegrasi(${l.id})">✕</button>`:''}
-      <div style="position:absolute;inset:0;z-index:1" onclick="window.open('${l.url}','_blank')"></div>
-    </a>
-  `).join('');
+      <div class="integration-url">${l.deskripsi||l.desc||''}</div>
+      ${actions}
+    </div>`;
+  }).join('');
 }
 
-function showAddIntegrasi() { openModal('modalIntegrasi'); }
+function showAddIntegrasi() {
+  document.getElementById('integrasiEditId').value = '';
+  document.getElementById('integrasiNama').value = '';
+  document.getElementById('integrasiUrl').value = '';
+  document.getElementById('integrasiIkon').value = '';
+  document.getElementById('integrasiDesc').value = '';
+  document.getElementById('integrasiLogoPreview').style.display = 'none';
+  document.getElementById('integrasiLogoB64').value = '';
+  document.querySelector('#modalIntegrasi .modal-header h3').textContent = 'Tambah Link ASN';
+  openModal('modalIntegrasi');
+}
+
+function editIntegrasi(id) {
+  const l = APP_DATA.integrasi.find(x=>x.id==id); if(!l) return;
+  document.getElementById('integrasiEditId').value = id;
+  document.getElementById('integrasiNama').value = l.nama||'';
+  document.getElementById('integrasiUrl').value = l.url||'';
+  document.getElementById('integrasiIkon').value = l.ikon||'';
+  document.getElementById('integrasiDesc').value = l.deskripsi||l.desc||'';
+  const prev = document.getElementById('integrasiLogoPreview');
+  if (l.logo_base64) { prev.src = l.logo_base64; prev.style.display='block'; }
+  else { prev.style.display='none'; }
+  document.getElementById('integrasiLogoB64').value = l.logo_base64||'';
+  document.querySelector('#modalIntegrasi .modal-header h3').textContent = 'Edit Link ASN';
+  openModal('modalIntegrasi');
+}
 
 async function saveIntegrasi() {
+  const editId = document.getElementById('integrasiEditId').value;
   const row = {
-    nama: document.getElementById('integrasiNama').value,
-    url: document.getElementById('integrasiUrl').value,
+    nama: document.getElementById('integrasiNama').value.trim(),
+    url: document.getElementById('integrasiUrl').value.trim(),
     ikon: document.getElementById('integrasiIkon').value || '🔗',
-    deskripsi: document.getElementById('integrasiDesc').value,
+    deskripsi: document.getElementById('integrasiDesc').value.trim(),
+    logo_base64: document.getElementById('integrasiLogoB64').value || null,
     user_id: currentUser.id
   };
   if (!row.nama || !row.url) return toast('Nama dan URL wajib diisi', 'error');
-  const { error } = await db.from('integrasi').insert(row);
+  let error;
+  if (editId) {
+    const res = await db.from('integrasi').update(row).eq('id', editId);
+    error = res.error;
+  } else {
+    const res = await db.from('integrasi').insert(row);
+    error = res.error;
+  }
   if (error) return toast(error.message, 'error');
-  toast('Link ditambahkan!', 'success'); closeModal('modalIntegrasi'); await loadIntegrasi();
+  toast(editId ? 'Link diperbarui! ✅' : 'Link ditambahkan! ✅', 'success');
+  closeModal('modalIntegrasi');
+  await loadIntegrasi();
+}
+
+function handleIntegLogoUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('integrasiLogoB64').value = e.target.result;
+    document.getElementById('integrasiLogoPreview').src = e.target.result;
+    document.getElementById('integrasiLogoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
 }
 
 async function deleteIntegrasi(id) {
@@ -2215,6 +2454,10 @@ async function deleteIntegrasi(id) {
   toast('Link dihapus'); await loadIntegrasi();
 }
 
+
+
+// Run this in Supabase SQL Editor if you added integrasi table before this update:
+// ALTER TABLE integrasi ADD COLUMN IF NOT EXISTS logo_base64 TEXT;
 
 // ===================== EXCEL UPLOAD / DOWNLOAD =====================
 
