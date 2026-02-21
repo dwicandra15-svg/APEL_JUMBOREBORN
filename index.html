@@ -631,81 +631,58 @@ tr:hover td { background: #f8fafc; }
 
 /* RESPONSIVE - MOBILE */
 @media (max-width: 600px) {
-  /* Grid */
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   #content { padding: 12px; }
 
-  /* Topbar */
   .topbar { padding: 10px 12px; gap: 8px; }
   .topbar-title { font-size: 13px; }
   .topbar-sub { display: none; }
   .topbar-actions { gap: 6px; }
 
-  /* Section header - stack on mobile */
   .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .section-header > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
   .section-header .btn { flex: 1; min-width: 120px; justify-content: center; font-size: 12px; padding: 7px 10px; }
 
-  /* Cards */
   .card { padding: 14px; }
   .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .card-header > * { width: 100%; }
 
-  /* Stat cards */
   .stat-card { padding: 14px 16px; }
   .stat-icon { width: 42px; height: 42px; font-size: 18px; }
   .stat-info h3 { font-size: 22px; }
 
-  /* Tables - horizontal scroll with sticky first column */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
-  table { min-width: 500px; font-size: 12px; }
+  table { min-width: 480px; font-size: 12px; }
   th, td { padding: 8px 10px; }
 
-  /* Buttons */
   .btn { font-size: 12px; padding: 7px 12px; }
   .btn-lg { font-size: 13px; padding: 10px 18px; }
 
-  /* Forms */
   .form-row { grid-template-columns: 1fr; gap: 10px; }
-  .form-control { font-size: 14px; } /* Prevent zoom on iOS */
+  .form-control { font-size: 14px; }
 
-  /* Modal */
   .modal { width: 96%; border-radius: 16px; max-height: 88vh; }
   .modal-header { padding: 14px 16px 10px; }
   .modal-body { padding: 14px 16px; }
   .modal-footer { padding: 10px 16px 16px; flex-direction: column; }
   .modal-footer .btn { width: 100%; justify-content: center; }
 
-  /* Login card */
   .login-card { width: 92%; padding: 32px 24px; }
   .login-logo h1 { font-size: 22px; }
 
-  /* Integration grid */
   .integration-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
 
-  /* Sidebar overlay backdrop */
   #sidebarBackdrop {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 99;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 99;
   }
   #sidebarBackdrop.show { display: block; }
 
-  /* Data siswa section header */
   #page-siswa .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   #page-siswa .section-header > div { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
   #page-siswa .section-header select { width: 100%; }
   #page-siswa .section-header .btn { flex: 1 1 calc(50% - 3px); text-align: center; justify-content: center; }
 
-  /* Rekap/filter row */
-  .filter-row { flex-direction: column; gap: 8px; }
-  .filter-row select, .filter-row input { width: 100%; }
-
-  /* Toast higher on mobile */
   #toast { bottom: 80px; font-size: 12px; padding: 9px 18px; }
-
-  /* Hide watermark on very small screens */
   body::after { display: none; }
 }
 
@@ -1850,47 +1827,39 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Gunakan onAuthStateChange agar session terbaca di semua device (HP, laptop, dll)
-  db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      if (session && session.user) {
-        currentUser = session.user;
-        // Simpan session terbaru ke localStorage
-        localStorage.setItem('apel_session', JSON.stringify(session));
-        // Hanya jalankan afterLogin jika belum login sebelumnya
-        if (!document.getElementById('loginPage').classList.contains('hide')) {
-          await afterLogin();
-        }
-      }
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null;
-      localStorage.removeItem('apel_session');
-      localStorage.removeItem('apel_last_page');
-      location.reload();
-    }
-  });
-
-  // Coba pulihkan session dari Supabase langsung (reliable di semua device)
+  // Cara paling reliable: langsung tanya Supabase apakah ada session aktif.
+  // Ini bekerja di SEMUA device karena Supabase menyimpan token-nya sendiri.
   try {
-    const { data: { session } } = await db.auth.getSession();
+    const { data: { session }, error } = await db.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
+      // Perbarui localStorage dengan session terbaru
       localStorage.setItem('apel_session', JSON.stringify(session));
       await afterLogin();
       return;
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('getSession error:', e);
+  }
 
-  // Fallback: coba dari localStorage
+  // Fallback: coba pulihkan dari localStorage (untuk browser yang cache token)
   const saved = localStorage.getItem('apel_session');
   if (saved) {
     try {
       const s = JSON.parse(saved);
-      const { data } = await db.auth.setSession(s);
-      if (data && data.user) { currentUser = data.user; await afterLogin(); return; }
-    } catch(e) {}
+      const { data, error } = await db.auth.setSession(s);
+      if (!error && data && data.user) {
+        currentUser = data.user;
+        await afterLogin();
+        return;
+      }
+    } catch(e) {
+      console.warn('setSession error:', e);
+    }
   }
 
+  // Tidak ada session valid → tampilkan halaman login
+  localStorage.removeItem('apel_session');
   document.getElementById('loginPage').classList.remove('hide');
 });
 
@@ -2996,6 +2965,7 @@ function renderMapelTbody() {
 }
 
 async function addKelas() {
+  if (!currentUser) return toast('Sesi belum siap, coba refresh halaman', 'error');
   const nama = document.getElementById('newKelas').value.trim();
   if (!nama) return toast('Nama kelas wajib diisi', 'error');
   const { error } = await db.from('kelas').insert({ nama, user_id: currentUser.id });
@@ -3012,6 +2982,7 @@ async function deleteKelas(id) {
 }
 
 async function addMapel() {
+  if (!currentUser) return toast('Sesi belum siap, coba refresh halaman', 'error');
   const nama = document.getElementById('newMapel').value.trim();
   if (!nama) return toast('Nama mapel wajib diisi', 'error');
   const { error } = await db.from('mapel').insert({ nama, user_id: currentUser.id });
@@ -3691,7 +3662,8 @@ function showPage(name) {
   // Close sidebar on mobile
   if (window.innerWidth < 900) {
     document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarBackdrop').classList.remove('show');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (backdrop) backdrop.classList.remove('show');
   }
   
   // Page-specific actions
@@ -3728,12 +3700,13 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const backdrop = document.getElementById('sidebarBackdrop');
   sidebar.classList.toggle('open');
-  backdrop.classList.toggle('show');
+  if (backdrop) backdrop.classList.toggle('show');
 }
 
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarBackdrop').classList.remove('show');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (backdrop) backdrop.classList.remove('show');
 }
 
 // Close modal on overlay click
