@@ -1874,6 +1874,7 @@ async function doRegister() {
 
 async function doLogout() {
   localStorage.removeItem('apel_session');
+  localStorage.removeItem('apel_last_page');
   if (db) await db.auth.signOut();
   location.reload();
 }
@@ -1884,7 +1885,8 @@ async function afterLogin() {
   document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
-  showPage('dashboard');
+  const lastPage = localStorage.getItem('apel_last_page') || 'dashboard';
+  showPage(lastPage);
 }
 
 // ===================== SETUP / CONFIG =====================
@@ -3555,6 +3557,7 @@ function populateBulan() {
 }
 
 function showPage(name) {
+  localStorage.setItem('apel_last_page', name);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${name}`);
