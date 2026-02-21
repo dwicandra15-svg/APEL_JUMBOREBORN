@@ -3,7 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APEL JUMBO Reborn - Aplikasi Elektronik Jurnal Mengajar Berbasis Online</title>
+<title>APEL JUMBO - Aplikasi Pengelolaan Elektronik Guru</title>
+<meta name="description" content="Aplikasi Pengelolaan Elektronik Guru berbasis web untuk manajemen kelas, absensi, nilai, jurnal mengajar, dan pembayaran UMMI.">
+
+<!-- Open Graph / WhatsApp / Telegram link preview -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="APEL JUMBO">
+<meta property="og:description" content="Aplikasi Pengelolaan Elektronik Guru - Manajemen kelas, absensi, nilai & jurnal mengajar">
+<meta property="og:site_name" content="APEL JUMBO">
+<meta property="og:image" content="https://dwicandra15-svg.github.io/APEL_JUMBOREBORN/apel-thumbnail.png">
+<meta property="og:url" content="https://dwicandra15-svg.github.io/APEL_JUMBOREBORN/">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="APEL JUMBO">
+<meta name="twitter:description" content="Aplikasi Pengelolaan Elektronik Guru">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -678,9 +692,9 @@ tr:hover td { background: #f8fafc; }
 <div id="loginPage">
   <div class="login-card">
     <div class="login-logo">
-      <div class="app-icon">🍎</div>
-      <h1>APEL JUMBO</h1>
-      <p>Aplikasi Elektronik Jurnal Mengajar Berbasis Online</p>
+      <div class="app-icon" id="loginLogo">🍎</div>
+      <h1 id="loginAppName">APEL JUMBO</h1>
+      <p id="loginSubtitle">Aplikasi Pengelolaan Elektronik Guru</p>
     </div>
     <div class="float-group">
       <input type="email" id="loginEmail" placeholder="email" autocomplete="email">
@@ -762,7 +776,7 @@ tr:hover td { background: #f8fafc; }
   <div class="sidebar-header">
     <div class="sidebar-logo" id="sidebarLogo">🍎</div>
     <div class="sidebar-title">
-      <h2>APEL JUMBO</h2>
+      <h2 id="sidebarAppName">APEL JUMBO</h2>
       <p>v1.0 · D.D Candra</p>
     </div>
   </div>
@@ -804,6 +818,9 @@ tr:hover td { background: #f8fafc; }
     </div>
     
     <div class="nav-label">UMMI</div>
+    <div class="nav-item" onclick="showPage('ummiTingkatan')">
+      <span class="icon">📚</span> Tingkatan UMMI
+    </div>
     <div class="nav-item" onclick="showPage('ummi7')">
       <span class="icon">📗</span> Pembayaran UMMI 7
     </div>
@@ -931,8 +948,19 @@ tr:hover td { background: #f8fafc; }
     <div id="page-jadwal" class="page">
       <div class="section-header">
         <div><div class="section-title">Jadwal Mengajar</div></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="showAddJadwal()">+ Tambah Jadwal</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <select id="filterJadwalKelas" class="form-control" style="width:140px" onchange="renderJadwal()">
+            <option value="">Semua Kelas</option>
+          </select>
+          <select id="filterJadwalMapel" class="form-control" style="width:160px" onchange="renderJadwal()">
+            <option value="">Semua Mapel</option>
+          </select>
+          <select id="filterJadwalHari" class="form-control" style="width:130px" onchange="renderJadwal()">
+            <option value="">Semua Hari</option>
+            <option>Senin</option><option>Selasa</option><option>Rabu</option>
+            <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+          </select>
+          <button class="btn btn-primary" onclick="showAddJadwal()">+ Tambah</button>
           <button class="btn btn-print" onclick="cetakJadwal()">🖨️ Cetak</button>
         </div>
       </div>
@@ -987,6 +1015,12 @@ tr:hover td { background: #f8fafc; }
           <div class="form-group">
             <label class="form-label">Filter Kelas</label>
             <select id="rekapAbsenKelas" class="form-control" onchange="loadRekapAbsen()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter Mata Pelajaran</label>
+            <select id="rekapAbsenMapel" class="form-control" onchange="loadRekapAbsen()">
+              <option value="">Semua Mapel</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Filter Periode (Bulan)</label>
@@ -1097,6 +1131,12 @@ tr:hover td { background: #f8fafc; }
             <select id="filterJurnalKelas" class="form-control" onchange="loadJurnal()"></select>
           </div>
           <div class="form-group">
+            <label class="form-label">Filter Mata Pelajaran</label>
+            <select id="filterJurnalMapel" class="form-control" onchange="loadJurnal()">
+              <option value="">Semua Mapel</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">Filter Bulan</label>
             <select id="filterJurnalBulan" class="form-control" onchange="loadJurnal()"></select>
           </div>
@@ -1193,6 +1233,28 @@ tr:hover td { background: #f8fafc; }
             <input type="text" id="setSupaUrl" class="form-control">
             <input type="text" id="setSupaKey" class="form-control">
           </div>
+          <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:12px">🎨 BRANDING APLIKASI</div>
+            <div class="form-group">
+              <label class="form-label">Nama Aplikasi (tampil di login)</label>
+              <input type="text" id="setAppName" class="form-control" placeholder="APEL JUMBO">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subtitle Aplikasi</label>
+              <input type="text" id="setAppSubtitle" class="form-control" placeholder="Aplikasi Pengelolaan Elektronik Guru">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Logo Aplikasi (untuk halaman login)</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <label class="btn btn-outline" style="cursor:pointer;margin:0;font-size:12px">
+                  📁 Pilih Logo
+                  <input type="file" accept="image/*" style="display:none" onchange="handleAppLogoUpload(this)">
+                </label>
+                <img id="appLogoPreview" src="" style="height:48px;width:48px;border-radius:12px;object-fit:cover;border:1.5px solid var(--border);display:none">
+                <span style="font-size:11px;color:var(--text-light)">PNG/JPG — tampil di halaman login & splash</span>
+              </div>
+            </div>
+          </div>
           <div class="form-group">
             <label class="form-label">Nama Guru / Wali Kelas</label>
             <input type="text" id="setGuru" class="form-control" placeholder="Nama lengkap guru">
@@ -1261,6 +1323,72 @@ tr:hover td { background: #f8fafc; }
 <!-- ===================== MODALS ===================== -->
 
 
+    <!-- ===== TINGKATAN UMMI ===== -->
+    <div id="page-ummiTingkatan" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">📚 Tingkatan UMMI</div>
+          <div class="section-sub">Kelola tingkatan Iqro dan Al-Quran per level kelas</div>
+        </div>
+      </div>
+
+      <!-- UMMI 7 -->
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">📗</span>
+            <div>
+              <div style="font-weight:800;font-size:15px;color:var(--text)">UMMI Kelas 7</div>
+              <div style="font-size:11px;color:var(--text-light)">Tingkatan untuk siswa kelas 7</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="font-size:12px" onclick="showAddTingkatan('7')">+ Tambah Tingkatan</button>
+        </div>
+        <div id="tingkatanGrid7" style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="color:var(--text-light);font-size:13px">Memuat...</span>
+        </div>
+      </div>
+
+      <!-- UMMI 8 -->
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">📘</span>
+            <div>
+              <div style="font-weight:800;font-size:15px;color:var(--text)">UMMI Kelas 8</div>
+              <div style="font-size:11px;color:var(--text-light)">Tingkatan untuk siswa kelas 8</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="font-size:12px" onclick="showAddTingkatan('8')">+ Tambah Tingkatan</button>
+        </div>
+        <div id="tingkatanGrid8" style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="color:var(--text-light);font-size:13px">Memuat...</span>
+        </div>
+      </div>
+
+      <!-- UMMI 9 -->
+      <div class="card" style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">📙</span>
+            <div>
+              <div style="font-weight:800;font-size:15px;color:var(--text)">UMMI Kelas 9</div>
+              <div style="font-size:11px;color:var(--text-light)">Tingkatan untuk siswa kelas 9</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="font-size:12px" onclick="showAddTingkatan('9')">+ Tambah Tingkatan</button>
+        </div>
+        <div id="tingkatanGrid9" style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="color:var(--text-light);font-size:13px">Memuat...</span>
+        </div>
+      </div>
+
+      <!-- Info box -->
+      <div style="background:var(--primary-light);border-radius:12px;padding:16px 18px;font-size:12px;color:var(--primary);border:1px solid #bfdbfe">
+        💡 <strong>Tips:</strong> Klik shortcut nama tingkatan saat tambah untuk mengisi cepat (Iqro 1–6, Al-Quran). Warna label bisa dikustomisasi sesuai kebutuhan. Tingkatan yang dibuat di sini akan muncul sebagai pilihan saat input pembayaran UMMI.
+      </div>
+    </div>
+
     <!-- ===== UMMI 7 ===== -->
     <div id="page-ummi7" class="page">
       <div id="ummi7-content"></div>
@@ -1274,7 +1402,50 @@ tr:hover td { background: #f8fafc; }
       <div id="ummi9-content"></div>
     </div>
 
-    <!-- Modal Pembayaran UMMI -->
+    
+<!-- Modal Tingkatan UMMI -->
+<div class="modal-overlay" id="modalTingkatan">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="modalTingkatanTitle">Tambah Tingkatan UMMI</h3>
+      <button class="btn-close" onclick="closeModal('modalTingkatan')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tingkatanEditId">
+      <input type="hidden" id="tingkatanLevel">
+      <div class="form-group">
+        <label class="form-label">Nama Tingkatan</label>
+        <input type="text" id="tingkatanNama" class="form-control" placeholder="cth: Iqro 1, Iqro 2, Al-Quran">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Urutan</label>
+          <input type="number" id="tingkatanUrutan" class="form-control" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Warna Label</label>
+          <input type="color" id="tingkatanWarna" class="form-control" value="#1a56db" style="height:42px;cursor:pointer">
+        </div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;margin-top:4px">
+        <div style="font-size:11px;color:var(--text-light);margin-bottom:8px;font-weight:600">CONTOH TINGKATAN UMUM:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${['Iqro 1','Iqro 2','Iqro 3','Iqro 4','Iqro 5','Iqro 6','Al-Quran'].map(t=>`
+            <span onclick="document.getElementById('tingkatanNama').value='${t}'" 
+              style="background:white;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600;hover:background:#f0f4ff">
+              ${t}
+            </span>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalTingkatan')">Batal</button>
+      <button class="btn btn-primary" onclick="saveTingkatan()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pembayaran UMMI -->
     <div class="modal-overlay" id="modalUmmi">
       <div class="modal" style="max-width:520px">
         <div class="modal-header">
@@ -1639,6 +1810,15 @@ function applyConfig() {
     document.getElementById('setWali').value = CONFIG.wali || '';
     const setTP = document.getElementById('setTP');
     if (setTP) setTP.value = CONFIG.tahunPelajaran || '';
+    const setAppName = document.getElementById('setAppName');
+    if (setAppName) setAppName.value = CONFIG.appName || '';
+    const setAppSub = document.getElementById('setAppSubtitle');
+    if (setAppSub) setAppSub.value = CONFIG.appSubtitle || '';
+    // Show logo preview if exists
+    if (CONFIG.appLogo) {
+      const prev = document.getElementById('appLogoPreview');
+      if (prev) { prev.src = CONFIG.appLogo; prev.style.display = 'block'; }
+    }
     if (CONFIG.logo) {
       const img = document.getElementById('setLogoPreview');
       img.src = CONFIG.logo; img.style.display = 'block';
@@ -1778,6 +1958,8 @@ function savePengaturan() {
   CONFIG.guru = document.getElementById('setGuru').value.trim();
   CONFIG.wali = document.getElementById('setWali').value.trim();
   CONFIG.tahunPelajaran = document.getElementById('setTP').value.trim();
+  CONFIG.appName = document.getElementById('setAppName')?.value.trim() || CONFIG.appName;
+  CONFIG.appSubtitle = document.getElementById('setAppSubtitle')?.value.trim() || CONFIG.appSubtitle;
   if (CONFIG._pendingLogo) { CONFIG.logo = CONFIG._pendingLogo; delete CONFIG._pendingLogo; }
   localStorage.setItem('apel_config', JSON.stringify(CONFIG));
   initSupabase();
@@ -1829,13 +2011,16 @@ async function loadIntegrasi() {
 }
 
 function populateAllSelects() {
-  const kelasSels = ['filterKelasS','absenKelas','rekapAbsenKelas','nilaiKelas','rekapNilaiKelas','filterJurnalKelas','jadwalKelas','siswaKelas','jurnalKelas','filterBimbinganSiswa'];
+  const kelasSels = ['filterKelasS','absenKelas','rekapAbsenKelas','nilaiKelas','rekapNilaiKelas','filterJurnalKelas','jadwalKelas','siswaKelas','jurnalKelas','filterBimbinganSiswa','filterJadwalKelas'];
   // Populate kelas selects
   ['filterKelasS','absenKelas','rekapAbsenKelas','nilaiKelas','rekapNilaiKelas','filterJurnalKelas','jadwalKelas','siswaKelas','jurnalKelas'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const hasAll = ['filterKelasS','rekapAbsenKelas','filterJurnalKelas'].includes(id);
+    const savedVal = el.value; // Save current value BEFORE repopulating
     el.innerHTML = (hasAll ? '<option value="">Semua</option>' : '') + APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+    // Restore saved value if it still exists in the new options
+    if (savedVal && [...el.options].some(o => o.value === savedVal)) el.value = savedVal;
   });
   // Populate mapel selects
   ['jadwalMapel','jurnalMapel','rekapNilaiMapel'].forEach(id => {
@@ -1917,13 +2102,13 @@ async function loadDashboard() {
 }
 
 // ===================== SISWA =====================
-async function loadSiswa() {
+function loadSiswa() {
   const kelasFilter = document.getElementById('filterKelasS')?.value;
-  let query = db.from('siswa').select('*').order('nama');
-  if (kelasFilter) query = query.eq('kelas_id', kelasFilter);
-  const { data } = await query;
-  APP_DATA.siswa = data || [];
-  document.getElementById('siswaTbody').innerHTML = APP_DATA.siswa.length ? APP_DATA.siswa.map(s=>`
+  // Filter locally from APP_DATA (preserves filter state after edits)
+  let filtered = kelasFilter 
+    ? APP_DATA.siswa.filter(s => String(s.kelas_id) === String(kelasFilter))
+    : APP_DATA.siswa;
+  document.getElementById('siswaTbody').innerHTML = filtered.length ? filtered.map(s=>`
     <tr>
       <td><span class="badge badge-gray">${s.nis||'-'}</span></td>
       <td><strong>${s.nama}</strong></td>
@@ -1932,7 +2117,7 @@ async function loadSiswa() {
       <td>${s.bimbingan==1?'<span class="badge badge-primary">💙 Ya</span>':'<span class="badge badge-gray">Tidak</span>'}</td>
       <td><button class="btn btn-sm btn-outline" onclick="editSiswa(${s.id})">✏️</button> <button class="btn btn-sm btn-danger" onclick="deleteSiswa(${s.id})">🗑️</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Belum ada data siswa</td></tr>';
+  `).join('') : `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">${kelasFilter ? 'Tidak ada siswa di kelas ini' : 'Belum ada data siswa'}</td></tr>`;
 }
 
 function showAddSiswa() {
@@ -1986,9 +2171,14 @@ async function saveSiswa() {
   if (err) return toast(err.message, 'error');
   toast('Data siswa disimpan!', 'success');
   closeModal('modalSiswa');
+  // Capture current filter BEFORE reload
+  const _kelasFilter = document.getElementById('filterKelasS')?.value || '';
   await loadSiswaAll();
+  await populateAllSelects(); // restores dropdown values automatically
+  // Force restore filter if somehow lost
+  const _fe = document.getElementById('filterKelasS');
+  if (_fe && _kelasFilter) _fe.value = _kelasFilter;
   loadSiswa();
-  populateAllSelects();
 }
 
 async function deleteSiswa(id) {
@@ -1996,22 +2186,54 @@ async function deleteSiswa(id) {
   const { error } = await db.from('siswa').delete().eq('id', id);
   if (error) return toast(error.message, 'error');
   toast('Siswa dihapus', 'success');
-  await loadSiswaAll(); loadSiswa(); populateAllSelects();
+  const _cf = document.getElementById('filterKelasS')?.value||'';
+  await loadSiswaAll();
+  await populateAllSelects();
+  const _fe2 = document.getElementById('filterKelasS');
+  if (_fe2 && _cf) _fe2.value = _cf;
+  loadSiswa();
 }
 
 // ===================== JADWAL =====================
 async function loadJadwal() {
   await loadJadwalAll();
-  document.getElementById('jadwalTbody').innerHTML = APP_DATA.jadwal.length ? APP_DATA.jadwal.map(j=>`
+  // Populate jadwal filter dropdowns
+  const fKelas = document.getElementById('filterJadwalKelas');
+  const fMapel = document.getElementById('filterJadwalMapel');
+  if (fKelas) {
+    fKelas.innerHTML = '<option value="">Semua Kelas</option>' +
+      APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+  }
+  if (fMapel) {
+    fMapel.innerHTML = '<option value="">Semua Mapel</option>' +
+      APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  }
+  renderJadwal();
+}
+
+function renderJadwal() {
+  const kelasFilter = document.getElementById('filterJadwalKelas')?.value;
+  const mapelFilter = document.getElementById('filterJadwalMapel')?.value;
+  const hariFilter = document.getElementById('filterJadwalHari')?.value;
+  
+  const hariOrder = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  let filtered = APP_DATA.jadwal.filter(j => {
+    if (kelasFilter && String(j.kelas_id) !== String(kelasFilter)) return false;
+    if (mapelFilter && String(j.mapel_id) !== String(mapelFilter)) return false;
+    if (hariFilter && j.hari !== hariFilter) return false;
+    return true;
+  }).sort((a,b) => (hariOrder.indexOf(a.hari)-hariOrder.indexOf(b.hari)) || a.jam_mulai?.localeCompare(b.jam_mulai||''));
+  
+  document.getElementById('jadwalTbody').innerHTML = filtered.length ? filtered.map(j=>`
     <tr>
       <td><span class="badge badge-primary">${j.hari}</span></td>
       <td>${j.jam_mulai||''} – ${j.jam_selesai||''}</td>
       <td>${getKelasName(j.kelas_id)}</td>
-      <td>${getMapelName(j.mapel_id)}</td>
+      <td><strong>${getMapelName(j.mapel_id)}</strong></td>
       <td>${j.ruang||'-'}</td>
       <td><button class="btn btn-sm btn-danger" onclick="deleteJadwal(${j.id})">🗑️</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Belum ada jadwal</td></tr>';
+  `).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Tidak ada jadwal ditemukan</td></tr>';
 }
 
 function showAddJadwal() {
@@ -2101,7 +2323,15 @@ async function simpanAbsen() {
 // ===================== REKAP ABSENSI =====================
 async function loadRekapAbsen() {
   const kelasId = document.getElementById('rekapAbsenKelas')?.value;
+  const mapelId = document.getElementById('rekapAbsenMapel')?.value;
   const bulan = document.getElementById('rekapAbsenBulan')?.value;
+  
+  // Populate mapel dropdown for rekap
+  const rekapMapelEl = document.getElementById('rekapAbsenMapel');
+  if (rekapMapelEl && rekapMapelEl.options.length <= 1) {
+    rekapMapelEl.innerHTML = '<option value="">Semua Mapel</option>' +
+      APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  }
   if (!kelasId || !bulan) return;
   
   let query = db.from('absensi').select('*');
@@ -2219,9 +2449,19 @@ async function loadRekapNilai() {
 // ===================== JURNAL =====================
 async function loadJurnal() {
   const kelasId = document.getElementById('filterJurnalKelas')?.value;
+  const mapelId = document.getElementById('filterJurnalMapel')?.value;
   const bulan = document.getElementById('filterJurnalBulan')?.value;
+  
+  // Populate mapel filter
+  const fmp = document.getElementById('filterJurnalMapel');
+  if (fmp && fmp.options.length <= 1) {
+    fmp.innerHTML = '<option value="">Semua Mapel</option>' +
+      APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  }
+  
   let query = db.from('jurnal').select('*').order('tanggal', {ascending:false});
   if (kelasId) query = query.eq('kelas_id', kelasId);
+  if (mapelId) query = query.eq('mapel_id', mapelId);
   if (bulan) query = query.like('tanggal', `%-${bulan}-%`);
   const { data } = await query;
   document.getElementById('jurnalList').innerHTML = (data||[]).length ? (data||[]).map(j=>`
@@ -2435,6 +2675,23 @@ async function saveIntegrasi() {
   toast(editId ? 'Link diperbarui! ✅' : 'Link ditambahkan! ✅', 'success');
   closeModal('modalIntegrasi');
   await loadIntegrasi();
+}
+
+
+function handleAppLogoUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    CONFIG.appLogo = e.target.result;
+    const prev = document.getElementById('appLogoPreview');
+    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+    const loginLogo = document.getElementById('loginLogo');
+    if (loginLogo) loginLogo.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:16px">`;
+    const sidebarLogo = document.getElementById('sidebarLogo');
+    if (sidebarLogo) sidebarLogo.innerHTML = `<img src="${e.target.result}" style="width:36px;height:36px;object-fit:cover;border-radius:10px">`;
+    toast('Logo berhasil diubah! Simpan pengaturan untuk menyimpan.', 'success');
+  };
+  reader.readAsDataURL(file);
 }
 
 function handleIntegLogoUpload(input) {
@@ -2783,6 +3040,23 @@ async function cetakBimbingan() {
 
 // ===================== UMMI PEMBAYARAN =====================
 
+// Store tingkatan data per level
+let ummiTingkatanData = {};
+
+async function loadAllTingkatan() {
+  await Promise.all(['7','8','9'].map(async lvl => {
+    const t = await loadUmmiTingkatan(lvl);
+    renderTingkatanGrid(lvl, t);
+  }));
+}
+
+async function loadUmmiTingkatan(lvl) {
+  const { data } = await db.from('ummi_tingkatan')
+    .select('*').eq('level', lvl).order('urutan');
+  ummiTingkatanData[lvl] = data || [];
+  return ummiTingkatanData[lvl];
+}
+
 function renderUmmiPage(level) {
   const levelMap = { 'ummi7': '7', 'ummi8': '8', 'ummi9': '9' };
   const lvl = levelMap[level] || level;
@@ -2846,6 +3120,7 @@ function renderUmmiPage(level) {
             <tr>
               <th>Nama Siswa</th>
               <th>Kelas</th>
+              <th style="text-align:center">Tingkatan</th>
               <th style="text-align:center">Juli</th>
               <th style="text-align:center">Agustus</th>
               <th style="text-align:center">September</th>
@@ -2875,6 +3150,9 @@ async function loadUmmiData(lvl) {
   const bulanFilter = document.getElementById(`ummiFilterBulan${lvl}`)?.value;
   const semesterFilter = document.getElementById(`ummiFilterSemester${lvl}`)?.value;
   
+  // Load tingkatan (for badge display in table)
+  await loadUmmiTingkatan(lvl);
+  
   let query = db.from('ummi').select('*').eq('level', lvl);
   if (bulanFilter) query = query.eq('bulan', bulanFilter);
   if (semesterFilter) query = query.eq('semester', semesterFilter);
@@ -2894,6 +3172,7 @@ async function loadUmmiData(lvl) {
   
   tbody.innerHTML = siswaLevel.length ? siswaLevel.map(s => {
     const siswaRec = records.filter(r => r.siswa_id == s.id);
+    const tingkatan = ummiTingkatanData[lvl] || [];
     const bulanCells = bulanList.map(bl => {
       const rec = siswaRec.find(r => r.bulan === bl);
       if (rec) {
@@ -2907,12 +3186,24 @@ async function loadUmmiData(lvl) {
     const siswaLunas = siswaRec.filter(r=>r.status==='Lunas').length;
     const siswaBelum = bulanList.length - siswaLunas;
     lunas += siswaLunas; total += siswaRec.reduce((a,r)=>a+(r.nominal||0),0);
+    // Get current tingkatan for this siswa
+    const siswaRecs = records.filter(r => r.siswa_id == s.id);
+    const latestRec = siswaRecs.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+    const curTingkatan = latestRec?.tingkatan_id 
+      ? (tingkatan.find(t=>t.id==latestRec.tingkatan_id)?.nama || '-') 
+      : '-';
+    const tingkatanColor = latestRec?.tingkatan_id 
+      ? (tingkatan.find(t=>t.id==latestRec.tingkatan_id)?.warna || '#1a56db')
+      : '#94a3b8';
     return `<tr>
       <td><strong>${s.nama}</strong></td>
       <td>${getKelasName(s.kelas_id)}</td>
+      <td style="text-align:center">
+        <span style="background:${tingkatanColor}22;color:${tingkatanColor};border:1px solid ${tingkatanColor}44;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap">${curTingkatan}</span>
+      </td>
       ${bulanCells.join('')}
       <td>
-        <button class="btn btn-sm btn-primary" onclick="showAddUmmi('${lvl}', ${s.id})" title="Tambah bayar">+</button>
+        <button class="btn btn-sm btn-primary" onclick="showAddUmmi('${lvl}', ${s.id})" title="Input bayar">+</button>
         <button class="btn btn-sm btn-danger" onclick="hapusUmmiSiswa(${s.id},'${lvl}')" title="Hapus data">🗑️</button>
       </td>
     </tr>`;
@@ -2927,7 +3218,7 @@ async function loadUmmiData(lvl) {
   if (el_total) el_total.textContent = 'Rp ' + total.toLocaleString('id-ID');
 }
 
-function showAddUmmi(lvl, preSiswaId = null) {
+async function showAddUmmi(lvl, preSiswaId = null) {
   document.getElementById('ummiLevel').value = lvl;
   document.getElementById('ummiEditId').value = '';
   document.getElementById('ummiTgl').value = new Date().toISOString().split('T')[0];
@@ -2942,6 +3233,10 @@ function showAddUmmi(lvl, preSiswaId = null) {
   document.getElementById('modalUmmiTitle').textContent = `Input Pembayaran UMMI ${lvl}`;
   document.getElementById('ummiNominal').value = '';
   document.getElementById('ummiCatatan').value = '';
+  // Populate tingkatan dropdown
+  const tingkatan = ummiTingkatanData[lvl] || await loadUmmiTingkatan(lvl);
+  document.getElementById('ummiTingkatanId').innerHTML = '<option value="">-- Pilih Tingkatan --</option>' +
+    tingkatan.map(t=>`<option value="${t.id}">${t.nama}</option>`).join('');
   openModal('modalUmmi');
 }
 
@@ -2957,6 +3252,7 @@ async function saveUmmi() {
     status: document.getElementById('ummiStatus').value,
     nominal: parseInt(document.getElementById('ummiNominal').value) || 0,
     catatan: document.getElementById('ummiCatatan').value,
+    tingkatan_id: document.getElementById('ummiTingkatanId').value || null,
     user_id: currentUser.id
   };
   if (!row.siswa_id) return toast('Pilih siswa terlebih dahulu', 'error');
@@ -3025,6 +3321,88 @@ function cetakUmmi(lvl) {
   doc.text('Created & Developed by D.D Candra', 148, 200, {align:'center'});
   doc.save(`rekap-ummi-${lvl}.pdf`);
   toast('PDF UMMI berhasil diunduh!', 'success');
+}
+
+
+// ===================== UMMI TINGKATAN =====================
+
+function renderTingkatanGrid(lvl, tingkatan) {
+  const grid = document.getElementById(`tingkatanGrid${lvl}`);
+  if (!grid) return;
+  if (!tingkatan.length) {
+    grid.innerHTML = `
+      <div style="width:100%;text-align:center;padding:16px 0;color:var(--text-light);font-size:13px">
+        Belum ada tingkatan. Tambahkan tingkatan seperti Iqro 1–6 dan Al-Quran.
+      </div>`;
+    return;
+  }
+  grid.innerHTML = tingkatan.map(t => `
+    <div style="display:inline-flex;align-items:center;gap:8px;background:${t.warna}18;border:1.5px solid ${t.warna}55;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;color:${t.warna};position:relative">
+      <span>${t.nama}</span>
+      <span style="font-size:10px;color:${t.warna}99">Urutan: ${t.urutan}</span>
+      <button onclick="editTingkatan(${t.id},'${lvl}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;color:${t.warna}" title="Edit">✏️</button>
+      <button onclick="deleteTingkatan(${t.id},'${lvl}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;color:#e02424" title="Hapus">✕</button>
+    </div>
+  `).join('');
+}
+
+function showAddTingkatan(lvl) {
+  document.getElementById('tingkatanEditId').value = '';
+  document.getElementById('tingkatanLevel').value = lvl;
+  document.getElementById('tingkatanNama').value = '';
+  document.getElementById('tingkatanUrutan').value = (ummiTingkatanData[lvl]?.length || 0) + 1;
+  document.getElementById('tingkatanWarna').value = lvl==='7'?'#059669':lvl==='8'?'#1a56db':'#d97706';
+  document.getElementById('modalTingkatanTitle').textContent = `Tambah Tingkatan UMMI ${lvl}`;
+  openModal('modalTingkatan');
+}
+
+async function editTingkatan(id, lvl) {
+  const t = (ummiTingkatanData[lvl]||[]).find(x=>x.id==id); if (!t) return;
+  document.getElementById('tingkatanEditId').value = id;
+  document.getElementById('tingkatanLevel').value = lvl;
+  document.getElementById('tingkatanNama').value = t.nama;
+  document.getElementById('tingkatanUrutan').value = t.urutan;
+  document.getElementById('tingkatanWarna').value = t.warna||'#1a56db';
+  document.getElementById('modalTingkatanTitle').textContent = `Edit Tingkatan UMMI ${lvl}`;
+  openModal('modalTingkatan');
+}
+
+async function saveTingkatan() {
+  const id = document.getElementById('tingkatanEditId').value;
+  const lvl = document.getElementById('tingkatanLevel').value;
+  const row = {
+    level: lvl,
+    nama: document.getElementById('tingkatanNama').value.trim(),
+    urutan: parseInt(document.getElementById('tingkatanUrutan').value)||0,
+    warna: document.getElementById('tingkatanWarna').value||'#1a56db',
+    user_id: currentUser.id
+  };
+  if (!row.nama) return toast('Nama tingkatan wajib diisi','error');
+  let error;
+  if (id) {
+    const res = await db.from('ummi_tingkatan').update(row).eq('id',id); error=res.error;
+  } else {
+    const res = await db.from('ummi_tingkatan').insert(row); error=res.error;
+  }
+  if (error) return toast(error.message,'error');
+  toast(id?'Tingkatan diperbarui! ✅':'Tingkatan ditambahkan! ✅','success');
+  closeModal('modalTingkatan');
+  const tingkatan = await loadUmmiTingkatan(lvl);
+  renderTingkatanGrid(lvl, tingkatan);
+  // Also refresh table if ummi payment page is open
+  const ummiPage = document.getElementById(`page-ummi${lvl}`);
+  if (ummiPage?.classList.contains('active')) loadUmmiData(lvl);
+}
+
+async function deleteTingkatan(id, lvl) {
+  if (!confirm('Hapus tingkatan ini?')) return;
+  const { error } = await db.from('ummi_tingkatan').delete().eq('id',id);
+  if (error) return toast(error.message,'error');
+  toast('Tingkatan dihapus','success');
+  const tingkatan = await loadUmmiTingkatan(lvl);
+  renderTingkatanGrid(lvl, tingkatan);
+  const ummiPage = document.getElementById(`page-ummi${lvl}`);
+  if (ummiPage?.classList.contains('active')) loadUmmiData(lvl);
 }
 
 // ===================== SQL SETUP =====================
@@ -3187,7 +3565,7 @@ function showPage(name) {
     'absensi':'Input Absensi','absenRekap':'Rekap Absensi','nilai':'Input Nilai',
     'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
     'integrasi':'Integrasi ASN','pengaturan':'Pengaturan',
-    'ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9'
+    'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
   // Mark nav active by matching inner text
@@ -3200,6 +3578,25 @@ function showPage(name) {
   // Page-specific actions
   if (name==='pengaturan') { applyConfig(); renderKelasTbody(); renderMapelTbody(); setSqlSetup(); }
   if (name==='nilaiRekap') updateRekapMapel();
+  if (name==='jurnal') {
+    const fjm = document.getElementById('filterJurnalMapel');
+    if (fjm) {
+      const prev = fjm.value;
+      fjm.innerHTML = '<option value="">Semua Mapel</option>' +
+        APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+      if (prev) fjm.value = prev;
+    }
+  }
+  if (name==='absenRekap') {
+    // Populate mapel filter
+    const rmp = document.getElementById('rekapAbsenMapel');
+    if (rmp) {
+      rmp.innerHTML = '<option value="">Semua Mapel</option>' +
+        APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+    }
+    loadRekapAbsen();
+  }
+  if (name==='ummiTingkatan') loadAllTingkatan();
   if (name==='ummi7') renderUmmiPage('ummi7');
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
