@@ -890,6 +890,9 @@ tr:hover td { background: #f8fafc; }
     <div class="nav-item" onclick="showPage('integrasi')">
       <span class="icon">🔗</span> Integrasi ASN
     </div>
+    <div class="nav-item" onclick="showPage('integrasiKinerja')">
+      <span class="icon">🔀</span> Shortcut App
+    </div>
     <div class="nav-item" onclick="showPage('pengaturan')">
       <span class="icon">⚙️</span> Pengaturan
     </div>
@@ -1243,6 +1246,21 @@ tr:hover td { background: #f8fafc; }
         💡 Klik ikon untuk membuka layanan langsung di tab baru. Hover untuk opsi hapus.
       </div>
       <div class="integration-grid" id="integrasiGrid"></div>
+    </div>
+
+    <!-- ===== INTEGRASI KINERJA ===== -->
+    <div id="page-integrasiKinerja" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">📈 Integrasi Kinerja</div>
+          <div class="section-sub">Shortcut cepat menuju portal penilaian & pelaporan kinerja</div>
+        </div>
+        <button class="btn btn-primary" onclick="showAddKinerja()">+ Tambah Link</button>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:20px">
+        💡 Klik ikon untuk membuka layanan langsung di tab baru. Hover untuk opsi edit / hapus.
+      </div>
+      <div class="integration-grid" id="kinerjaGrid"></div>
     </div>
 
     <!-- ===== PENGATURAN ===== -->
@@ -1821,6 +1839,53 @@ tr:hover td { background: #f8fafc; }
   </div>
 </div>
 
+<!-- Modal Integrasi Kinerja -->
+<div class="modal-overlay" id="modalKinerja">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalKinerjaTitle">Tambah Link Kinerja</h3>
+      <button class="btn-close" onclick="closeModal('modalKinerja')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="kinerjaEditId">
+      <input type="hidden" id="kinerjaLogoB64">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nama Layanan</label>
+          <input type="text" id="kinerjaNama" class="form-control" placeholder="cth: e-Kinerja, PMM, SIMPATIKA">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ikon (Emoji)</label>
+          <input type="text" id="kinerjaIkon" class="form-control" placeholder="📊">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL / Link</label>
+        <input type="url" id="kinerjaUrl" class="form-control" placeholder="https://kinerja.bkn.go.id">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deskripsi Singkat</label>
+        <input type="text" id="kinerjaDesc" class="form-control" placeholder="Deskripsi layanan...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo / Gambar (Opsional)</label>
+        <div style="display:flex;align-items:center;gap:14px">
+          <label class="btn btn-outline" style="cursor:pointer;margin:0;font-size:12px">
+            📁 Pilih Gambar
+            <input type="file" accept="image/*" style="display:none" onchange="handleKinerjaLogoUpload(this)">
+          </label>
+          <img id="kinerjaLogoPreview" src="" alt="preview" style="height:44px;width:44px;border-radius:10px;object-fit:cover;border:1.5px solid var(--border);display:none">
+          <span style="font-size:11px;color:var(--text-light)">PNG/JPG, akan menggantikan emoji</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalKinerja')">Batal</button>
+      <button class="btn btn-primary" onclick="saveKinerja()">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ================================================================
 // APEL JUMBO  - Application Logic
@@ -1829,7 +1894,7 @@ tr:hover td { background: #f8fafc; }
 
 let db = null;
 let CONFIG = {};
-let APP_DATA = { kelas: [], mapel: [], siswa: [], jadwal: [], integrasi: [] };
+let APP_DATA = { kelas: [], mapel: [], siswa: [], jadwal: [], integrasi: [], kinerja: [] };
 let currentUser = null;
 let editingId = null;
 
@@ -2076,7 +2141,7 @@ function savePengaturan() {
 
 // ===================== LOAD DATA =====================
 async function loadAllData() {
-  await Promise.all([loadKelas(), loadMapel(), loadSiswaAll(), loadJadwalAll(), loadIntegrasi(), loadTingkatanAll()]);
+  await Promise.all([loadKelas(), loadMapel(), loadSiswaAll(), loadJadwalAll(), loadIntegrasi(), loadTingkatanAll(), loadKinerja()]);
   populateAllSelects();
   loadDashboard();
   // Load mapping siswa per tingkatan setelah data siswa siap
@@ -2784,6 +2849,120 @@ async function saveIntegrasi() {
   await loadIntegrasi();
 }
 
+
+// ===================== INTEGRASI KINERJA =====================
+
+const defaultKinerja = [
+  { nama: 'e-Kinerja BKN', url: 'https://kinerja.bkn.go.id', ikon: '📊', deskripsi: 'Penilaian Kinerja ASN' },
+  { nama: 'PMM', url: 'https://guru.kemdikbud.go.id', ikon: '📚', deskripsi: 'Platform Merdeka Mengajar' },
+  { nama: 'SIMPATIKA', url: 'https://simpatika.kemenag.go.id', ikon: '🕌', deskripsi: 'Sistem Informasi Pendidik' },
+  { nama: 'Rapor Pendidikan', url: 'https://raporpendidikan.kemdikbud.go.id', ikon: '📋', deskripsi: 'Rapor Pendidikan Sekolah' },
+  { nama: 'ARKAS', url: 'https://arkas.kemdikbud.go.id', ikon: '💰', deskripsi: 'Aplikasi Rencana Kegiatan & Anggaran Sekolah' },
+  { nama: 'SIPLah', url: 'https://siplah.kemdikbud.go.id', ikon: '🛒', deskripsi: 'Sistem Informasi Pengadaan Sekolah' },
+];
+
+async function loadKinerja() {
+  if (!db) return;
+  const { data } = await db.from('kinerja').select('*').order('nama');
+  APP_DATA.kinerja = data || [];
+  renderKinerja();
+}
+
+function renderKinerja() {
+  const links = (APP_DATA.kinerja && APP_DATA.kinerja.length) ? APP_DATA.kinerja : defaultKinerja;
+  const grid = document.getElementById('kinerjaGrid');
+  if (!grid) return;
+  grid.innerHTML = links.map(l => {
+    const iconHtml = l.logo_base64
+      ? `<img src="${l.logo_base64}" alt="${l.nama}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+      : (l.ikon || '📊');
+    const actions = l.id ? `
+      <div class="integration-actions">
+        <button class="integration-edit" onclick="event.stopPropagation();event.preventDefault();editKinerja(${l.id})" title="Edit">✏️</button>
+        <button class="integration-del" onclick="event.stopPropagation();event.preventDefault();deleteKinerja(${l.id})" title="Hapus">✕</button>
+      </div>` : '';
+    return `
+    <div class="integration-card" onclick="window.open('${l.url}','_blank')">
+      <div class="integration-icon">${iconHtml}</div>
+      <div class="integration-name">${l.nama}</div>
+      <div class="integration-url">${l.deskripsi || ''}</div>
+      ${actions}
+    </div>`;
+  }).join('');
+}
+
+function showAddKinerja() {
+  document.getElementById('kinerjaEditId').value = '';
+  document.getElementById('kinerjaNama').value = '';
+  document.getElementById('kinerjaUrl').value = '';
+  document.getElementById('kinerjaIkon').value = '';
+  document.getElementById('kinerjaDesc').value = '';
+  document.getElementById('kinerjaLogoPreview').style.display = 'none';
+  document.getElementById('kinerjaLogoB64').value = '';
+  document.getElementById('modalKinerjaTitle').textContent = 'Tambah Link Kinerja';
+  openModal('modalKinerja');
+}
+
+function editKinerja(id) {
+  const l = APP_DATA.kinerja.find(x => x.id == id); if (!l) return;
+  document.getElementById('kinerjaEditId').value = id;
+  document.getElementById('kinerjaNama').value = l.nama || '';
+  document.getElementById('kinerjaUrl').value = l.url || '';
+  document.getElementById('kinerjaIkon').value = l.ikon || '';
+  document.getElementById('kinerjaDesc').value = l.deskripsi || '';
+  const prev = document.getElementById('kinerjaLogoPreview');
+  if (l.logo_base64) { prev.src = l.logo_base64; prev.style.display = 'block'; }
+  else { prev.style.display = 'none'; }
+  document.getElementById('kinerjaLogoB64').value = l.logo_base64 || '';
+  document.getElementById('modalKinerjaTitle').textContent = 'Edit Link Kinerja';
+  openModal('modalKinerja');
+}
+
+async function saveKinerja() {
+  const editId = document.getElementById('kinerjaEditId').value;
+  const row = {
+    nama: document.getElementById('kinerjaNama').value.trim(),
+    url: document.getElementById('kinerjaUrl').value.trim(),
+    ikon: document.getElementById('kinerjaIkon').value || '📊',
+    deskripsi: document.getElementById('kinerjaDesc').value.trim(),
+    logo_base64: document.getElementById('kinerjaLogoB64').value || null,
+    user_id: currentUser.id
+  };
+  if (!row.nama || !row.url) return toast('Nama dan URL wajib diisi', 'error');
+  let error;
+  if (editId) {
+    const res = await db.from('kinerja').update(row).eq('id', editId);
+    error = res.error;
+  } else {
+    const res = await db.from('kinerja').insert(row);
+    error = res.error;
+  }
+  if (error) return toast(error.message, 'error');
+  toast(editId ? 'Link diperbarui! ✅' : 'Link ditambahkan! ✅', 'success');
+  closeModal('modalKinerja');
+  await loadKinerja();
+}
+
+async function deleteKinerja(id) {
+  if (!confirm('Hapus link kinerja ini?')) return;
+  const { error } = await db.from('kinerja').delete().eq('id', id);
+  if (error) return toast(error.message, 'error');
+  toast('Link dihapus', 'success');
+  APP_DATA.kinerja = APP_DATA.kinerja.filter(x => x.id != id);
+  renderKinerja();
+}
+
+function handleKinerjaLogoUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('kinerjaLogoB64').value = e.target.result;
+    const prev = document.getElementById('kinerjaLogoPreview');
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
 
 function handleAppLogoUpload(input) {
   const file = input.files[0]; if (!file) return;
@@ -3786,6 +3965,17 @@ CREATE TABLE IF NOT EXISTS integrasi (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS kinerja (
+  id BIGSERIAL PRIMARY KEY,
+  nama TEXT NOT NULL,
+  url TEXT NOT NULL,
+  ikon TEXT DEFAULT '📊',
+  deskripsi TEXT,
+  logo_base64 TEXT,
+  user_id UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS ummi_tingkatan (
   id BIGSERIAL PRIMARY KEY,
   level TEXT NOT NULL,
@@ -3824,12 +4014,13 @@ ALTER TABLE bimbingan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integrasi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ummi_tingkatan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ummi ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kinerja ENABLE ROW LEVEL SECURITY;
 
 -- Policies: users can only see their own data
 DO $$ 
 DECLARE t TEXT;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['kelas','mapel','siswa','jadwal','absensi','nilai','jurnal','bimbingan','integrasi','ummi_tingkatan','ummi']
+  FOREACH t IN ARRAY ARRAY['kelas','mapel','siswa','jadwal','absensi','nilai','jurnal','bimbingan','integrasi','ummi_tingkatan','ummi','kinerja']
   LOOP
     EXECUTE format('CREATE POLICY IF NOT EXISTS "own_data" ON %I FOR ALL USING (auth.uid() = user_id)', t);
   END LOOP;
@@ -3873,7 +4064,7 @@ function showPage(name) {
     'dashboard':'Dashboard','siswa':'Data Siswa','jadwal':'Jadwal Mengajar',
     'absensi':'Input Absensi','absenRekap':'Rekap Absensi','nilai':'Input Nilai',
     'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
-    'integrasi':'Integrasi ASN','pengaturan':'Pengaturan',
+    'integrasi':'Integrasi ASN','integrasiKinerja':'Integrasi Kinerja','pengaturan':'Pengaturan',
     'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
@@ -3910,6 +4101,7 @@ function showPage(name) {
     loadRekapAbsen();
   }
   if (name==='ummiTingkatan') loadAllTingkatan();
+  if (name==='integrasiKinerja') renderKinerja();
   if (name==='ummi7') renderUmmiPage('ummi7');
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
