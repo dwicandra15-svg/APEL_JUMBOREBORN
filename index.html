@@ -4773,11 +4773,13 @@ async function ecmLoadAll() {
   try {
     if (!db) return;
     const { data, error } = await db.from('app_settings')
-      .select('value').eq('key','card_config').single();
-    if (error || !data) return;
+      .select('value').eq('key','card_config').maybeSingle();
+    // Silently ignore 406 (table not exist) or PGRST116 (no rows) - not an error
+    if (error) return;
+    if (!data || !data.value) return;
     const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
     Object.entries(saved).forEach(([id, cardData]) => ecmApplyToDOM(id, cardData));
-  } catch(e) { console.log('ecmLoadAll:', e); }
+  } catch(e) { /* silently ignore - table may not exist yet */ }
 }
 
 // ── Open context menu (⋯ button) ─────────────────────────────────────────────
@@ -4819,7 +4821,7 @@ async function ecmOpenModal(id) {
   // Get current saved data
   let current = ECM_DEFAULTS[id] || { emoji:'❓', color:'ic-blue', name:id };
   try {
-    const { data } = await db.from('app_settings').select('value').eq('key','card_config').single();
+    const { data } = await db.from('app_settings').select('value').eq('key','card_config').maybeSingle();
     if (data && data.value) {
       const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
       if (saved[id]) current = { ...ECM_DEFAULTS[id], ...saved[id] };
@@ -4911,7 +4913,7 @@ async function ecmSave() {
   // Load existing
   let allCards = {};
   try {
-    const { data } = await db.from('app_settings').select('value').eq('key','card_config').single();
+    const { data } = await db.from('app_settings').select('value').eq('key','card_config').maybeSingle();
     if (data?.value) allCards = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
   } catch(e) {}
 
@@ -4930,9 +4932,9 @@ async function ecmSave() {
   );
 
   if (error) {
-    if (error.code === '42P01' || error.message.includes('does not exist')) {
+    if (error.code === '42P01' || error.message.includes('does not exist') || error.code === '406' || error.status === 406) {
       ecmClose();
-      alert('Tabel app_settings belum dibuat di Supabase.\n\nBuka Supabase Dashboard → SQL Editor, jalankan:\n\nCREATE TABLE IF NOT EXISTS app_settings (\n  key TEXT PRIMARY KEY,\n  value TEXT\n);\nALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON app_settings FOR ALL USING (true) WITH CHECK (true);');
+      ecmShowSetupToast();
       return;
     }
     toast('Gagal menyimpan: ' + error.message, 'error'); return;
@@ -4948,7 +4950,7 @@ async function ecmDoReset(id) {
   if (!db) return;
   let allCards = {};
   try {
-    const { data } = await db.from('app_settings').select('value').eq('key','card_config').single();
+    const { data } = await db.from('app_settings').select('value').eq('key','card_config').maybeSingle();
     if (data?.value) allCards = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
   } catch(e) {}
   delete allCards[id];
@@ -4979,6 +4981,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Also load on initial after-login ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 1000));
+
+// ── Show setup notification (friendly toast instead of browser alert) ─────────
+function ecmShowSetupToast() {
+  // Create a nice in-app notification
+  let notif = document.getElementById('ecm-setup-notif');
+  if (!notif) {
+    notif = document.createElement('div');
+    notif.id = 'ecm-setup-notif';
+    notif.style.cssText = `
+      position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+      background:#1e293b; color:#fff; border-radius:16px; padding:16px 20px;
+      max-width:340px; width:90%; z-index:99999; box-shadow:0 8px 32px rgba(0,0,0,.3);
+      font-size:13px; line-height:1.5; text-align:center;
+    `;
+    document.body.appendChild(notif);
+  }
+  notif.innerHTML = `
+    <div style="font-size:20px;margin-bottom:8px">⚠️</div>
+    <div style="font-weight:700;margin-bottom:6px">Tabel Supabase Belum Dibuat</div>
+    <div style="color:#94a3b8;font-size:12px;margin-bottom:12px">
+      Fitur edit ikon memerlukan tabel <b style="color:#fff">app_settings</b> di Supabase Anda.
+    </div>
+    <div style="background:#0f172a;border-radius:8px;padding:10px;font-family:monospace;font-size:10px;text-align:left;color:#7dd3fc;margin-bottom:12px">
+      CREATE TABLE app_settings (<br>
+      &nbsp;&nbsp;key TEXT PRIMARY KEY,<br>
+      &nbsp;&nbsp;value TEXT<br>
+      );<br>
+      ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;<br>
+      CREATE POLICY "allow_all" ON app_settings<br>
+      &nbsp;&nbsp;FOR ALL USING (true) WITH CHECK (true);
+    </div>
+    <button onclick="document.getElementById('ecm-setup-notif').remove()" style="
+      background:#1a56db;color:#fff;border:none;border-radius:8px;
+      padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%
+    ">Mengerti</button>
+  `;
+  notif.style.display = 'block';
+}
 </script>
 
 
