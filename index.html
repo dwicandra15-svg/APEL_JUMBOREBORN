@@ -1178,6 +1178,32 @@ tr:hover td { background: #f8fafc; }
   background:#fff; border-radius:16px; border:1px solid var(--border);
   margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.04);
 }
+.mp-card-menu-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity .15s, background .15s;
+  z-index: 2;
+}
+.mp-sub-card:hover .mp-card-menu-btn {
+  opacity: 1;
+}
+.mp-card-menu-btn:hover {
+  background: rgba(0,0,0,0.07);
+}
 .mp-mapel-ico {
   width:52px; height:52px; border-radius:15px; flex-shrink:0;
   background:linear-gradient(135deg,#dbeafe,#bfdbfe);
@@ -1585,8 +1611,6 @@ tr:hover td { background: #f8fafc; }
         </div>
 
         <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
-
-        <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
       </div>
     </div>
 
@@ -1607,40 +1631,55 @@ tr:hover td { background: #f8fafc; }
       </div>
       <div class="mp-body">
         <!-- Mapel info card -->
-        <div class="mp-mapel-info">
+        <div class="mp-mapel-info" style="position:relative">
           <div class="mp-mapel-ico" id="mp-mapel-ico">📚</div>
-          <div>
+          <div style="flex:1">
             <div class="mp-mapel-name" id="mp-mapel-name">—</div>
             <div class="mp-mapel-sub" id="mp-mapel-kode">—</div>
           </div>
+          <!-- Tombol titik 3 untuk edit icon/nama mapel -->
+          <button onclick="mpEditCard(event, MP_SELECTED_ID, MP_SELECTED_NAME)"
+            title="Edit ikon & nama"
+            style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
+                   width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+                   justify-content:center;color:var(--text-light);font-size:18px;line-height:1;
+                   transition:background .15s"
+            onmouseover="this.style.background='#f1f5f9'"
+            onmouseout="this.style.background='none'">⋮</button>
         </div>
 
         <!-- Sub-fitur grid -->
         <div class="mh-sec-title">Fitur Administrasi</div>
         <div class="mp-sub-grid">
-          <div class="mp-sub-card" onclick="mpGoSub('absensi')">
-            <div class="mp-sub-ico ic-green">✅</div>
-            <div class="mp-sub-lbl">Input Absensi</div>
+          <div class="mp-sub-card" onclick="mpGoSub('absensi')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_absensi','Input Absensi')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-green" id="ico-mapel_absensi">✅</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_absensi">Input Absensi</div>
           </div>
-          <div class="mp-sub-card" onclick="mpGoSub('absenRekap')">
-            <div class="mp-sub-ico ic-sky">📋</div>
-            <div class="mp-sub-lbl">Rekap Absensi</div>
+          <div class="mp-sub-card" onclick="mpGoSub('absenRekap')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_absenRekap','Rekap Absensi')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-sky" id="ico-mapel_absenRekap">📋</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_absenRekap">Rekap Absensi</div>
           </div>
-          <div class="mp-sub-card" onclick="mpGoSub('nilai')">
-            <div class="mp-sub-ico ic-yellow">📝</div>
-            <div class="mp-sub-lbl">Input Nilai</div>
+          <div class="mp-sub-card" onclick="mpGoSub('nilai')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_nilai','Input Nilai')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-yellow" id="ico-mapel_nilai">📝</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_nilai">Input Nilai</div>
           </div>
-          <div class="mp-sub-card" onclick="mpGoSub('nilaiRekap')">
-            <div class="mp-sub-ico ic-teal">📈</div>
-            <div class="mp-sub-lbl">Rekap Nilai</div>
+          <div class="mp-sub-card" onclick="mpGoSub('nilaiRekap')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_nilaiRekap','Rekap Nilai')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-teal" id="ico-mapel_nilaiRekap">📈</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_nilaiRekap">Rekap Nilai</div>
           </div>
-          <div class="mp-sub-card" onclick="mpGoSub('jurnal')">
-            <div class="mp-sub-ico ic-purple">📔</div>
-            <div class="mp-sub-lbl">Jurnal Mengajar</div>
+          <div class="mp-sub-card" onclick="mpGoSub('jurnal')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_jurnal','Jurnal Mengajar')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-purple" id="ico-mapel_jurnal">📔</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_jurnal">Jurnal Mengajar</div>
           </div>
-          <div class="mp-sub-card" onclick="mpGoSub('bimbingan')">
-            <div class="mp-sub-ico ic-pink">💙</div>
-            <div class="mp-sub-lbl">Bimbingan Wali</div>
+          <div class="mp-sub-card" onclick="mpGoSub('bimbingan')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_bimbingan','Bimbingan Wali')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-pink" id="ico-mapel_bimbingan">💙</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_bimbingan">Bimbingan Wali</div>
           </div>
         </div>
       </div>
@@ -5059,27 +5098,58 @@ function ecmApplyToDOM(id, data) {
 async function ecmLoadAll() {
   try {
     if (!db) return;
+    // Load main card_config (dashboard cards)
     const { data, error } = await db.from('app_settings')
       .select('value').eq('key','card_config').maybeSingle();
-    // Silently ignore 406 (table not exist) or PGRST116 (no rows) - not an error
-    if (error) return;
-    if (!data || !data.value) return;
-    const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-    Object.entries(saved).forEach(([id, cardData]) => ecmApplyToDOM(id, cardData));
+    if (!error && data?.value) {
+      const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      Object.entries(saved).forEach(([id, cardData]) => ecmApplyToDOM(id, cardData));
+    }
+    // Load mapel_icons (sub-feature cards + header)
+    const { data: mpData } = await db.from('app_settings')
+      .select('value').eq('key','mapel_icons').maybeSingle();
+    if (mpData?.value) {
+      const mpSaved = typeof mpData.value === 'string' ? JSON.parse(mpData.value) : mpData.value;
+      Object.entries(mpSaved).forEach(([id, cardData]) => {
+        const icoEl = document.getElementById('ico-' + id);
+        const lblEl = document.getElementById('lbl-' + id);
+        if (icoEl) {
+          ECM_COLORS.forEach(c => icoEl.classList.remove(c.cls));
+          icoEl.classList.add(cardData.color || '');
+          if (cardData.img) icoEl.innerHTML = `<img src="${cardData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+          else if (cardData.emoji) icoEl.textContent = cardData.emoji;
+        }
+        if (lblEl && cardData.name) lblEl.textContent = cardData.name;
+      });
+    }
   } catch(e) { /* silently ignore - table may not exist yet */ }
 }
 
 // ── Open context menu (⋯ button) ─────────────────────────────────────────────
 function ecmOpen(event, id) {
+  // Support call as ecmOpen(event, id) OR ecmOpen(id) from sub-cards
+  if (typeof event === 'string') { id = event; event = null; }
   ecm_ctxId = id;
   const menu = document.getElementById('mhCtxMenu');
   menu.style.display = 'block';
   // Position near the button
-  const rect = event.target.getBoundingClientRect();
-  let x = rect.left, y = rect.bottom + 4;
-  if (x + 210 > window.innerWidth) x = window.innerWidth - 215;
-  menu.style.left = x + 'px';
-  menu.style.top  = y + 'px';
+  try {
+    const target = event && event.target ? event.target : event && event.currentTarget ? event.currentTarget : null;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      let x = rect.left, y = rect.bottom + 4;
+      if (x + 210 > window.innerWidth) x = window.innerWidth - 215;
+      menu.style.left = x + 'px';
+      menu.style.top  = y + 'px';
+    } else {
+      // Fallback: center of screen
+      menu.style.left = Math.max(10, (window.innerWidth / 2) - 105) + 'px';
+      menu.style.top  = '120px';
+    }
+  } catch(e) {
+    menu.style.left = Math.max(10, (window.innerWidth / 2) - 105) + 'px';
+    menu.style.top  = '120px';
+  }
   // Close on outside click
   setTimeout(() => document.addEventListener('click', ecmCloseCtx, { once: true }), 10);
 }
@@ -5404,6 +5474,22 @@ function mpBack() {
   // Restore back button behavior
   const bb = document.getElementById('backBtn');
   if (bb) bb.onclick = goHome;
+}
+
+// ── Edit mapel header icon (titik 3 di kartu info mapel) ─────────────────────
+function mpEditCard(event, mapelId, mapelName) {
+  event.stopPropagation();
+  // Use the ecm modal with mapel_ prefix so ecmSave routes to ecmSaveMapel
+  const cardId = 'mapel_header_' + mapelId;
+  mpEditName = mapelName;
+  ecmOpen(event, cardId);
+}
+
+// ── Edit sub-feature card icon (titik 3 di sub card) ─────────────────────────
+function mpEditSubCard(event, cardKey, defaultName) {
+  event.stopPropagation();
+  mpEditName = defaultName;
+  ecmOpen(event, cardKey);
 }
 
 // ── Navigate to sub-feature with mapel pre-selected ──────────────────────────
@@ -6036,19 +6122,32 @@ async function ecmSaveMapel() {
 
   if (error) { toast('Gagal menyimpan: ' + error.message,'error'); return; }
 
-  // Update the DOM card
+  // Update the DOM card (works for both mapel_ and mapel_header_ and mapel_absensi etc)
   const icoEl = document.getElementById('ico-' + ecm_id);
   const lblEl = document.getElementById('lbl-' + ecm_id);
   if (icoEl) {
     ECM_COLORS.forEach(c => icoEl.classList.remove(c.cls));
     icoEl.classList.add(newData.color);
     if (newData.img) icoEl.innerHTML = `<img src="${newData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
-    else icoEl.textContent = newData.emoji;
+    else if (newData.emoji) icoEl.textContent = newData.emoji;
   }
   if (lblEl) lblEl.textContent = newData.name;
 
+  // Also update mapel header card if editing header
+  if (ecm_id && ecm_id.startsWith('mapel_header_')) {
+    const mpIco = document.getElementById('mp-mapel-ico');
+    if (mpIco) {
+      ECM_COLORS.forEach(c => mpIco.classList.remove(c.cls));
+      mpIco.classList.add(newData.color);
+      if (newData.img) mpIco.innerHTML = `<img src="${newData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:15px">`;
+      else if (newData.emoji) mpIco.textContent = newData.emoji;
+    }
+    const mpName = document.getElementById('mp-mapel-name');
+    if (mpName) mpName.textContent = newData.name;
+  }
+
   ecmClose();
-  toast('Ikon mapel berhasil disimpan! ✓','success');
+  toast('Ikon berhasil disimpan! ✓','success');
 }
 
 // Load saved mapel icons
