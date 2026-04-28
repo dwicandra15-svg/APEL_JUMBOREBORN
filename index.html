@@ -2629,6 +2629,7 @@ let editingId = null;
 // ===================== INIT =====================
 window.addEventListener('DOMContentLoaded', async () => {
   loadConfig();
+  applyConfig();
   setDefaultDates();
   populateBulan();
   setSqlSetup();
@@ -2782,6 +2783,7 @@ async function afterLogin() {
   document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
+  setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 800);
   goHome(); // ← Show grid home page instead of last sidebar page
 }
 
@@ -3273,8 +3275,10 @@ async function loadRekapAbsen() {
   
   let query = db.from('absensi').select('*');
   if (kelasId) query = query.eq('kelas_id', kelasId);
-  if (bulan) query = query.like('tanggal', `%-${bulan}-%`);
-  
+  if (bulan) {
+    const yr = new Date().getFullYear();
+    query = query.gte('tanggal', `${yr}-${bulan}-01`).lte('tanggal', `${yr}-${bulan}-31`);
+  }
   const { data } = await query;
   const records = data || [];
   const siswaKelas = APP_DATA.siswa.filter(s=>!kelasId||s.kelas_id==kelasId);
@@ -3399,7 +3403,10 @@ async function loadJurnal() {
   let query = db.from('jurnal').select('*').order('tanggal', {ascending:false});
   if (kelasId) query = query.eq('kelas_id', kelasId);
   if (mapelId) query = query.eq('mapel_id', mapelId);
-  if (bulan) query = query.like('tanggal', `%-${bulan}-%`);
+  if (bulan) {
+    const yr = new Date().getFullYear();
+    query = query.gte('tanggal', `${yr}-${bulan}-01`).lte('tanggal', `${yr}-${bulan}-31`);
+  }
   const { data } = await query;
   document.getElementById('jurnalList').innerHTML = (data||[]).length ? (data||[]).map(j=>`
     <div class="jurnal-card">
@@ -5186,11 +5193,16 @@ function ecmClose() { document.getElementById('editCardModal').classList.remove(
 // ── Save to Supabase ──────────────────────────────────────────────────────────
 async function ecmSave() {
   if (!db) { toast('Koneksi database belum siap', 'error'); return; }
-
   const name = document.getElementById('ecm-name').value.trim();
   if (!name) { toast('Nama fitur tidak boleh kosong', 'error'); return; }
 
-  // Load existing
+  // Handle mapel_ prefix separately
+  if (ecm_id && ecm_id.startsWith('mapel_')) {
+    await ecmSaveMapel();
+    return;
+  }
+
+  // Default: save to card_config
   let allCards = {};
   try {
     const { data } = await db.from('app_settings').select('value').eq('key','card_config').maybeSingle();
@@ -5222,7 +5234,7 @@ async function ecmSave() {
 
   ecmApplyToDOM(ecm_id, newData);
   ecmClose();
-  toast('Kartu berhasil diperbarui! Semua pengguna dapat melihat perubahan ini ✓', 'success');
+  toast('Kartu berhasil diperbarui! ✓', 'success');
 }
 
 // ── Reset to default ──────────────────────────────────────────────────────────
@@ -5250,17 +5262,7 @@ async function ecmReset() {
 }
 
 // ── Close modal on overlay click ─────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const ecModal = document.getElementById('editCardModal');
-  if (ecModal) ecModal.addEventListener('click', e => {
-    if (e.target === ecModal) ecmClose();
-  });
-});
-
-// ── ecmLoadAll is called inside goHome() directly (no override needed) ──────
-
-// ── Also load on initial after-login ─────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 1000));
+// editCardModal backdrop close (merged into main // ecmLoadAll triggered from afterLogin() and goHome()
 
 // ── Show setup notification (friendly toast instead of browser alert) ─────────
 function ecmShowSetupToast() {
@@ -5284,7 +5286,7 @@ function ecmShowSetupToast() {
       Fitur edit ikon memerlukan tabel <b style="color:#fff">app_settings</b> di Supabase Anda.
     </div>
     <div style="background:#0f172a;border-radius:8px;padding:10px;font-family:monospace;font-size:10px;text-align:left;color:#7dd3fc;margin-bottom:12px">
-      CREATE TABLE app_settings (<br>
+      CREATE TABLE IF NOT EXISTS app_settings (<br>
       &nbsp;&nbsp;key TEXT PRIMARY KEY,<br>
       &nbsp;&nbsp;value TEXT<br>
       );<br>
@@ -5462,14 +5464,7 @@ function mpPreSelectMapel(page, mapelId) {
 // =========================================================
 
 // ── Navigation ───────────────────────────────────────────
-function gpOpen() {
-  showPage('guruPiket');
-  const tb = document.getElementById('mainTopbar');
-  if (tb) tb.style.display = '';
-  const bb = document.getElementById('backBtn');
-  if (bb) { bb.classList.add('visible'); bb.onclick = goHome; }
-  document.getElementById('pageTitle').textContent = 'Guru Piket';
-}
+// gpOpen: see full implementation below
 
 // ── Init date fields to today ─────────────────────────────
 function piketInitDate() {
@@ -5627,9 +5622,9 @@ async function piketDelete(table, id, reloadFn) {
 function piketHandleError(error, table) {
   if (error.code === '42P01' || (error.message && error.message.includes('does not exist'))) {
     const sqls = {
-      'piket_s5':    'CREATE TABLE piket_s5 (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru TEXT, kelas_id BIGINT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_s5 ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_s5 FOR ALL USING (true) WITH CHECK (true);',
-      'piket_inval': 'CREATE TABLE piket_inval (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru_tidak_hadir TEXT, guru_pengganti TEXT, kelas_id BIGINT, mapel_id BIGINT, jam TEXT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_inval ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_inval FOR ALL USING (true) WITH CHECK (true);',
-      'tamu':        'CREATE TABLE tamu (id BIGSERIAL PRIMARY KEY, tanggal DATE, nama TEXT, instansi TEXT, keperluan TEXT, yang_ditemui TEXT, jam_masuk TIME, jam_keluar TIME, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE tamu ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON tamu FOR ALL USING (true) WITH CHECK (true);',
+      'piket_s5':    'CREATE TABLE IF NOT EXISTS piket_s5 (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru TEXT, kelas_id BIGINT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_s5 ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_s5 FOR ALL USING (true) WITH CHECK (true);',
+      'piket_inval': 'CREATE TABLE IF NOT EXISTS piket_inval (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru_tidak_hadir TEXT, guru_pengganti TEXT, kelas_id BIGINT, mapel_id BIGINT, jam TEXT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_inval ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_inval FOR ALL USING (true) WITH CHECK (true);',
+      'tamu':        'CREATE TABLE IF NOT EXISTS tamu (id BIGSERIAL PRIMARY KEY, tanggal DATE, nama TEXT, instansi TEXT, keperluan TEXT, yang_ditemui TEXT, jam_masuk TIME, jam_keluar TIME, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE tamu ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON tamu FOR ALL USING (true) WITH CHECK (true);',
     };
     alert('Tabel "' + table + '" belum ada.\n\nJalankan SQL ini di Supabase → SQL Editor:\n\n' + (sqls[table]||''));
   } else {
@@ -6011,15 +6006,7 @@ async function ecmOpenModalForMapel(mapelId, mapelName) {
   document.getElementById('editCardModal').classList.add('open');
 }
 
-// Patch ecmSave to handle mapel_ prefix
-const _origEcmSave = ecmSave;
-async function ecmSave() {
-  if (ecm_id && ecm_id.startsWith('mapel_')) {
-    await ecmSaveMapel();
-  } else {
-    await _origEcmSave();
-  }
-}
+// ecmSave merged above - handles mapel_ prefix natively
 
 async function ecmSaveMapel() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
