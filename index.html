@@ -1018,7 +1018,8 @@ tr:hover td { background: #f8fafc; }
   opacity:0; pointer-events:none;
   letter-spacing:-1px; line-height:1;
 }
-.mh-card:hover .mh-card-dots { opacity:1; pointer-events:auto; }
+.mh-card:hover .mh-card-dots,
+.mapel-card:hover .mh-card-dots { opacity:1; pointer-events:auto; }
 @media (max-width:899px) {
   /* Always show dots on mobile */
   .mh-card-dots { opacity:0.4; pointer-events:auto; }
@@ -1126,6 +1127,199 @@ tr:hover td { background: #f8fafc; }
 .ecm-btn-save   { flex:1; padding:12px; background:#1a56db; color:#fff; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
 .ecm-btn-cancel { padding:12px 18px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
 .ecm-btn-reset  { padding:12px 14px; background:#fee2e2; color:#e02424; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+
+/* ===== MAPEL PAGE ===== */
+#page-mapel { background: var(--bg); min-height: 100vh; display:none; }
+#page-mapel.active { display:block; }
+
+/* Mapel hero header */
+.mp-header {
+  background: linear-gradient(150deg, #0f172a 0%, #1e3a8a 55%, #1a56db 100%);
+  padding: 20px 24px 24px; position:relative; overflow:hidden;
+}
+.mp-header::before {
+  content:''; position:absolute; width:220px; height:220px; border-radius:50%;
+  background:rgba(99,102,241,.15); top:-60px; right:-50px;
+}
+.mp-header-top { display:flex; align-items:center; gap:12px; position:relative; z-index:2; }
+.mp-back-btn {
+  width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.12); color:#fff; font-size:18px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.mp-header-title { font-size:18px; font-weight:800; color:#fff; }
+.mp-header-sub   { font-size:12px; color:rgba(255,255,255,.65); margin-top:2px; }
+
+/* Mapel grid on beranda */
+.mapel-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mapel-card {
+  background:#fff; border-radius:18px; border:1.5px solid var(--border);
+  padding:20px 14px 16px; min-height:120px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  text-align:center; cursor:pointer;
+  transition:transform .18s, box-shadow .18s, border-color .18s;
+  box-shadow:0 2px 10px rgba(0,0,0,.04); position:relative;
+}
+.mapel-card:hover  { transform:translateY(-3px); border-color:var(--primary); box-shadow:0 8px 24px rgba(26,86,219,.14); }
+.mapel-card:active { transform:scale(.96); }
+.mapel-card-ico {
+  width:60px; height:60px; border-radius:17px;
+  display:flex; align-items:center; justify-content:center; font-size:28px;
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+}
+.mapel-card-lbl { font-size:12px; font-weight:700; color:var(--text); line-height:1.3; }
+.mapel-card-kode { font-size:10px; color:var(--text-light); margin-top:2px; }
+
+/* Sub-fitur page inside mapel */
+.mp-body { max-width:900px; margin:0 auto; padding:20px 24px 40px; }
+.mp-mapel-info {
+  display:flex; align-items:center; gap:14px; padding:14px 16px;
+  background:#fff; border-radius:16px; border:1px solid var(--border);
+  margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.mp-mapel-ico {
+  width:52px; height:52px; border-radius:15px; flex-shrink:0;
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  display:flex; align-items:center; justify-content:center; font-size:26px;
+}
+.mp-mapel-name { font-size:16px; font-weight:800; color:var(--text); }
+.mp-mapel-sub  { font-size:11px; color:var(--text-light); margin-top:2px; }
+
+/* Sub-feature grid */
+.mp-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.mp-sub-card {
+  background:#fff; border-radius:16px; border:1.5px solid var(--border);
+  padding:18px 12px 14px; min-height:100px;
+  display:flex; flex-direction:column; align-items:center; gap:9px;
+  text-align:center; cursor:pointer;
+  transition:transform .18s, box-shadow .18s, border-color .18s;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.mp-sub-card:hover  { transform:translateY(-3px); border-color:var(--primary); box-shadow:0 8px 24px rgba(26,86,219,.14); }
+.mp-sub-card:active { transform:scale(.96); }
+.mp-sub-ico {
+  width:52px; height:52px; border-radius:15px;
+  display:flex; align-items:center; justify-content:center; font-size:24px;
+}
+.mp-sub-lbl { font-size:12px; font-weight:700; color:var(--text); line-height:1.3; }
+
+/* Loading skeleton for mapel grid */
+.mapel-skeleton {
+  background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+  background-size:200% 100%; animation:shimmer 1.5s infinite;
+  border-radius:18px; height:130px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+
+/* ===== GURU PIKET ===== */
+#page-guruPiket { background:var(--bg); min-height:100vh; display:none; }
+#page-guruPiket.active { display:block; }
+.gp-header {
+  background:linear-gradient(150deg,#0f172a 0%,#1e3a8a 55%,#1a56db 100%);
+  padding:20px 24px 24px; position:relative; overflow:hidden;
+}
+.gp-header::before {
+  content:''; position:absolute; width:200px; height:200px; border-radius:50%;
+  background:rgba(99,102,241,.15); top:-60px; right:-50px;
+}
+.gp-header-row { display:flex; align-items:center; gap:12px; position:relative; z-index:2; }
+.gp-back { width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.12); color:#fff; font-size:18px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.gp-header-title { font-size:18px; font-weight:800; color:#fff; }
+.gp-header-sub   { font-size:12px; color:rgba(255,255,255,.65); margin-top:2px; }
+.gp-body { max-width:900px; margin:0 auto; padding:20px 24px 40px; }
+.gp-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.gp-sub-card {
+  background:#fff; border-radius:18px; border:1.5px solid var(--border);
+  padding:24px 14px 18px; min-height:130px;
+  display:flex; flex-direction:column; align-items:center; gap:11px;
+  text-align:center; cursor:pointer;
+  transition:transform .18s, box-shadow .18s, border-color .18s;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+.gp-sub-card:hover  { transform:translateY(-3px); border-color:var(--primary); box-shadow:0 8px 24px rgba(26,86,219,.14); }
+.gp-sub-card:active { transform:scale(.96); }
+.gp-sub-ico { width:60px; height:60px; border-radius:17px; display:flex; align-items:center; justify-content:center; font-size:28px; }
+.gp-sub-lbl { font-size:13px; font-weight:700; color:var(--text); line-height:1.3; }
+.gp-sub-desc { font-size:11px; color:var(--text-light); line-height:1.4; }
+
+/* Piket sub-pages */
+#page-piketS5, #page-piketInval, #page-terimaTamu {
+  background:var(--bg); min-height:100vh; display:none;
+}
+#page-piketS5.active, #page-piketInval.active, #page-terimaTamu.active { display:block; }
+.piket-header {
+  background:linear-gradient(150deg,#0f172a 0%,#1e3a8a 55%,#1a56db 100%);
+  padding:18px 20px 22px; position:relative; overflow:hidden;
+}
+.piket-header-row { display:flex; align-items:center; gap:10px; position:relative; z-index:2; }
+.piket-back { width:36px; height:36px; border-radius:10px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.12); color:#fff; font-size:17px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.piket-title { font-size:16px; font-weight:800; color:#fff; }
+.piket-sub   { font-size:11px; color:rgba(255,255,255,.65); margin-top:1px; }
+.piket-body  { max-width:900px; margin:0 auto; padding:16px 20px 60px; }
+.piket-form  { background:#fff; border-radius:16px; border:1px solid var(--border); padding:18px; margin-bottom:14px; }
+.piket-form-title { font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.piket-input {
+  width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid #e2e8f0;
+  font-size:13px; font-family:inherit; outline:none; box-sizing:border-box; margin-bottom:10px;
+}
+.piket-input:focus { border-color:var(--primary); }
+.piket-btn-save {
+  width:100%; padding:12px; background:var(--primary); color:#fff; border:none;
+  border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;
+}
+.piket-table-wrap { background:#fff; border-radius:16px; border:1px solid var(--border); overflow:hidden; }
+.piket-table { width:100%; border-collapse:collapse; font-size:12px; }
+.piket-table th { background:#f8fafc; padding:10px 12px; text-align:left; font-size:11px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.5px; }
+.piket-table td { padding:12px; border-top:1px solid var(--border); vertical-align:middle; }
+.piket-table tr:hover td { background:#f8fafc; }
+.piket-empty { text-align:center; padding:30px; color:var(--text-light); }
+
+
+/* ===== GURU PIKET PAGE ===== */
+#page-guruPiket { background: var(--bg); min-height:100vh; display:none; }
+#page-guruPiket.active { display:block; }
+
+.gp-header {
+  background: linear-gradient(150deg, #0f172a 0%, #1e3a8a 55%, #1a56db 100%);
+  padding:20px 24px 24px; position:relative; overflow:hidden;
+}
+.gp-header::before {
+  content:''; position:absolute; width:200px; height:200px; border-radius:50%;
+  background:rgba(99,102,241,.15); top:-60px; right:-50px;
+}
+.gp-header-top { display:flex; align-items:center; gap:12px; position:relative; z-index:2; }
+.gp-back-btn {
+  width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.12); color:#fff; font-size:18px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.gp-title { font-size:18px; font-weight:800; color:#fff; }
+.gp-sub   { font-size:12px; color:rgba(255,255,255,.65); margin-top:2px; }
+
+.gp-body { max-width:900px; margin:0 auto; padding:20px 24px 60px; }
+.gp-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.gp-sub-card {
+  background:#fff; border-radius:18px; border:1.5px solid var(--border);
+  padding:24px 14px 20px; min-height:130px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  text-align:center; cursor:pointer; position:relative;
+  transition:transform .18s, box-shadow .18s, border-color .18s;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+.gp-sub-card:hover  { transform:translateY(-3px); border-color:var(--primary); box-shadow:0 8px 24px rgba(26,86,219,.14); }
+.gp-sub-card:active { transform:scale(.96); }
+.gp-sub-ico {
+  width:60px; height:60px; border-radius:17px;
+  display:flex; align-items:center; justify-content:center; font-size:28px;
+}
+.gp-sub-lbl  { font-size:13px; font-weight:700; color:var(--text); line-height:1.3; }
+.gp-sub-desc { font-size:11px; color:var(--text-light); margin-top:2px; }
 
 </style>
 </head>
@@ -1347,37 +1541,108 @@ tr:hover td { background: #f8fafc; }
         <div class="mh-sec-title">Utama</div>
         <div class="mh-grid">
           <div class="mh-card" data-id="dashboard" onclick="goPage('dashboard')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'dashboard')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-dashboard">📊</div><div class="mh-card-lbl" id="lbl-dashboard">Dashboard</div></div>
-          <div class="mh-card" data-id="siswa" onclick="goPage('siswa')">    <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
-          <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')">   <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
-          <div class="mh-card" data-id="jurnal" onclick="goPage('jurnal')">   <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">📔</div><div class="mh-card-lbl" id="lbl-jurnal">Jurnal Mengajar</div></div>
+          <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
+          <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
+          <div class="mh-card" data-id="jurnal" onclick="goPage('jurnal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">📔</div><div class="mh-card-lbl" id="lbl-jurnal">Jurnal Mengajar</div></div>
         </div>
 
-        <div class="mh-sec-title">Administrasi</div>
+        
+<div class="mh-sec-title">Mata Pelajaran</div>
+        <div id="mapelGridHome" class="mapel-grid">
+          <div class="mapel-skeleton"></div>
+          <div class="mapel-skeleton"></div>
+          <div class="mapel-skeleton"></div>
+          <div class="mapel-skeleton"></div>
+        </div>
+
+        
+<div class="mh-sec-title">Administrasi</div>
         <div class="mh-grid">
-          <div class="mh-card" data-id="absensi" onclick="goPage('absensi')">   <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-absensi">✅</div><div class="mh-card-lbl" id="lbl-absensi">Input Absensi</div></div>
+          <div class="mh-card" data-id="absensi" onclick="goPage('absensi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-absensi">✅</div><div class="mh-card-lbl" id="lbl-absensi">Input Absensi</div></div>
           <div class="mh-card" data-id="absenRekap" onclick="goPage('absenRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absenRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-sky" id="ico-absenRekap">📋</div><div class="mh-card-lbl" id="lbl-absenRekap">Rekap Absensi</div></div>
-          <div class="mh-card" data-id="nilai" onclick="goPage('nilai')">     <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilai')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-yellow" id="ico-nilai">📝</div><div class="mh-card-lbl" id="lbl-nilai">Input Nilai</div></div>
+          <div class="mh-card" data-id="nilai" onclick="goPage('nilai')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilai')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-yellow" id="ico-nilai">📝</div><div class="mh-card-lbl" id="lbl-nilai">Input Nilai</div></div>
           <div class="mh-card" data-id="nilaiRekap" onclick="goPage('nilaiRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilaiRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-nilaiRekap">📈</div><div class="mh-card-lbl" id="lbl-nilaiRekap">Rekap Nilai</div></div>
-          <div class="mh-card" data-id="bimbingan" onclick="goPage('bimbingan')"> <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'bimbingan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-pink" id="ico-bimbingan">💙</div><div class="mh-card-lbl" id="lbl-bimbingan">Bimbingan Wali</div></div>
+          <div class="mh-card" data-id="bimbingan" onclick="goPage('bimbingan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'bimbingan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-pink" id="ico-bimbingan">💙</div><div class="mh-card-lbl" id="lbl-bimbingan">Bimbingan Wali</div></div>
         </div>
 
-        <div class="mh-sec-title">UMMI</div>
+        
+<div class="mh-sec-title">UMMI</div>
         <div class="mh-grid">
           <div class="mh-card" data-id="ummiTingkatan" onclick="goPage('ummiTingkatan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummiTingkatan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-ummiTingkatan">📚</div><div class="mh-card-lbl" id="lbl-ummiTingkatan">Tingkatan UMMI</div></div>
-          <div class="mh-card" data-id="ummi7" onclick="goPage('ummi7')">        <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi7')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-ummi7">📗</div><div class="mh-card-lbl" id="lbl-ummi7">UMMI Kelas 7</div></div>
-          <div class="mh-card" data-id="ummi8" onclick="goPage('ummi8')">        <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi8')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-ummi8">📘</div><div class="mh-card-lbl" id="lbl-ummi8">UMMI Kelas 8</div></div>
-          <div class="mh-card" data-id="ummi9" onclick="goPage('ummi9')">        <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi9')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-ummi9">📙</div><div class="mh-card-lbl" id="lbl-ummi9">UMMI Kelas 9</div></div>
+          <div class="mh-card" data-id="ummi7" onclick="goPage('ummi7')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi7')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-ummi7">📗</div><div class="mh-card-lbl" id="lbl-ummi7">UMMI Kelas 7</div></div>
+          <div class="mh-card" data-id="ummi8" onclick="goPage('ummi8')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi8')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-ummi8">📘</div><div class="mh-card-lbl" id="lbl-ummi8">UMMI Kelas 8</div></div>
+          <div class="mh-card" data-id="ummi9" onclick="goPage('ummi9')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi9')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-ummi9">📙</div><div class="mh-card-lbl" id="lbl-ummi9">UMMI Kelas 9</div></div>
         </div>
 
-        <div class="mh-sec-title">Lainnya</div>
+        
+<div class="mh-sec-title">Lainnya</div>
         <div class="mh-grid">
-          <div class="mh-card" data-id="integrasi" onclick="goPage('integrasi')">       <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-integrasi">🔗</div><div class="mh-card-lbl" id="lbl-integrasi">Integrasi ASN</div></div>
+          <div class="mh-card" data-id="guruPiket" onclick="gpOpen()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'guruPiket')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-guruPiket">👮</div><div class="mh-card-lbl" id="lbl-guruPiket">Guru Piket</div></div>
+          <div class="mh-card" data-id="integrasi" onclick="goPage('integrasi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-integrasi">🔗</div><div class="mh-card-lbl" id="lbl-integrasi">Integrasi ASN</div></div>
           <div class="mh-card" data-id="integrasiKinerja" onclick="goPage('integrasiKinerja')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasiKinerja')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-integrasiKinerja">🔀</div><div class="mh-card-lbl" id="lbl-integrasiKinerja">Shortcut App</div></div>
-          <div class="mh-card" data-id="pengaturan" onclick="goPage('pengaturan')">      <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'pengaturan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-pengaturan">⚙️</div><div class="mh-card-lbl" id="lbl-pengaturan">Pengaturan</div></div>
-          <div class="mh-card" data-id="logout" onclick="doLogout()">                <button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'logout')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-red" id="ico-logout">🚪</div><div class="mh-card-lbl" id="lbl-logout">Keluar</div></div>
+          <div class="mh-card" data-id="pengaturan" onclick="goPage('pengaturan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'pengaturan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-pengaturan">⚙️</div><div class="mh-card-lbl" id="lbl-pengaturan">Pengaturan</div></div>
+          <div class="mh-card" data-id="logout" onclick="doLogout()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'logout')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-red" id="ico-logout">🚪</div><div class="mh-card-lbl" id="lbl-logout">Keluar</div></div>
         </div>
 
         <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
+
+        <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
+      </div>
+    </div>
+
+
+    <!-- ===== MAPEL SECTION on Home ===== -->
+    <!-- (rendered dynamically by JS inside mh-body) -->
+
+    <!-- ===== MAPEL DETAIL PAGE ===== -->
+    <div id="page-mapel" class="page">
+      <div class="mp-header">
+        <div class="mp-header-top">
+          <button class="mp-back-btn" onclick="mpBack()">←</button>
+          <div>
+            <div class="mp-header-title" id="mp-title">Mata Pelajaran</div>
+            <div class="mp-header-sub" id="mp-sub">Pilih fitur administrasi</div>
+          </div>
+        </div>
+      </div>
+      <div class="mp-body">
+        <!-- Mapel info card -->
+        <div class="mp-mapel-info">
+          <div class="mp-mapel-ico" id="mp-mapel-ico">📚</div>
+          <div>
+            <div class="mp-mapel-name" id="mp-mapel-name">—</div>
+            <div class="mp-mapel-sub" id="mp-mapel-kode">—</div>
+          </div>
+        </div>
+
+        <!-- Sub-fitur grid -->
+        <div class="mh-sec-title">Fitur Administrasi</div>
+        <div class="mp-sub-grid">
+          <div class="mp-sub-card" onclick="mpGoSub('absensi')">
+            <div class="mp-sub-ico ic-green">✅</div>
+            <div class="mp-sub-lbl">Input Absensi</div>
+          </div>
+          <div class="mp-sub-card" onclick="mpGoSub('absenRekap')">
+            <div class="mp-sub-ico ic-sky">📋</div>
+            <div class="mp-sub-lbl">Rekap Absensi</div>
+          </div>
+          <div class="mp-sub-card" onclick="mpGoSub('nilai')">
+            <div class="mp-sub-ico ic-yellow">📝</div>
+            <div class="mp-sub-lbl">Input Nilai</div>
+          </div>
+          <div class="mp-sub-card" onclick="mpGoSub('nilaiRekap')">
+            <div class="mp-sub-ico ic-teal">📈</div>
+            <div class="mp-sub-lbl">Rekap Nilai</div>
+          </div>
+          <div class="mp-sub-card" onclick="mpGoSub('jurnal')">
+            <div class="mp-sub-ico ic-purple">📔</div>
+            <div class="mp-sub-lbl">Jurnal Mengajar</div>
+          </div>
+          <div class="mp-sub-card" onclick="mpGoSub('bimbingan')">
+            <div class="mp-sub-ico ic-pink">💙</div>
+            <div class="mp-sub-lbl">Bimbingan Wali</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2609,8 +2874,9 @@ async function loadAllData() {
   loadDashboard();
   // Load mapping siswa per tingkatan setelah data siswa siap
   loadSiswaPerTingkatan();
-  // Refresh home page stats
+  // Refresh home page stats & mapel grid
   mhRefreshStats();
+  mpRenderHomeGrid();
 }
 
 async function loadKelas() {
@@ -4671,11 +4937,16 @@ function goHome() {
   // Hide topbar
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = 'none';
+  // Restore back button default behavior
+  const bb = document.getElementById('backBtn');
+  if (bb) bb.onclick = goHome;
   // Refresh home info & stats
   mhRefreshInfo();
   mhRefreshStats();
-  // Load saved card customizations from Supabase
-  setTimeout(() => ecmLoadAll(), 300);
+  // Render mapel grid
+  mpRenderHomeGrid();
+  // Load saved customizations from Supabase
+  setTimeout(() => { ecmLoadAll(); mpLoadSavedIcons(); }, 300);
 }
 
 function goPage(name) {
@@ -4742,6 +5013,7 @@ const ECM_DEFAULTS = {
   'integrasiKinerja': { emoji:'🔀', color:'ic-orange', name:'Shortcut App'    },
   'pengaturan':       { emoji:'⚙️', color:'ic-indigo', name:'Pengaturan'      },
   'logout':           { emoji:'🚪', color:'ic-red',    name:'Keluar'          },
+  'guruPiket':        { emoji:'👮', color:'ic-blue',   name:'Guru Piket'      },
 };
 
 let ecm_id       = null;
@@ -5019,6 +5291,801 @@ function ecmShowSetupToast() {
   `;
   notif.style.display = 'block';
 }
+
+// =========================================================
+//  MAPEL (MATA PELAJARAN) FEATURE
+// =========================================================
+
+// Auto-assign emoji based on mapel name keywords
+const MP_EMOJI_MAP = [
+  { keys:['math','mat','matem'],           emoji:'➗', color:'ic-blue'   },
+  { keys:['ipa','sains','fisika','bio','kimia'], emoji:'🔬', color:'ic-green'  },
+  { keys:['ips','sosial','sejarah','geografi'],  emoji:'🌏', color:'ic-teal'   },
+  { keys:['indo','indonesia','bhs ind'],    emoji:'📖', color:'ic-orange' },
+  { keys:['ingg','english','bhs ing'],      emoji:'🇬🇧', color:'ic-sky'    },
+  { keys:['agama','islam','quran','pai'],    emoji:'🕌', color:'ic-green'  },
+  { keys:['pkn','pancasila','kewargaan'],   emoji:'🇮🇩', color:'ic-red'    },
+  { keys:['seni','art','budaya','musik'],   emoji:'🎨', color:'ic-pink'   },
+  { keys:['olahraga','pjok','sport','jas'], emoji:'⚽', color:'ic-orange' },
+  { keys:['tik','komputer','informatika','it'], emoji:'💻', color:'ic-indigo'},
+  { keys:['prakarya','kerajinan','teknologi'], emoji:'🔧', color:'ic-yellow'},
+  { keys:['arab','bahasa arab'],            emoji:'📜', color:'ic-teal'   },
+  { keys:['jawa','daerah','lokal'],         emoji:'🎭', color:'ic-purple' },
+  { keys:['bk','konseling','bimbingan'],    emoji:'💙', color:'ic-pink'   },
+  { keys:['kimia'],                         emoji:'⚗️', color:'ic-purple' },
+  { keys:['fisika'],                        emoji:'⚡', color:'ic-yellow' },
+  { keys:['biologi'],                       emoji:'🌱', color:'ic-green'  },
+  { keys:['ekonomi'],                       emoji:'💰', color:'ic-yellow' },
+  { keys:['sosiologi'],                     emoji:'👥', color:'ic-blue'   },
+  { keys:['geografi'],                      emoji:'🗺️', color:'ic-teal'   },
+  { keys:['sejarah'],                       emoji:'📜', color:'ic-orange' },
+];
+
+function mpGetEmoji(name) {
+  const lower = name.toLowerCase();
+  for (const e of MP_EMOJI_MAP) {
+    if (e.keys.some(k => lower.includes(k))) return { emoji: e.emoji, color: e.color };
+  }
+  // Default: use first letter
+  return { emoji: '📚', color: 'ic-indigo' };
+}
+
+// Global state for selected mapel
+let MP_SELECTED_ID   = null;
+let MP_SELECTED_NAME = null;
+let MP_FROM_HOME     = true;  // whether to go back to home or to mapel list
+
+// ── Render mapel grid on home page ───────────────────────────────────────────
+function mpRenderHomeGrid() {
+  const container = document.getElementById('mapelGridHome');
+  if (!container) return;
+
+  const mapels = APP_DATA.mapel || [];
+  if (!mapels.length) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light);font-size:13px">Belum ada data mata pelajaran.<br>Tambahkan di menu <b>Pengaturan</b>.</div>';
+    return;
+  }
+
+  container.innerHTML = mapels.map(m => {
+    const { emoji, color } = mpGetEmoji(m.nama);
+    return `
+      <div class="mapel-card" onclick="mpOpenDetail(${m.id}, '${m.nama.replace(/'/g,"\'")}', '${m.kode||''}')">
+        <button class="mh-card-dots" onclick="event.stopPropagation();mpDotsOpen(event,${m.id},'${m.nama.replace(/'/g,"\'")}')">⋯</button>
+        <div class="mapel-card-ico ${color}" id="ico-mapel_${m.id}">${emoji}</div>
+        <div class="mapel-card-lbl" id="lbl-mapel_${m.id}">${m.nama}</div>
+        ${m.kode ? `<div class="mapel-card-kode">${m.kode}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── Open mapel detail page ────────────────────────────────────────────────────
+function mpOpenDetail(id, name, kode) {
+  MP_SELECTED_ID   = id;
+  MP_SELECTED_NAME = name;
+
+  // Update detail page header
+  document.getElementById('mp-title').textContent   = name;
+  document.getElementById('mp-sub').textContent     = 'Pilih fitur administrasi';
+  document.getElementById('mp-mapel-name').textContent = name;
+  document.getElementById('mp-mapel-kode').textContent = kode ? 'Kode: ' + kode : 'Mata Pelajaran';
+
+  // Set icon
+  const { emoji, color } = mpGetEmoji(name);
+  const ico = document.getElementById('mp-mapel-ico');
+  ECM_COLORS.forEach(c => ico.classList.remove(c.cls));
+  ico.classList.add(color);
+  ico.textContent = emoji;
+
+  // Show page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-mapel').classList.add('active');
+
+  // Show topbar with back button
+  const tb = document.getElementById('mainTopbar');
+  if (tb) tb.style.display = '';
+  const bb = document.getElementById('backBtn');
+  if (bb) { bb.classList.add('visible'); bb.onclick = mpBack; }
+  document.getElementById('pageTitle').textContent = name;
+}
+
+// ── Back from mapel detail ────────────────────────────────────────────────────
+function mpBack() {
+  goHome();
+  // Restore back button behavior
+  const bb = document.getElementById('backBtn');
+  if (bb) bb.onclick = goHome;
+}
+
+// ── Navigate to sub-feature with mapel pre-selected ──────────────────────────
+function mpGoSub(page) {
+  if (!MP_SELECTED_ID) return;
+
+  // Navigate to the page
+  goPage(page);
+
+  // Pre-select the mapel in the page's dropdowns
+  setTimeout(() => {
+    mpPreSelectMapel(page, MP_SELECTED_ID);
+    // Update back button to go back to mapel detail
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.onclick = () => mpOpenDetail(MP_SELECTED_ID, MP_SELECTED_NAME, '');
+  }, 150);
+}
+
+function mpPreSelectMapel(page, mapelId) {
+  const selectors = {
+    'absensi':    '#absensiMapel,#filterAbsenMapel,select[id*="absen"][id*="apel"]',
+    'absenRekap': '#rekapAbsenMapel,#filterAbsenRekapMapel',
+    'nilai':      '#nilaiMapel,#filterNilaiMapel',
+    'nilaiRekap': '#rekapNilaiMapel',
+    'jurnal':     '#filterJurnalMapel,#jurnalMapel',
+    'bimbingan':  '#bimbinganMapel',
+  };
+  const sel = selectors[page];
+  if (!sel) return;
+
+  // Try each selector
+  sel.split(',').forEach(s => {
+    const el = document.querySelector(s.trim());
+    if (el && el.tagName === 'SELECT') {
+      el.value = String(mapelId);
+      // Trigger change event to reload data
+      el.dispatchEvent(new Event('change'));
+    }
+  });
+
+  // Also trigger the page's load function
+  const loadFns = {
+    'absensi':    () => { try { loadAbsensi(); } catch(e){} },
+    'absenRekap': () => { try { loadRekapAbsen(); } catch(e){} },
+    'nilai':      () => { try { loadNilai(); } catch(e){} },
+    'nilaiRekap': () => { try { loadRekapNilai(); } catch(e){} },
+    'jurnal':     () => { try { loadJurnal(); } catch(e){} },
+    'bimbingan':  () => { try { loadBimbingan(); } catch(e){} },
+  };
+  if (loadFns[page]) setTimeout(loadFns[page], 200);
+}
+
+// ── Refresh mapel grid when data loads ───────────────────────────────────────
+// (called from goHome and after loadAllData)
+
+// =========================================================
+//  GURU PIKET FEATURE
+// =========================================================
+
+// ── Navigation ───────────────────────────────────────────
+function gpOpen() {
+  showPage('guruPiket');
+  const tb = document.getElementById('mainTopbar');
+  if (tb) tb.style.display = '';
+  const bb = document.getElementById('backBtn');
+  if (bb) { bb.classList.add('visible'); bb.onclick = goHome; }
+  document.getElementById('pageTitle').textContent = 'Guru Piket';
+}
+
+// ── Init date fields to today ─────────────────────────────
+function piketInitDate() {
+  const today = new Date().toISOString().split('T')[0];
+  ['s5Tanggal','invalTanggal','tamuTanggal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = today;
+  });
+}
+
+// ── Populate kelas & mapel dropdowns ─────────────────────
+function piketPopulateDropdowns() {
+  const kelasOpts = (APP_DATA.kelas||[]).map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+  const mapelOpts = (APP_DATA.mapel||[]).map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
+  ['s5Kelas','invalKelas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">— Pilih Kelas —</option>' + kelasOpts;
+  });
+  const im = document.getElementById('invalMapel');
+  if (im) im.innerHTML = '<option value="">— Pilih Mata Pelajaran —</option>' + mapelOpts;
+}
+
+// ══ PIKET S5 ══════════════════════════════════════════════
+
+async function s5Load() {
+  if (!db) return;
+  const { data } = await db.from('piket_s5').select('*').order('tanggal', {ascending:false}).limit(50);
+  const tbody = document.getElementById('s5Tbody');
+  if (!tbody) return;
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="piket-empty">Belum ada data piket S5</td></tr>'; return;
+  }
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.tanggal||'-'}</td>
+      <td><strong>${r.guru||'-'}</strong></td>
+      <td>${getKelasName(r.kelas_id)||r.kelas_id||'-'}</td>
+      <td>${r.catatan||'-'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('piket_s5',${r.id},'s5Load')">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function s5Save() {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const tanggal = document.getElementById('s5Tanggal').value;
+  const guru    = document.getElementById('s5Guru').value.trim();
+  const kelasId = document.getElementById('s5Kelas').value;
+  const catatan = document.getElementById('s5Catatan').value.trim();
+  if (!tanggal || !guru) { toast('Tanggal dan nama guru wajib diisi','error'); return; }
+  const { error } = await db.from('piket_s5').insert({ tanggal, guru, kelas_id: kelasId||null, catatan });
+  if (error) { piketHandleError(error,'piket_s5'); return; }
+  document.getElementById('s5Guru').value = '';
+  document.getElementById('s5Catatan').value = '';
+  toast('Piket S5 berhasil disimpan ✓','success');
+  s5Load();
+}
+
+// ══ PIKET INVAL ════════════════════════════════════════════
+
+async function invalLoad() {
+  if (!db) return;
+  const { data } = await db.from('piket_inval').select('*').order('tanggal',{ascending:false}).limit(50);
+  const tbody = document.getElementById('invalTbody');
+  if (!tbody) return;
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="piket-empty">Belum ada data piket inval</td></tr>'; return;
+  }
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.tanggal||'-'}</td>
+      <td>${r.guru_tidak_hadir||'-'}</td>
+      <td><strong>${r.guru_pengganti||'-'}</strong></td>
+      <td>${getKelasName(r.kelas_id)||'-'} / ${getMapelName(r.mapel_id)||'-'}<br><small style="color:var(--text-light)">Jam ke-${r.jam||'-'} · ${r.catatan||''}</small></td>
+      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('piket_inval',${r.id},'invalLoad')">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function invalSave() {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const tanggal          = document.getElementById('invalTanggal').value;
+  const guru_tidak_hadir = document.getElementById('invalGuruTidakHadir').value.trim();
+  const guru_pengganti   = document.getElementById('invalGuruPengganti').value.trim();
+  const kelas_id         = document.getElementById('invalKelas').value;
+  const mapel_id         = document.getElementById('invalMapel').value;
+  const jam              = document.getElementById('invalJam').value.trim();
+  const catatan          = document.getElementById('invalCatatan').value.trim();
+  if (!tanggal || !guru_tidak_hadir || !guru_pengganti) {
+    toast('Tanggal, guru tidak hadir, dan pengganti wajib diisi','error'); return;
+  }
+  const { error } = await db.from('piket_inval').insert({
+    tanggal, guru_tidak_hadir, guru_pengganti,
+    kelas_id: kelas_id||null, mapel_id: mapel_id||null, jam, catatan
+  });
+  if (error) { piketHandleError(error,'piket_inval'); return; }
+  ['invalGuruTidakHadir','invalGuruPengganti','invalJam','invalCatatan'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  toast('Piket Inval berhasil disimpan ✓','success');
+  invalLoad();
+}
+
+// ══ TERIMA TAMU ════════════════════════════════════════════
+
+async function tamuLoad() {
+  if (!db) return;
+  const { data } = await db.from('tamu').select('*').order('tanggal',{ascending:false}).limit(50);
+  const tbody = document.getElementById('tamuTbody');
+  if (!tbody) return;
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="piket-empty">Belum ada data tamu</td></tr>'; return;
+  }
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.tanggal||'-'}</td>
+      <td><strong>${r.nama||'-'}</strong><br><small style="color:var(--text-light)">${r.instansi||''}</small></td>
+      <td>${r.keperluan||'-'}</td>
+      <td>${r.yang_ditemui||'-'}</td>
+      <td><small>${r.jam_masuk||'-'} – ${r.jam_keluar||'-'}</small></td>
+      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('tamu',${r.id},'tamuLoad')">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function tamuSave() {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const tanggal     = document.getElementById('tamuTanggal').value;
+  const nama        = document.getElementById('tamuNama').value.trim();
+  const instansi    = document.getElementById('tamuInstansi').value.trim();
+  const keperluan   = document.getElementById('tamuKeperluan').value.trim();
+  const yang_ditemui= document.getElementById('tamuYangDitemui').value.trim();
+  const jam_masuk   = document.getElementById('tamuJamMasuk').value;
+  const jam_keluar  = document.getElementById('tamuJamKeluar').value;
+  if (!tanggal || !nama || !keperluan) {
+    toast('Tanggal, nama tamu, dan keperluan wajib diisi','error'); return;
+  }
+  const { error } = await db.from('tamu').insert({
+    tanggal, nama, instansi, keperluan, yang_ditemui, jam_masuk, jam_keluar
+  });
+  if (error) { piketHandleError(error,'tamu'); return; }
+  ['tamuNama','tamuInstansi','tamuKeperluan','tamuYangDitemui','tamuJamMasuk','tamuJamKeluar'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  toast('Data tamu berhasil disimpan ✓','success');
+  tamuLoad();
+}
+
+// ── Generic delete ────────────────────────────────────────
+async function piketDelete(table, id, reloadFn) {
+  if (!confirm('Hapus data ini?')) return;
+  await db.from(table).delete().eq('id', id);
+  toast('Data berhasil dihapus','success');
+  try { eval(reloadFn + '()'); } catch(e) {}
+}
+
+// ── Handle missing table error ────────────────────────────
+function piketHandleError(error, table) {
+  if (error.code === '42P01' || (error.message && error.message.includes('does not exist'))) {
+    const sqls = {
+      'piket_s5':    'CREATE TABLE piket_s5 (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru TEXT, kelas_id BIGINT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_s5 ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_s5 FOR ALL USING (true) WITH CHECK (true);',
+      'piket_inval': 'CREATE TABLE piket_inval (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru_tidak_hadir TEXT, guru_pengganti TEXT, kelas_id BIGINT, mapel_id BIGINT, jam TEXT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_inval ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_inval FOR ALL USING (true) WITH CHECK (true);',
+      'tamu':        'CREATE TABLE tamu (id BIGSERIAL PRIMARY KEY, tanggal DATE, nama TEXT, instansi TEXT, keperluan TEXT, yang_ditemui TEXT, jam_masuk TIME, jam_keluar TIME, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE tamu ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON tamu FOR ALL USING (true) WITH CHECK (true);',
+    };
+    alert('Tabel "' + table + '" belum ada.\n\nJalankan SQL ini di Supabase → SQL Editor:\n\n' + (sqls[table]||''));
+  } else {
+    toast('Error: ' + (error.message||'Gagal menyimpan'), 'error');
+  }
+}
+
+// ── Auto-load data when pages are opened ──────────────────
+// Patch showPage to auto-load piket data
+const _origShowPage = showPage;
+function showPage(name) {
+  _origShowPage(name);
+  piketInitDate();
+  piketPopulateDropdowns();
+  if (name === 'piketS5')    setTimeout(s5Load, 100);
+  if (name === 'piketInval') setTimeout(invalLoad, 100);
+  if (name === 'terimaTamu') setTimeout(tamuLoad, 100);
+}
+
+// ── Edit mapel card (nama + icon) via Supabase ───────────────────────────────
+async function mpEditCard(event, mapelId, currentName, currentKode) {
+  // Reuse the ECM modal but for mapel
+  ecm_id    = 'mapel_' + mapelId;
+  ecm_emoji = null;
+  ecm_img   = null;
+
+  // Get current saved data from Supabase app_settings
+  let current = { name: currentName, color: 'ic-indigo', emoji: mpGetEmoji(currentName).emoji };
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (data && data.value) {
+      const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      if (saved[mapelId]) current = { ...current, ...saved[mapelId] };
+    }
+  } catch(e) {}
+
+  ecm_color = current.color || 'ic-indigo';
+
+  // Fill modal
+  document.getElementById('ecm-name').value = current.name || currentName;
+
+  // Build emoji grid
+  const grid = document.getElementById('ecm-emoji-grid');
+  grid.innerHTML = ECM_EMOJIS.map(e =>
+    `<button class="ecm-emoji-btn${e === current.emoji ? ' active':''}" onclick="ecmSelectEmoji('${e}')">${e}</button>`
+  ).join('');
+
+  // Color swatches
+  const cg = document.getElementById('ecm-colors');
+  cg.innerHTML = ECM_COLORS.map(c =>
+    `<div class="ecm-color-swatch${c.cls===ecm_color?' active':''}" style="background:${c.bg}" title="${c.label}" onclick="ecmSelectColor('${c.cls}')"></div>`
+  ).join('');
+
+  ecmSetPreview(current);
+  document.getElementById('ecm-custom-emoji').value = '';
+
+  // Override save to save mapel icon
+  document.querySelector('.ecm-btn-save').onclick = () => mpSaveCardEdit(mapelId);
+
+  document.getElementById('editCardModal').classList.add('open');
+}
+
+async function mpSaveCardEdit(mapelId) {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const name = document.getElementById('ecm-name').value.trim();
+  if (!name) { toast('Nama tidak boleh kosong','error'); return; }
+
+  // Load existing mapel icons
+  let allIcons = {};
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (data && data.value) allIcons = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+  } catch(e) {}
+
+  const newData = {
+    name:  name,
+    color: ecm_color,
+    emoji: ecm_img ? null : (ecm_emoji || mpGetEmoji(name).emoji),
+    img:   ecm_img || null,
+  };
+  allIcons[mapelId] = newData;
+
+  const { error } = await db.from('app_settings').upsert(
+    { key: 'mapel_icons', value: JSON.stringify(allIcons) },
+    { onConflict: 'key' }
+  );
+
+  if (error && (error.code === '42P01' || error.message.includes('does not exist'))) {
+    ecmClose();
+    ecmShowSetupToast();
+    return;
+  }
+
+  // Apply to DOM
+  const ico = document.getElementById('mpico-' + mapelId);
+  const lbl = document.getElementById('mplbl-' + mapelId);
+  if (ico) {
+    ECM_COLORS.forEach(c => ico.classList.remove(c.cls));
+    ico.classList.add(newData.color);
+    if (newData.img) ico.innerHTML = `<img src="${newData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+    else ico.textContent = newData.emoji;
+  }
+  if (lbl) lbl.textContent = name;
+
+  // Restore default save button
+  document.querySelector('.ecm-btn-save').onclick = ecmSave;
+  ecmClose();
+  toast('Kartu mapel berhasil diperbarui ✓','success');
+}
+
+
+// =========================================================
+//  GURU PIKET FEATURE
+// =========================================================
+
+function gpOpen() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-guruPiket').classList.add('active');
+  const tb = document.getElementById('mainTopbar');
+  if (tb) tb.style.display = '';
+  const bb = document.getElementById('backBtn');
+  if (bb) { bb.classList.add('visible'); bb.onclick = gpBack; }
+  document.getElementById('pageTitle').textContent = 'Guru Piket';
+}
+
+function gpBack() {
+  goHome();
+  const bb = document.getElementById('backBtn');
+  if (bb) bb.onclick = goHome;
+}
+
+function gpGoSub(sub) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + sub).classList.add('active');
+  const titles = { piketS5:'Piket S5', piketInval:'Piket Inval', terimaTamu:'Terima Tamu' };
+  document.getElementById('pageTitle').textContent = titles[sub] || sub;
+  const bb = document.getElementById('backBtn');
+  if (bb) bb.onclick = gpSubBack;
+  // Load data
+  if (sub === 'piketS5')    gpS5Load();
+  if (sub === 'piketInval') gpInvalLoad();
+  if (sub === 'terimaTamu') gpTamuLoad();
+}
+
+function gpSubBack() {
+  gpOpen();
+}
+
+// ── PIKET S5 ─────────────────────────────────────────────────────────────────
+function gpS5ShowAdd() {
+  document.getElementById('s5Tanggal').value = new Date().toISOString().split('T')[0];
+  document.getElementById('s5Guru').value = CONFIG.guru || '';
+  document.getElementById('s5Kelas').value = '';
+  document.getElementById('s5Catatan').value = '';
+  document.getElementById('modalS5').classList.add('active');
+}
+
+async function gpS5Load() {
+  if (!db) return;
+  const el = document.getElementById('piketS5Tbody');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Memuat...</div>';
+  const { data, error } = await db.from('piket_s5').select('*').order('tanggal', { ascending: false });
+  if (error) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#e02424">Tabel piket_s5 belum dibuat.<br><small>Jalankan SQL setup di Supabase</small></div>';
+    return;
+  }
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Belum ada data piket S5</div>';
+    return;
+  }
+  el.innerHTML = data.map(d => `
+    <div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:14px">🌅 ${d.tanggal}</div>
+          <div style="font-size:13px;color:var(--text-light);margin-top:4px">👤 ${d.nama_guru}</div>
+          <div style="font-size:12px;color:var(--text-light)">🏫 ${d.kelas || '-'}</div>
+          ${d.catatan ? '<div style="font-size:12px;margin-top:4px;color:var(--text)">📝 '+d.catatan+'</div>' : ''}
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="gpS5Delete(${d.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function gpS5Save() {
+  const data = {
+    tanggal:   document.getElementById('s5Tanggal').value,
+    nama_guru: document.getElementById('s5Guru').value,
+    kelas:     document.getElementById('s5Kelas').value,
+    catatan:   document.getElementById('s5Catatan').value,
+  };
+  if (!data.tanggal || !data.nama_guru) { toast('Tanggal dan nama guru wajib diisi','error'); return; }
+  const { error } = await db.from('piket_s5').insert([data]);
+  if (error) { toast('Gagal: ' + error.message,'error'); return; }
+  document.getElementById('modalS5').classList.remove('active');
+  toast('Data piket S5 disimpan ✓','success');
+  gpS5Load();
+}
+
+async function gpS5Delete(id) {
+  if (!confirm('Hapus data ini?')) return;
+  await db.from('piket_s5').delete().eq('id', id);
+  gpS5Load();
+}
+
+// ── PIKET INVAL ───────────────────────────────────────────────────────────────
+function gpInvalShowAdd() {
+  document.getElementById('invalTanggal').value = new Date().toISOString().split('T')[0];
+  document.getElementById('invalGuruDi').value = '';
+  document.getElementById('invalGuru').value = CONFIG.guru || '';
+  document.getElementById('invalKelas').value = '';
+  document.getElementById('invalJam').value = '';
+  document.getElementById('invalKet').value = '';
+  document.getElementById('modalInval').classList.add('active');
+}
+
+async function gpInvalLoad() {
+  if (!db) return;
+  const el = document.getElementById('piketInvalTbody');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Memuat...</div>';
+  const { data, error } = await db.from('piket_inval').select('*').order('tanggal', { ascending: false });
+  if (error) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#e02424">Tabel piket_inval belum dibuat.<br><small>Jalankan SQL setup di Supabase</small></div>';
+    return;
+  }
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Belum ada data piket inval</div>';
+    return;
+  }
+  el.innerHTML = data.map(d => `
+    <div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:14px">📋 ${d.tanggal} · Jam ${d.jam || '-'}</div>
+          <div style="font-size:13px;margin-top:4px">🔄 <b>${d.guru_pengganti}</b> menggantikan <b>${d.guru_digantikan}</b></div>
+          <div style="font-size:12px;color:var(--text-light)">📚 ${d.kelas_mapel || '-'}</div>
+          ${d.keterangan ? '<div style="font-size:12px;margin-top:4px">📝 '+d.keterangan+'</div>' : ''}
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="gpInvalDelete(${d.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function gpInvalSave() {
+  const data = {
+    tanggal:        document.getElementById('invalTanggal').value,
+    guru_digantikan:document.getElementById('invalGuruDi').value,
+    guru_pengganti: document.getElementById('invalGuru').value,
+    kelas_mapel:    document.getElementById('invalKelas').value,
+    jam:            document.getElementById('invalJam').value,
+    keterangan:     document.getElementById('invalKet').value,
+  };
+  if (!data.tanggal || !data.guru_pengganti) { toast('Tanggal dan guru pengganti wajib diisi','error'); return; }
+  const { error } = await db.from('piket_inval').insert([data]);
+  if (error) { toast('Gagal: ' + error.message,'error'); return; }
+  document.getElementById('modalInval').classList.remove('active');
+  toast('Data piket inval disimpan ✓','success');
+  gpInvalLoad();
+}
+
+async function gpInvalDelete(id) {
+  if (!confirm('Hapus data ini?')) return;
+  await db.from('piket_inval').delete().eq('id', id);
+  gpInvalLoad();
+}
+
+// ── TERIMA TAMU ───────────────────────────────────────────────────────────────
+function gpTamuShowAdd() {
+  const now = new Date();
+  document.getElementById('tamuTanggal').value  = now.toISOString().split('T')[0];
+  document.getElementById('tamuJamDatang').value = now.toTimeString().slice(0,5);
+  document.getElementById('tamuJamPulang').value = '';
+  document.getElementById('tamuNama').value = '';
+  document.getElementById('tamuAsal').value = '';
+  document.getElementById('tamuKeperluan').value = '';
+  document.getElementById('tamuBertemu').value = '';
+  document.getElementById('modalTamu').classList.add('active');
+}
+
+async function gpTamuLoad() {
+  if (!db) return;
+  const el = document.getElementById('terimaTamuTbody');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Memuat...</div>';
+  const { data, error } = await db.from('tamu_sekolah').select('*').order('tanggal', { ascending: false });
+  if (error) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#e02424">Tabel tamu_sekolah belum dibuat.<br><small>Jalankan SQL setup di Supabase</small></div>';
+    return;
+  }
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">Belum ada data tamu</div>';
+    return;
+  }
+  el.innerHTML = data.map(d => `
+    <div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">🤝 ${d.nama_tamu}</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:3px">🏢 ${d.asal_instansi || '-'}</div>
+          <div style="font-size:12px;margin-top:3px">📋 ${d.keperluan || '-'}</div>
+          <div style="font-size:12px;color:var(--text-light)">👤 Bertemu: ${d.bertemu_dengan || '-'}</div>
+          <div style="font-size:11px;color:var(--text-light);margin-top:3px">📅 ${d.tanggal} · ⏰ ${d.jam_datang||'-'} – ${d.jam_pulang||'-'}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="gpTamuDelete(${d.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function gpTamuSave() {
+  const data = {
+    tanggal:        document.getElementById('tamuTanggal').value,
+    nama_tamu:      document.getElementById('tamuNama').value,
+    asal_instansi:  document.getElementById('tamuAsal').value,
+    keperluan:      document.getElementById('tamuKeperluan').value,
+    bertemu_dengan: document.getElementById('tamuBertemu').value,
+    jam_datang:     document.getElementById('tamuJamDatang').value,
+    jam_pulang:     document.getElementById('tamuJamPulang').value,
+  };
+  if (!data.tanggal || !data.nama_tamu) { toast('Tanggal dan nama tamu wajib diisi','error'); return; }
+  const { error } = await db.from('tamu_sekolah').insert([data]);
+  if (error) { toast('Gagal: ' + error.message,'error'); return; }
+  document.getElementById('modalTamu').classList.remove('active');
+  toast('Data tamu disimpan ✓','success');
+  gpTamuLoad();
+}
+
+async function gpTamuDelete(id) {
+  if (!confirm('Hapus data tamu ini?')) return;
+  await db.from('tamu_sekolah').delete().eq('id', id);
+  gpTamuLoad();
+}
+
+// =========================================================
+//  MAPEL DOTS MENU — edit nama & ikon mapel (Supabase)
+// =========================================================
+
+let mpEditId   = null;  // mapel db id
+let mpEditName = null;
+
+function mpDotsOpen(event, mapelId, mapelName) {
+  event.stopPropagation();
+  mpEditId   = mapelId;
+  mpEditName = mapelName;
+  // Reuse the ECM modal
+  ecmOpenModalForMapel(mapelId, mapelName);
+}
+
+async function ecmOpenModalForMapel(mapelId, mapelName) {
+  ecm_id    = 'mapel_' + mapelId;
+  ecm_emoji = null;
+  ecm_img   = null;
+
+  // Get current saved data
+  let current = mpGetEmoji(mapelName);
+  current.name = mapelName;
+
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (data && data.value) {
+      const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      if (saved['mapel_' + mapelId]) {
+        const s = saved['mapel_' + mapelId];
+        current = { ...current, ...s };
+      }
+    }
+  } catch(e) {}
+
+  ecm_color = current.color || 'ic-blue';
+
+  // Fill modal
+  document.getElementById('ecm-name').value = current.name || mapelName;
+
+  const grid = document.getElementById('ecm-emoji-grid');
+  grid.innerHTML = ECM_EMOJIS.map(e =>
+    `<button class="ecm-emoji-btn${e === current.emoji ? ' active' : ''}" onclick="ecmSelectEmoji('${e}')">${e}</button>`
+  ).join('');
+
+  const cg = document.getElementById('ecm-colors');
+  cg.innerHTML = ECM_COLORS.map(c =>
+    `<div class="ecm-color-swatch${c.cls === ecm_color ? ' active' : ''}"
+       style="background:${c.bg}" title="${c.label}"
+       onclick="ecmSelectColor('${c.cls}')"></div>`
+  ).join('');
+
+  ecmSetPreview(current);
+  document.getElementById('ecm-custom-emoji').value = '';
+  document.getElementById('editCardModal').classList.add('open');
+}
+
+// Patch ecmSave to handle mapel_ prefix
+const _origEcmSave = ecmSave;
+async function ecmSave() {
+  if (ecm_id && ecm_id.startsWith('mapel_')) {
+    await ecmSaveMapel();
+  } else {
+    await _origEcmSave();
+  }
+}
+
+async function ecmSaveMapel() {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const name = document.getElementById('ecm-name').value.trim();
+  if (!name) { toast('Nama tidak boleh kosong','error'); return; }
+
+  // Load existing
+  let allMapelIcons = {};
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (data?.value) allMapelIcons = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+  } catch(e) {}
+
+  const def = mpGetEmoji(mpEditName);
+  const newData = {
+    name:  name,
+    color: ecm_color || def.color,
+    emoji: ecm_img ? null : (ecm_emoji || def.emoji),
+    img:   ecm_img || null,
+  };
+  allMapelIcons[ecm_id] = newData;
+
+  const { error } = await db.from('app_settings').upsert(
+    { key: 'mapel_icons', value: JSON.stringify(allMapelIcons) },
+    { onConflict: 'key' }
+  );
+
+  if (error) { toast('Gagal menyimpan: ' + error.message,'error'); return; }
+
+  // Update the DOM card
+  const icoEl = document.getElementById('ico-' + ecm_id);
+  const lblEl = document.getElementById('lbl-' + ecm_id);
+  if (icoEl) {
+    ECM_COLORS.forEach(c => icoEl.classList.remove(c.cls));
+    icoEl.classList.add(newData.color);
+    if (newData.img) icoEl.innerHTML = `<img src="${newData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+    else icoEl.textContent = newData.emoji;
+  }
+  if (lblEl) lblEl.textContent = newData.name;
+
+  ecmClose();
+  toast('Ikon mapel berhasil disimpan! ✓','success');
+}
+
+// Load saved mapel icons
+async function mpLoadSavedIcons() {
+  try {
+    if (!db) return;
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (!data?.value) return;
+    const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+    Object.entries(saved).forEach(([key, iconData]) => {
+      const icoEl = document.getElementById('ico-' + key);
+      const lblEl = document.getElementById('lbl-' + key);
+      if (icoEl) {
+        ECM_COLORS.forEach(c => icoEl.classList.remove(c.cls));
+        if (iconData.color) icoEl.classList.add(iconData.color);
+        if (iconData.img)   icoEl.innerHTML = `<img src="${iconData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+        else if (iconData.emoji) icoEl.textContent = iconData.emoji;
+      }
+      if (lblEl && iconData.name) lblEl.textContent = iconData.name;
+    });
+  } catch(e) {}
+}
 </script>
 
 
@@ -5076,6 +6143,142 @@ function ecmShowSetupToast() {
   <div class="mh-ctx-sep"></div>
   <div class="mh-ctx-item danger" onclick="ecmResetFromCtx()">
     <span class="ctx-ico">↺</span> Reset ke Default
+  </div>
+</div>
+
+
+<!-- ===== GURU PIKET MENU ===== -->
+<div id="page-guruPiket" class="page">
+  <div class="gp-header">
+    <div class="gp-header-row">
+      <button class="gp-back" onclick="goHome()">←</button>
+      <div>
+        <div class="gp-header-title">👮 Guru Piket</div>
+        <div class="gp-header-sub">Pilih fitur piket</div>
+      </div>
+    </div>
+  </div>
+  <div class="gp-body">
+    <div class="mh-sec-title">Menu Guru Piket</div>
+    <div class="gp-sub-grid">
+      <div class="gp-sub-card" onclick="goPage('piketS5')">
+        <div class="gp-sub-ico ic-orange">📢</div>
+        <div class="gp-sub-lbl">Piket S5</div>
+        <div class="gp-sub-desc">Senyum, Salam, Sapa, Sopan, Santun</div>
+      </div>
+      <div class="gp-sub-card" onclick="goPage('piketInval')">
+        <div class="gp-sub-ico ic-yellow">📋</div>
+        <div class="gp-sub-lbl">Piket Inval</div>
+        <div class="gp-sub-desc">Pengganti guru yang tidak hadir</div>
+      </div>
+      <div class="gp-sub-card" onclick="goPage('terimaTamu')">
+        <div class="gp-sub-ico ic-blue">🤝</div>
+        <div class="gp-sub-lbl">Terima Tamu</div>
+        <div class="gp-sub-desc">Pencatatan tamu yang berkunjung</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PIKET S5 ===== -->
+<div id="page-piketS5" class="page">
+  <div class="piket-header">
+    <div class="piket-header-row">
+      <button class="piket-back" onclick="goPage('guruPiket')">←</button>
+      <div>
+        <div class="piket-title">📢 Piket S5</div>
+        <div class="piket-sub">Senyum · Salam · Sapa · Sopan · Santun</div>
+      </div>
+    </div>
+  </div>
+  <div class="piket-body">
+    <div class="piket-form">
+      <div class="piket-form-title">📝 Input Piket S5</div>
+      <input class="piket-input" id="s5Tanggal" type="date">
+      <input class="piket-input" id="s5Guru" placeholder="Nama Guru Piket">
+      <select class="piket-input" id="s5Kelas">
+        <option value="">— Pilih Kelas —</option>
+      </select>
+      <input class="piket-input" id="s5Catatan" placeholder="Catatan (opsional)">
+      <button class="piket-btn-save" onclick="s5Save()">💾 Simpan Piket S5</button>
+    </div>
+    <div class="mh-sec-title">Riwayat Piket S5</div>
+    <div class="piket-table-wrap">
+      <table class="piket-table">
+        <thead><tr><th>Tanggal</th><th>Guru</th><th>Kelas</th><th>Catatan</th><th>Aksi</th></tr></thead>
+        <tbody id="s5Tbody"><tr><td colspan="5" class="piket-empty">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PIKET INVAL ===== -->
+<div id="page-piketInval" class="page">
+  <div class="piket-header">
+    <div class="piket-header-row">
+      <button class="piket-back" onclick="goPage('guruPiket')">←</button>
+      <div>
+        <div class="piket-title">📋 Piket Inval</div>
+        <div class="piket-sub">Pengganti guru tidak hadir</div>
+      </div>
+    </div>
+  </div>
+  <div class="piket-body">
+    <div class="piket-form">
+      <div class="piket-form-title">📝 Input Piket Inval</div>
+      <input class="piket-input" id="invalTanggal" type="date">
+      <input class="piket-input" id="invalGuruTidakHadir" placeholder="Nama Guru yang Tidak Hadir">
+      <input class="piket-input" id="invalGuruPengganti" placeholder="Nama Guru Pengganti">
+      <select class="piket-input" id="invalKelas">
+        <option value="">— Pilih Kelas —</option>
+      </select>
+      <select class="piket-input" id="invalMapel">
+        <option value="">— Pilih Mata Pelajaran —</option>
+      </select>
+      <input class="piket-input" id="invalJam" placeholder="Jam ke- (contoh: 1-2)">
+      <input class="piket-input" id="invalCatatan" placeholder="Catatan tugas yang diberikan">
+      <button class="piket-btn-save" onclick="invalSave()">💾 Simpan Piket Inval</button>
+    </div>
+    <div class="mh-sec-title">Riwayat Piket Inval</div>
+    <div class="piket-table-wrap">
+      <table class="piket-table">
+        <thead><tr><th>Tanggal</th><th>Tidak Hadir</th><th>Pengganti</th><th>Kelas/Mapel</th><th>Aksi</th></tr></thead>
+        <tbody id="invalTbody"><tr><td colspan="5" class="piket-empty">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TERIMA TAMU ===== -->
+<div id="page-terimaTamu" class="page">
+  <div class="piket-header">
+    <div class="piket-header-row">
+      <button class="piket-back" onclick="goPage('guruPiket')">←</button>
+      <div>
+        <div class="piket-title">🤝 Terima Tamu</div>
+        <div class="piket-sub">Buku tamu sekolah</div>
+      </div>
+    </div>
+  </div>
+  <div class="piket-body">
+    <div class="piket-form">
+      <div class="piket-form-title">📝 Catat Tamu</div>
+      <input class="piket-input" id="tamuTanggal" type="date">
+      <input class="piket-input" id="tamuNama" placeholder="Nama Tamu">
+      <input class="piket-input" id="tamuInstansi" placeholder="Asal Instansi / Wali Murid">
+      <input class="piket-input" id="tamuKeperluan" placeholder="Keperluan">
+      <input class="piket-input" id="tamuYangDitemui" placeholder="Yang Ditemui">
+      <input class="piket-input" id="tamuJamMasuk" type="time" placeholder="Jam Masuk">
+      <input class="piket-input" id="tamuJamKeluar" type="time" placeholder="Jam Keluar">
+      <button class="piket-btn-save" onclick="tamuSave()">💾 Simpan Data Tamu</button>
+    </div>
+    <div class="mh-sec-title">Riwayat Tamu</div>
+    <div class="piket-table-wrap">
+      <table class="piket-table">
+        <thead><tr><th>Tanggal</th><th>Nama Tamu</th><th>Keperluan</th><th>Yang Ditemui</th><th>Jam</th><th>Aksi</th></tr></thead>
+        <tbody id="tamuTbody"><tr><td colspan="6" class="piket-empty">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
