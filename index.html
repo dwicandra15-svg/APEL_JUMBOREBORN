@@ -4868,6 +4868,14 @@ function showPage(name) {
   if (name==='ummiTingkatan') loadAllTingkatan();
   if (name==='integrasiKinerja') renderKinerja();
   if (name==='ummi7') renderUmmiPage('ummi7');
+  // Piket pages
+  try {
+    piketInitDate();
+    piketPopulateDropdowns();
+  } catch(e) {}
+  if (name==='piketS5')    setTimeout(()=>{ try{s5Load();}catch(e){} }, 100);
+  if (name==='piketInval') setTimeout(()=>{ try{invalLoad();}catch(e){} }, 100);
+  if (name==='terimaTamu') setTimeout(()=>{ try{tamuLoad();}catch(e){} }, 100);
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
 }
@@ -5629,17 +5637,7 @@ function piketHandleError(error, table) {
   }
 }
 
-// ── Auto-load data when pages are opened ──────────────────
-// Patch showPage to auto-load piket data
-const _origShowPage = showPage;
-function showPage(name) {
-  _origShowPage(name);
-  piketInitDate();
-  piketPopulateDropdowns();
-  if (name === 'piketS5')    setTimeout(s5Load, 100);
-  if (name === 'piketInval') setTimeout(invalLoad, 100);
-  if (name === 'terimaTamu') setTimeout(tamuLoad, 100);
-}
+// Piket auto-load is now integrated in original showPage
 
 // ── Edit mapel card (nama + icon) via Supabase ───────────────────────────────
 async function mpEditCard(event, mapelId, currentName, currentKode) {
