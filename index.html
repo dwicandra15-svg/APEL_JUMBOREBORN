@@ -860,6 +860,26 @@ tr:hover td { background: #f8fafc; }
 #backBtn:hover { background:var(--primary-light); }
 #backBtn.visible { display:inline-flex; }
 
+.piket-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.piket-field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.piket-label { font-size:11px; font-weight:700; color:var(--text-light); letter-spacing:.5px; text-transform:uppercase; }
+.req { color:#ef4444; }
+.piket-btn-group { display:flex; gap:0; border-radius:10px; overflow:hidden; border:1.5px solid var(--border); }
+.piket-seg-btn { flex:1; padding:10px; border:none; background:#f8fafc; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s,color .15s; color:var(--text-light); }
+.piket-seg-btn.active { background:#7c3aed; color:#fff; }
+.piket-minggu-wrap { display:flex; flex-wrap:wrap; gap:8px; }
+.piket-minggu-btn { padding:8px 16px; border-radius:10px; border:1.5px solid var(--border); background:#f8fafc; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; color:var(--text-light); }
+.piket-minggu-btn.active { background:#7c3aed; color:#fff; border-color:#7c3aed; }
+.piket-photo-box { border:2px dashed var(--border); border-radius:12px; padding:20px; text-align:center; cursor:pointer; color:var(--text-light); font-size:13px; background:#fafafa; transition:border-color .15s; min-height:80px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; }
+.piket-photo-box:hover { border-color:var(--primary); }
+.piket-btn-cancel { flex:1; padding:12px; border:1.5px solid var(--border); border-radius:12px; background:#fff; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-light); }
+.piket-btn-cancel:hover { background:#f1f5f9; }
+.piket-btn-save { flex:1; padding:12px; border:none; border-radius:12px; background:#7c3aed; color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s; }
+.piket-btn-save:hover { background:#6d28d9; }
+.piket-input textarea { resize:vertical; min-height:70px; }
+textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
+@media(max-width:480px) { .piket-row-2 { grid-template-columns:1fr; } }
+
 .mh-footer { text-align:center; padding:20px 0 40px; font-size:11px; color:var(--text-light); font-style:italic; }
 
 
@@ -2823,6 +2843,7 @@ async function afterLogin() {
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
   setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 800);
+  setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 1000);
   goHome(); // ← Show grid home page instead of last sidebar page
 }
 
@@ -4919,9 +4940,10 @@ function showPage(name) {
     piketInitDate();
     piketPopulateDropdowns();
   } catch(e) {}
-  if (name==='piketS5')    setTimeout(()=>{ try{s5Load();}catch(e){} }, 100);
-  if (name==='piketInval') setTimeout(()=>{ try{invalLoad();}catch(e){} }, 100);
-  if (name==='terimaTamu') setTimeout(()=>{ try{tamuLoad();}catch(e){} }, 100);
+  if (name==='piketS5')    { try{piketInitDate();piketPopulateDropdowns();}catch(e){} setTimeout(()=>{ try{s5Load();}catch(e){} }, 150); }
+  if (name==='piketInval') { try{piketInitDate();piketPopulateDropdowns();}catch(e){} setTimeout(()=>{ try{invalLoad();}catch(e){} }, 150); }
+  if (name==='terimaTamu') { try{piketInitDate();}catch(e){} setTimeout(()=>{ try{tamuLoad();}catch(e){} }, 150); }
+  if (name==='guruPiketDaftar') setTimeout(()=>{ try{guruPiketLoad();}catch(e){} }, 100);
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
 }
@@ -5549,151 +5571,539 @@ function mpPreSelectMapel(page, mapelId) {
 //  GURU PIKET FEATURE
 // =========================================================
 
-// ── Navigation ───────────────────────────────────────────
-// gpOpen: see full implementation below
+// =========================================================
+//  GURU PIKET - COMPLETE JS
+// =========================================================
 
-// ── Init date fields to today ─────────────────────────────
-function piketInitDate() {
-  const today = new Date().toISOString().split('T')[0];
-  ['s5Tanggal','invalTanggal','tamuTanggal'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = today;
-  });
+// In-memory guru list (loaded from Supabase app_settings key: guru_piket)
+let GURU_PIKET_LIST = [];
+let s5FotoBase64 = null;
+let invalFotoBase64 = null;
+let tamuFotoBase64 = null;
+
+// ── Helper: hari dari tanggal ─────────────────────────────
+function getHariFromDate(dateStr) {
+  if (!dateStr) return '';
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  return days[new Date(dateStr).getDay()];
 }
 
-// ── Populate kelas & mapel dropdowns ─────────────────────
+// ── Helper: minggu ke-berapa dalam bulan ─────────────────
+function getMingguKe(dateStr) {
+  if (!dateStr) return 1;
+  const d = new Date(dateStr);
+  return Math.ceil(d.getDate() / 7);
+}
+
+// ── Init date & time fields ───────────────────────────────
+function piketInitDate() {
+  const today = new Date().toISOString().split('T')[0];
+  const now   = new Date().toTimeString().slice(0,5);
+
+  // S5
+  const s5T = document.getElementById('s5Tanggal');
+  if (s5T && !s5T.value) {
+    s5T.value = today;
+    s5T.onchange = () => s5UpdateHari();
+    s5UpdateHari();
+  }
+  const s5W = document.getElementById('s5Waktu');
+  if (s5W) s5W.value = now;
+
+  // Init tahun
+  const s5Yr = document.getElementById('s5Tahun');
+  if (s5Yr && !s5Yr.value) s5Yr.value = new Date().getFullYear();
+
+  // Init minggu buttons
+  s5BuildMingguBtns();
+
+  // Inval
+  const iT = document.getElementById('invalTanggal');
+  if (iT && !iT.value) {
+    iT.value = today;
+    iT.onchange = () => {
+      const hEl = document.getElementById('invalHari');
+      if (hEl) hEl.value = getHariFromDate(iT.value);
+    };
+    const hEl = document.getElementById('invalHari');
+    if (hEl) hEl.value = getHariFromDate(today);
+  }
+
+  // Tamu
+  const tT = document.getElementById('tamuTanggal');
+  if (tT && !tT.value) {
+    tT.value = today;
+    tT.onchange = () => {
+      const hEl = document.getElementById('tamuHari');
+      if (hEl) hEl.value = getHariFromDate(tT.value);
+    };
+    const hEl = document.getElementById('tamuHari');
+    if (hEl) hEl.value = getHariFromDate(today);
+  }
+}
+
+function s5UpdateHari() {
+  const v = document.getElementById('s5Tanggal')?.value;
+  const hEl = document.getElementById('s5Hari');
+  if (hEl) hEl.value = getHariFromDate(v);
+  const minggu = getMingguKe(v);
+  s5BuildMingguBtns(minggu);
+}
+
+function s5BuildMingguBtns(active) {
+  const wrap = document.getElementById('s5MingguBtns');
+  if (!wrap) return;
+  const current = active || getMingguKe(document.getElementById('s5Tanggal')?.value) || 1;
+  wrap.innerHTML = [1,2,3,4,5].map(n =>
+    `<button type="button" class="piket-minggu-btn${n===current?' active':''}" onclick="s5SetMinggu(${n})">Ke ${n}</button>`
+  ).join('');
+  document.getElementById('s5Minggu').value = 'Ke ' + current;
+}
+
+function s5SetMinggu(n) {
+  document.querySelectorAll('.piket-minggu-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('s5Minggu').value = 'Ke ' + n;
+}
+
+function s5SetSem(sem) {
+  document.getElementById('s5Semester').value = sem;
+  document.getElementById('s5SemGanjil').classList.toggle('active', sem==='Ganjil');
+  document.getElementById('s5SemGenap').classList.toggle('active', sem==='Genap');
+}
+
+// ── Auto NIP from guru dropdown ───────────────────────────
+function s5AutoNip() {
+  const sel = document.getElementById('s5GuruSelect');
+  const nip = GURU_PIKET_LIST.find(g => g.nama === sel.value)?.nip || '';
+  const nipEl = document.getElementById('s5Nip');
+  if (nipEl) nipEl.value = nip;
+}
+
+function invalAutoNip(type) {
+  const selId = type === 'TH' ? 'invalGuruTidakHadir' : 'invalGuruPengganti';
+  const nipId  = type === 'TH' ? 'invalNipTH' : 'invalNipP';
+  const sel = document.getElementById(selId);
+  const nip = GURU_PIKET_LIST.find(g => g.nama === sel.value)?.nip || '';
+  const nipEl = document.getElementById(nipId);
+  if (nipEl) nipEl.value = nip;
+}
+
+// ── Populate dropdowns ────────────────────────────────────
 function piketPopulateDropdowns() {
   const kelasOpts = (APP_DATA.kelas||[]).map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
   const mapelOpts = (APP_DATA.mapel||[]).map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
-  ['s5Kelas','invalKelas'].forEach(id => {
+  ['invalKelas'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">— Pilih Kelas —</option>' + kelasOpts;
   });
   const im = document.getElementById('invalMapel');
-  if (im) im.innerHTML = '<option value="">— Pilih Mata Pelajaran —</option>' + mapelOpts;
+  if (im) im.innerHTML = '<option value="">— Pilih Mapel —</option>' + mapelOpts;
+  piketPopulateGuruDropdowns();
+}
+
+function piketPopulateGuruDropdowns() {
+  const opts = GURU_PIKET_LIST.map(g => `<option value="${g.nama}">${g.nama}</option>`).join('');
+  ['s5GuruSelect','invalGuruTidakHadir','invalGuruPengganti'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">— Pilih Guru —</option>' + opts;
+  });
+}
+
+// ── Foto preview helpers ──────────────────────────────────
+function s5PreviewFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    s5FotoBase64 = e.target.result;
+    const img = document.getElementById('s5FotoPreview');
+    const ph  = document.getElementById('s5FotoPlaceholder');
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+    if (ph)  ph.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+function invalPreviewFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    invalFotoBase64 = e.target.result;
+    const img = document.getElementById('invalFotoPreview');
+    const ph  = document.getElementById('invalFotoPlaceholder');
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+function tamuPreviewFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    tamuFotoBase64 = e.target.result;
+    const img = document.getElementById('tamuFotoPreview');
+    const ph  = document.getElementById('tamuFotoPlaceholder');
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
 }
 
 // ══ PIKET S5 ══════════════════════════════════════════════
 
 async function s5Load() {
   if (!db) return;
-  const { data } = await db.from('piket_s5').select('*').order('tanggal', {ascending:false}).limit(50);
+  const { data } = await db.from('piket_s5').select('*').order('tanggal',{ascending:false}).limit(100);
   const tbody = document.getElementById('s5Tbody');
   if (!tbody) return;
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="piket-empty">Belum ada data piket S5</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="6" class="piket-empty">Belum ada data piket S5</td></tr>'; return;
   }
   tbody.innerHTML = data.map(r => `
     <tr>
-      <td>${r.tanggal||'-'}</td>
-      <td><strong>${r.guru||'-'}</strong></td>
-      <td>${getKelasName(r.kelas_id)||r.kelas_id||'-'}</td>
-      <td>${r.catatan||'-'}</td>
-      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('piket_s5',${r.id},'s5Load')">🗑️</button></td>
+      <td>${r.tanggal||'-'}<br><small style="color:var(--text-light)">${r.hari||''}</small></td>
+      <td><small>${r.waktu||'-'}</small></td>
+      <td><strong>${r.guru||'-'}</strong><br><small style="color:var(--text-light)">${r.nip||''}</small></td>
+      <td style="font-size:11px">${r.keterangan||'-'}</td>
+      <td><small>${r.minggu||'-'}</small></td>
+      <td>
+        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
+        <button class="btn btn-sm btn-danger" onclick="piketDelete('piket_s5',${r.id},'s5Load')">🗑️</button>
+      </td>
     </tr>`).join('');
 }
 
 async function s5Save() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
-  const tanggal = document.getElementById('s5Tanggal').value;
-  const guru    = document.getElementById('s5Guru').value.trim();
-  const kelasId = document.getElementById('s5Kelas').value;
-  const catatan = document.getElementById('s5Catatan').value.trim();
-  if (!tanggal || !guru) { toast('Tanggal dan nama guru wajib diisi','error'); return; }
-  const { error } = await db.from('piket_s5').insert({ tanggal, guru, kelas_id: kelasId||null, catatan });
+  const tanggal    = document.getElementById('s5Tanggal').value;
+  const waktu      = document.getElementById('s5Waktu').value;
+  const hari       = document.getElementById('s5Hari').value;
+  const guru       = document.getElementById('s5GuruSelect').value;
+  const nip        = document.getElementById('s5Nip').value;
+  const tahun      = document.getElementById('s5Tahun').value;
+  const semester   = document.getElementById('s5Semester').value;
+  const minggu     = document.getElementById('s5Minggu').value;
+  const keterangan = document.getElementById('s5Keterangan').value;
+  const foto       = s5FotoBase64 || null;
+
+  if (!tanggal || !guru || !keterangan || !minggu) {
+    toast('Tanggal, guru, keterangan, dan minggu wajib diisi','error'); return;
+  }
+  const { error } = await db.from('piket_s5').insert({
+    tanggal, waktu, hari, guru, nip, tahun: parseInt(tahun)||null,
+    semester, minggu, keterangan, foto
+  });
   if (error) { piketHandleError(error,'piket_s5'); return; }
-  document.getElementById('s5Guru').value = '';
-  document.getElementById('s5Catatan').value = '';
   toast('Piket S5 berhasil disimpan ✓','success');
+  s5Reset();
   s5Load();
+}
+
+function s5Reset() {
+  const today = new Date().toISOString().split('T')[0];
+  const now   = new Date().toTimeString().slice(0,5);
+  document.getElementById('s5Tanggal').value = today;
+  document.getElementById('s5Waktu').value = now;
+  document.getElementById('s5Hari').value = getHariFromDate(today);
+  document.getElementById('s5GuruSelect').value = '';
+  document.getElementById('s5Nip').value = '';
+  document.getElementById('s5Keterangan').value = '';
+  const img = document.getElementById('s5FotoPreview');
+  const ph  = document.getElementById('s5FotoPlaceholder');
+  if (img) { img.src=''; img.style.display='none'; }
+  if (ph) ph.style.display='';
+  s5FotoBase64 = null;
+  document.getElementById('s5FotoInput').value = '';
+  s5BuildMingguBtns();
+}
+
+async function s5DownloadPdf() {
+  const { data } = await db.from('piket_s5').select('*').order('tanggal',{ascending:false});
+  if (!data || !data.length) { toast('Tidak ada data','error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  addKopToPdf(doc);
+  doc.setFontSize(13); doc.setFont(undefined,'bold');
+  doc.text('LAPORAN PIKET S5', 105, 45, {align:'center'});
+  doc.setFontSize(9); doc.setFont(undefined,'normal');
+  const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu']];
+  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-', r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-']);
+  doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:8}, headStyles:{fillColor:[124,58,237]} });
+  doc.save('Laporan_Piket_S5.pdf');
 }
 
 // ══ PIKET INVAL ════════════════════════════════════════════
 
 async function invalLoad() {
   if (!db) return;
-  const { data } = await db.from('piket_inval').select('*').order('tanggal',{ascending:false}).limit(50);
+  const { data } = await db.from('piket_inval').select('*').order('tanggal',{ascending:false}).limit(100);
   const tbody = document.getElementById('invalTbody');
   if (!tbody) return;
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="piket-empty">Belum ada data piket inval</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="6" class="piket-empty">Belum ada data piket inval</td></tr>'; return;
   }
   tbody.innerHTML = data.map(r => `
     <tr>
-      <td>${r.tanggal||'-'}</td>
-      <td>${r.guru_tidak_hadir||'-'}</td>
-      <td><strong>${r.guru_pengganti||'-'}</strong></td>
-      <td>${getKelasName(r.kelas_id)||'-'} / ${getMapelName(r.mapel_id)||'-'}<br><small style="color:var(--text-light)">Jam ke-${r.jam||'-'} · ${r.catatan||''}</small></td>
-      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('piket_inval',${r.id},'invalLoad')">🗑️</button></td>
+      <td>${r.tanggal||'-'}<br><small>${r.hari||''}</small></td>
+      <td>${r.guru_tidak_hadir||'-'}<br><small style="color:var(--text-light)">${r.nip_th||''}</small></td>
+      <td><strong>${r.guru_pengganti||'-'}</strong><br><small style="color:var(--text-light)">${r.nip_p||''}</small></td>
+      <td>${getKelasName(r.kelas_id)||'-'} / ${getMapelName(r.mapel_id)||'-'}</td>
+      <td>Jam ${r.jam||'-'}${r.durasi?' · '+r.durasi+' mnt':''}</td>
+      <td>
+        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
+        <button class="btn btn-sm btn-danger" onclick="piketDelete('piket_inval',${r.id},'invalLoad')">🗑️</button>
+      </td>
     </tr>`).join('');
 }
 
 async function invalSave() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
-  const tanggal          = document.getElementById('invalTanggal').value;
-  const guru_tidak_hadir = document.getElementById('invalGuruTidakHadir').value.trim();
-  const guru_pengganti   = document.getElementById('invalGuruPengganti').value.trim();
-  const kelas_id         = document.getElementById('invalKelas').value;
-  const mapel_id         = document.getElementById('invalMapel').value;
-  const jam              = document.getElementById('invalJam').value.trim();
-  const catatan          = document.getElementById('invalCatatan').value.trim();
-  if (!tanggal || !guru_tidak_hadir || !guru_pengganti) {
-    toast('Tanggal, guru tidak hadir, dan pengganti wajib diisi','error'); return;
+  const tanggal           = document.getElementById('invalTanggal').value;
+  const hari              = document.getElementById('invalHari').value;
+  const guru_tidak_hadir  = document.getElementById('invalGuruTidakHadir').value;
+  const nip_th            = document.getElementById('invalNipTH').value;
+  const guru_pengganti    = document.getElementById('invalGuruPengganti').value;
+  const nip_p             = document.getElementById('invalNipP').value;
+  const kelas_id          = document.getElementById('invalKelas').value;
+  const mapel_id          = document.getElementById('invalMapel').value;
+  const jam               = document.getElementById('invalJam').value.trim();
+  const durasi            = document.getElementById('invalDurasi').value;
+  const catatan           = document.getElementById('invalCatatan').value.trim();
+  const foto              = invalFotoBase64 || null;
+
+  if (!tanggal || !guru_tidak_hadir || !guru_pengganti || !jam) {
+    toast('Tanggal, guru tidak hadir, pengganti, dan jam wajib diisi','error'); return;
   }
   const { error } = await db.from('piket_inval').insert({
-    tanggal, guru_tidak_hadir, guru_pengganti,
-    kelas_id: kelas_id||null, mapel_id: mapel_id||null, jam, catatan
+    tanggal, hari, guru_tidak_hadir, nip_th, guru_pengganti, nip_p,
+    kelas_id: kelas_id||null, mapel_id: mapel_id||null,
+    jam, durasi: parseInt(durasi)||null, catatan, foto
   });
   if (error) { piketHandleError(error,'piket_inval'); return; }
-  ['invalGuruTidakHadir','invalGuruPengganti','invalJam','invalCatatan'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = '';
-  });
   toast('Piket Inval berhasil disimpan ✓','success');
+  invalReset();
   invalLoad();
+}
+
+function invalReset() {
+  ['invalGuruTidakHadir','invalGuruPengganti','invalKelas','invalMapel','invalJam','invalDurasi','invalCatatan'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  ['invalNipTH','invalNipP'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const img = document.getElementById('invalFotoPreview');
+  const ph  = document.getElementById('invalFotoPlaceholder');
+  if (img) { img.src=''; img.style.display='none'; }
+  if (ph) ph.style.display='';
+  invalFotoBase64 = null;
+}
+
+async function invalDownloadPdf() {
+  const { data } = await db.from('piket_inval').select('*').order('tanggal',{ascending:false});
+  if (!data || !data.length) { toast('Tidak ada data','error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  addKopToPdf(doc);
+  doc.setFontSize(13); doc.setFont(undefined,'bold');
+  doc.text('LAPORAN PIKET INVAL', 105, 45, {align:'center'});
+  const head = [['No','Tanggal','Guru Tdk Hadir','NIP','Pengganti','NIP','Kelas/Mapel','Jam']];
+  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.guru_tidak_hadir||'-', r.nip_th||'-', r.guru_pengganti||'-', r.nip_p||'-', (getKelasName(r.kelas_id)||'-')+'/'+(getMapelName(r.mapel_id)||'-'), r.jam||'-']);
+  doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:7}, headStyles:{fillColor:[124,58,237]} });
+  doc.save('Laporan_Piket_Inval.pdf');
 }
 
 // ══ TERIMA TAMU ════════════════════════════════════════════
 
 async function tamuLoad() {
   if (!db) return;
-  const { data } = await db.from('tamu').select('*').order('tanggal',{ascending:false}).limit(50);
+  const { data } = await db.from('tamu').select('*').order('tanggal',{ascending:false}).limit(100);
   const tbody = document.getElementById('tamuTbody');
   if (!tbody) return;
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="piket-empty">Belum ada data tamu</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="7" class="piket-empty">Belum ada data tamu</td></tr>'; return;
   }
   tbody.innerHTML = data.map(r => `
     <tr>
-      <td>${r.tanggal||'-'}</td>
-      <td><strong>${r.nama||'-'}</strong><br><small style="color:var(--text-light)">${r.instansi||''}</small></td>
-      <td>${r.keperluan||'-'}</td>
+      <td>${r.tanggal||'-'}<br><small>${r.hari||''}</small></td>
+      <td><strong>${r.nama||'-'}</strong><br><small style="color:var(--text-light)">${r.identitas||''}</small></td>
+      <td><small>${r.instansi||'-'}</small></td>
+      <td>${r.keperluan||'-'}${r.ket_keperluan?'<br><small>'+r.ket_keperluan+'</small>':''}</td>
       <td>${r.yang_ditemui||'-'}</td>
       <td><small>${r.jam_masuk||'-'} – ${r.jam_keluar||'-'}</small></td>
-      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('tamu',${r.id},'tamuLoad')">🗑️</button></td>
+      <td>
+        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
+        <button class="btn btn-sm btn-danger" onclick="piketDelete('tamu',${r.id},'tamuLoad')">🗑️</button>
+      </td>
     </tr>`).join('');
 }
 
 async function tamuSave() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
-  const tanggal     = document.getElementById('tamuTanggal').value;
-  const nama        = document.getElementById('tamuNama').value.trim();
-  const instansi    = document.getElementById('tamuInstansi').value.trim();
-  const keperluan   = document.getElementById('tamuKeperluan').value.trim();
-  const yang_ditemui= document.getElementById('tamuYangDitemui').value.trim();
-  const jam_masuk   = document.getElementById('tamuJamMasuk').value;
-  const jam_keluar  = document.getElementById('tamuJamKeluar').value;
-  if (!tanggal || !nama || !keperluan) {
-    toast('Tanggal, nama tamu, dan keperluan wajib diisi','error'); return;
+  const tanggal      = document.getElementById('tamuTanggal').value;
+  const hari         = document.getElementById('tamuHari').value;
+  const nama         = document.getElementById('tamuNama').value.trim();
+  const instansi     = document.getElementById('tamuInstansi').value.trim();
+  const identitas    = document.getElementById('tamuIdentitas').value.trim();
+  const keperluan    = document.getElementById('tamuKeperluan').value;
+  const ket_keperluan= document.getElementById('tamuKetKeperluan').value.trim();
+  const yang_ditemui = document.getElementById('tamuYangDitemui').value.trim();
+  const jam_masuk    = document.getElementById('tamuJamMasuk').value;
+  const jam_keluar   = document.getElementById('tamuJamKeluar').value;
+  const foto         = tamuFotoBase64 || null;
+
+  if (!tanggal || !nama || !keperluan || !yang_ditemui) {
+    toast('Tanggal, nama tamu, keperluan, dan yang ditemui wajib diisi','error'); return;
   }
   const { error } = await db.from('tamu').insert({
-    tanggal, nama, instansi, keperluan, yang_ditemui, jam_masuk, jam_keluar
+    tanggal, hari, nama, instansi, identitas, keperluan, ket_keperluan, yang_ditemui, jam_masuk, jam_keluar, foto
   });
   if (error) { piketHandleError(error,'tamu'); return; }
-  ['tamuNama','tamuInstansi','tamuKeperluan','tamuYangDitemui','tamuJamMasuk','tamuJamKeluar'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = '';
-  });
   toast('Data tamu berhasil disimpan ✓','success');
+  tamuReset();
   tamuLoad();
+}
+
+function tamuReset() {
+  ['tamuNama','tamuInstansi','tamuIdentitas','tamuKeperluan','tamuKetKeperluan','tamuYangDitemui','tamuJamMasuk','tamuJamKeluar'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  const img = document.getElementById('tamuFotoPreview');
+  const ph  = document.getElementById('tamuFotoPlaceholder');
+  if (img) { img.src=''; img.style.display='none'; }
+  if (ph) ph.style.display='';
+  tamuFotoBase64 = null;
+}
+
+async function tamuDownloadPdf() {
+  const { data } = await db.from('tamu').select('*').order('tanggal',{ascending:false});
+  if (!data || !data.length) { toast('Tidak ada data','error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  addKopToPdf(doc);
+  doc.setFontSize(13); doc.setFont(undefined,'bold');
+  doc.text('BUKU TAMU SEKOLAH', 105, 45, {align:'center'});
+  const head = [['No','Tanggal','Nama Tamu','Instansi','Keperluan','Yang Ditemui','Jam Masuk','Jam Keluar']];
+  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.nama||'-', r.instansi||'-', r.keperluan||'-', r.yang_ditemui||'-', r.jam_masuk||'-', r.jam_keluar||'-']);
+  doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:7.5}, headStyles:{fillColor:[124,58,237]} });
+  doc.save('Buku_Tamu_Sekolah.pdf');
+}
+
+// ══ DATA GURU PIKET ════════════════════════════════════════
+
+async function guruPiketLoad() {
+  if (!db) return;
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','guru_piket').maybeSingle();
+    GURU_PIKET_LIST = (data?.value ? (typeof data.value==='string'?JSON.parse(data.value):data.value) : []);
+  } catch(e) { GURU_PIKET_LIST = []; }
+  guruPiketRender();
+  piketPopulateGuruDropdowns();
+}
+
+function guruPiketRender() {
+  const tbody = document.getElementById('guruPiketTbody');
+  if (!tbody) return;
+  if (!GURU_PIKET_LIST.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="piket-empty">Belum ada data guru</td></tr>'; return;
+  }
+  tbody.innerHTML = GURU_PIKET_LIST.map((g,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${g.nama||'-'}</strong></td>
+      <td><small>${g.nip||'-'}</small></td>
+      <td>${g.mapel||'-'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="guruPiketDelete(${i})">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function guruPiketSave() {
+  if (!db) { toast('Koneksi database belum siap','error'); return; }
+  const { error } = await db.from('app_settings').upsert(
+    { key:'guru_piket', value: JSON.stringify(GURU_PIKET_LIST) },
+    { onConflict:'key' }
+  );
+  if (error) { toast('Gagal menyimpan: '+error.message,'error'); return; }
+  piketPopulateGuruDropdowns();
+  toast('Data guru berhasil disimpan ✓','success');
+}
+
+async function guruSaveManual() {
+  const nama  = document.getElementById('guruNamaInput').value.trim();
+  const nip   = document.getElementById('guruNipInput').value.trim();
+  const mapel = document.getElementById('guruMapelInput').value.trim();
+  if (!nama) { toast('Nama guru wajib diisi','error'); return; }
+  if (GURU_PIKET_LIST.find(g => g.nama===nama)) { toast('Guru sudah ada dalam daftar','error'); return; }
+  GURU_PIKET_LIST.push({ nama, nip, mapel });
+  guruPiketRender();
+  await guruPiketSave();
+  document.getElementById('guruNamaInput').value = '';
+  document.getElementById('guruNipInput').value = '';
+  document.getElementById('guruMapelInput').value = '';
+}
+
+async function guruPiketDelete(idx) {
+  if (!confirm('Hapus guru ini?')) return;
+  GURU_PIKET_LIST.splice(idx, 1);
+  guruPiketRender();
+  await guruPiketSave();
+}
+
+async function guruDeleteAll() {
+  if (!confirm('Hapus SEMUA data guru piket? Tindakan ini tidak dapat dibatalkan.')) return;
+  GURU_PIKET_LIST = [];
+  guruPiketRender();
+  await guruPiketSave();
+  piketPopulateGuruDropdowns();
+  toast('Semua data guru dihapus','success');
+}
+
+function guruDownloadTemplate() {
+  if (!window.XLSX) { toast('Library XLSX belum siap','error'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Nama', 'NIP', 'Mapel'],
+    ['Contoh: Budi Santoso', '198001012005011001', 'Matematika'],
+    ['Contoh: Siti Rahayu', '197505152000122002', 'Bahasa Indonesia'],
+  ]);
+  ws['!cols'] = [{wch:30},{wch:25},{wch:25}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template Guru');
+  XLSX.writeFile(wb, 'Template_Guru_Piket.xlsx');
+}
+
+async function guruImportExcel(input) {
+  const file = input.files[0]; if (!file) return;
+  const statusEl = document.getElementById('guruImportStatus');
+  if (statusEl) statusEl.textContent = '⏳ Memproses...';
+
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type:'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1 });
+
+      let added = 0, skipped = 0;
+      // Skip header row (row 0)
+      for (let i = 1; i < rows.length; i++) {
+        const [nama, nip, mapel] = rows[i];
+        if (!nama || !String(nama).trim()) continue;
+        const namaStr = String(nama).trim();
+        if (GURU_PIKET_LIST.find(g => g.nama===namaStr)) { skipped++; continue; }
+        GURU_PIKET_LIST.push({
+          nama: namaStr,
+          nip: nip ? String(nip).trim() : '',
+          mapel: mapel ? String(mapel).trim() : ''
+        });
+        added++;
+      }
+
+      guruPiketRender();
+      await guruPiketSave();
+      if (statusEl) statusEl.textContent = `✅ ${added} guru ditambahkan${skipped?' ('+skipped+' dilewati karena duplikat)':''}`;
+      input.value = '';
+    } catch(err) {
+      if (statusEl) statusEl.textContent = '❌ Gagal membaca file: ' + err.message;
+    }
+  };
+  reader.readAsBinaryString(file);
 }
 
 // ── Generic delete ────────────────────────────────────────
@@ -5701,22 +6111,61 @@ async function piketDelete(table, id, reloadFn) {
   if (!confirm('Hapus data ini?')) return;
   await db.from(table).delete().eq('id', id);
   toast('Data berhasil dihapus','success');
-  try { eval(reloadFn + '()'); } catch(e) {}
+  if (reloadFn === 's5Load') s5Load();
+  else if (reloadFn === 'invalLoad') invalLoad();
+  else if (reloadFn === 'tamuLoad') tamuLoad();
 }
 
 // ── Handle missing table error ────────────────────────────
 function piketHandleError(error, table) {
   if (error.code === '42P01' || (error.message && error.message.includes('does not exist'))) {
     const sqls = {
-      'piket_s5':    'CREATE TABLE IF NOT EXISTS piket_s5 (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru TEXT, kelas_id BIGINT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_s5 ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_s5 FOR ALL USING (true) WITH CHECK (true);',
-      'piket_inval': 'CREATE TABLE IF NOT EXISTS piket_inval (id BIGSERIAL PRIMARY KEY, tanggal DATE, guru_tidak_hadir TEXT, guru_pengganti TEXT, kelas_id BIGINT, mapel_id BIGINT, jam TEXT, catatan TEXT, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE piket_inval ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON piket_inval FOR ALL USING (true) WITH CHECK (true);',
-      'tamu':        'CREATE TABLE IF NOT EXISTS tamu (id BIGSERIAL PRIMARY KEY, tanggal DATE, nama TEXT, instansi TEXT, keperluan TEXT, yang_ditemui TEXT, jam_masuk TIME, jam_keluar TIME, created_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE tamu ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON tamu FOR ALL USING (true) WITH CHECK (true);',
+      'piket_s5':    `CREATE TABLE IF NOT EXISTS piket_s5 (
+  id BIGSERIAL PRIMARY KEY,
+  tanggal DATE, waktu TIME, hari TEXT,
+  guru TEXT, nip TEXT,
+  tahun INT, semester TEXT, minggu TEXT,
+  keterangan TEXT, foto TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE piket_s5 ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON piket_s5 FOR ALL USING (true) WITH CHECK (true);`,
+      'piket_inval': `CREATE TABLE IF NOT EXISTS piket_inval (
+  id BIGSERIAL PRIMARY KEY,
+  tanggal DATE, hari TEXT,
+  guru_tidak_hadir TEXT, nip_th TEXT,
+  guru_pengganti TEXT, nip_p TEXT,
+  kelas_id BIGINT, mapel_id BIGINT,
+  jam TEXT, durasi INT, catatan TEXT, foto TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE piket_inval ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON piket_inval FOR ALL USING (true) WITH CHECK (true);`,
+      'tamu': `CREATE TABLE IF NOT EXISTS tamu (
+  id BIGSERIAL PRIMARY KEY,
+  tanggal DATE, hari TEXT, nama TEXT,
+  instansi TEXT, identitas TEXT,
+  keperluan TEXT, ket_keperluan TEXT,
+  yang_ditemui TEXT, jam_masuk TIME, jam_keluar TIME, foto TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE tamu ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all" ON tamu FOR ALL USING (true) WITH CHECK (true);`,
     };
-    alert('Tabel "' + table + '" belum ada.\n\nJalankan SQL ini di Supabase → SQL Editor:\n\n' + (sqls[table]||''));
+    const sqlText = sqls[table] || '';
+    // Use copy-able toast
+    navigator.clipboard?.writeText(sqlText).catch(()=>{});
+    alert('Tabel "'+table+'" belum ada.\n\nSQL sudah dicopy ke clipboard.\nBuka Supabase → SQL Editor → Paste → Run');
   } else {
     toast('Error: ' + (error.message||'Gagal menyimpan'), 'error');
   }
 }
+
+// Piket auto-load is now integrated in original showPage
+
+// piketInitDate & piketPopulateDropdowns defined above
+
+// All piket functions defined above in new implementation
 
 // Piket auto-load is now integrated in original showPage
 
@@ -6260,6 +6709,11 @@ async function mpLoadSavedIcons() {
         <div class="gp-sub-lbl">Terima Tamu</div>
         <div class="gp-sub-desc">Pencatatan tamu yang berkunjung</div>
       </div>
+      <div class="gp-sub-card" onclick="goPage('guruPiketDaftar')">
+        <div class="gp-sub-ico ic-green">👨‍🏫</div>
+        <div class="gp-sub-lbl">Data Guru</div>
+        <div class="gp-sub-desc">Kelola daftar guru &amp; NIP piket</div>
+      </div>
     </div>
   </div>
 </div>
@@ -6277,20 +6731,87 @@ async function mpLoadSavedIcons() {
   </div>
   <div class="piket-body">
     <div class="piket-form">
-      <div class="piket-form-title">📝 Input Piket S5</div>
-      <input class="piket-input" id="s5Tanggal" type="date">
-      <input class="piket-input" id="s5Guru" placeholder="Nama Guru Piket">
-      <select class="piket-input" id="s5Kelas">
-        <option value="">— Pilih Kelas —</option>
-      </select>
-      <input class="piket-input" id="s5Catatan" placeholder="Catatan (opsional)">
-      <button class="piket-btn-save" onclick="s5Save()">💾 Simpan Piket S5</button>
+      <div class="piket-form-title">📝 Form Piket S5</div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">TANGGAL <span class="req">*</span></label>
+          <input class="piket-input" id="s5Tanggal" type="date">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">WAKTU <span class="req">*</span></label>
+          <input class="piket-input" id="s5Waktu" type="time" readonly>
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">HARI</label>
+        <input class="piket-input" id="s5Hari" readonly placeholder="Otomatis dari tanggal">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Nama Guru <span class="req">*</span></label>
+        <select class="piket-input" id="s5GuruSelect" onchange="s5AutoNip()">
+          <option value="">— Pilih Guru —</option>
+        </select>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">NIP</label>
+        <input class="piket-input" id="s5Nip" readonly placeholder="Otomatis dari nama guru">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">TAHUN <span class="req">*</span></label>
+        <input class="piket-input" id="s5Tahun" type="number" placeholder="Tahun">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">SEMESTER <span class="req">*</span></label>
+        <div class="piket-btn-group">
+          <button class="piket-seg-btn active" id="s5SemGanjil" onclick="s5SetSem('Ganjil')">Ganjil</button>
+          <button class="piket-seg-btn" id="s5SemGenap" onclick="s5SetSem('Genap')">Genap</button>
+        </div>
+        <input type="hidden" id="s5Semester" value="Ganjil">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Minggu <span class="req">*</span></label>
+        <div id="s5MingguBtns" class="piket-minggu-wrap"></div>
+        <input type="hidden" id="s5Minggu" value="">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Keterangan <span class="req">*</span></label>
+        <select class="piket-input" id="s5Keterangan">
+          <option value="">— Pilih Keterangan —</option>
+          <option value="Menyambut Kedatangan Siswa di Gerbang Sekolah">Menyambut Kedatangan Siswa di Gerbang Sekolah</option>
+          <option value="Mengantar Kepulangan Siswa di Gerbang Sekolah">Mengantar Kepulangan Siswa di Gerbang Sekolah</option>
+        </select>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Photo <span class="req">*</span></label>
+        <div class="piket-photo-box" onclick="document.getElementById('s5FotoInput').click()">
+          <img id="s5FotoPreview" src="" style="display:none;max-width:100%;max-height:200px;border-radius:8px">
+          <span id="s5FotoPlaceholder">📷 Tap untuk ambil/pilih foto</span>
+          <input type="file" id="s5FotoInput" accept="image/*" capture="environment" style="display:none" onchange="s5PreviewFoto(this)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="piket-btn-cancel" onclick="s5Reset()">cancel</button>
+        <button class="piket-btn-save" onclick="s5Save()">save</button>
+      </div>
     </div>
-    <div class="mh-sec-title">Riwayat Piket S5</div>
+
+    <div class="mh-sec-title" style="margin-top:24px">Riwayat Piket S5
+      <button class="btn btn-outline" style="font-size:11px;float:right;margin-top:-4px" onclick="s5DownloadPdf()">⬇️ Download PDF</button>
+    </div>
     <div class="piket-table-wrap">
       <table class="piket-table">
-        <thead><tr><th>Tanggal</th><th>Guru</th><th>Kelas</th><th>Catatan</th><th>Aksi</th></tr></thead>
-        <tbody id="s5Tbody"><tr><td colspan="5" class="piket-empty">Memuat data...</td></tr></tbody>
+        <thead><tr><th>Tanggal</th><th>Waktu</th><th>Guru / NIP</th><th>Keterangan</th><th>Minggu</th><th>Aksi</th></tr></thead>
+        <tbody id="s5Tbody"><tr><td colspan="6" class="piket-empty">Memuat data...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -6309,25 +6830,96 @@ async function mpLoadSavedIcons() {
   </div>
   <div class="piket-body">
     <div class="piket-form">
-      <div class="piket-form-title">📝 Input Piket Inval</div>
-      <input class="piket-input" id="invalTanggal" type="date">
-      <input class="piket-input" id="invalGuruTidakHadir" placeholder="Nama Guru yang Tidak Hadir">
-      <input class="piket-input" id="invalGuruPengganti" placeholder="Nama Guru Pengganti">
-      <select class="piket-input" id="invalKelas">
-        <option value="">— Pilih Kelas —</option>
-      </select>
-      <select class="piket-input" id="invalMapel">
-        <option value="">— Pilih Mata Pelajaran —</option>
-      </select>
-      <input class="piket-input" id="invalJam" placeholder="Jam ke- (contoh: 1-2)">
-      <input class="piket-input" id="invalCatatan" placeholder="Catatan tugas yang diberikan">
-      <button class="piket-btn-save" onclick="invalSave()">💾 Simpan Piket Inval</button>
+      <div class="piket-form-title">📝 Form Piket Inval</div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">TANGGAL <span class="req">*</span></label>
+          <input class="piket-input" id="invalTanggal" type="date">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">HARI</label>
+          <input class="piket-input" id="invalHari" readonly placeholder="Otomatis">
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Guru yang Tidak Hadir <span class="req">*</span></label>
+        <select class="piket-input" id="invalGuruTidakHadir" onchange="invalAutoNip('TH')">
+          <option value="">— Pilih Guru —</option>
+        </select>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">NIP Guru Tidak Hadir</label>
+        <input class="piket-input" id="invalNipTH" readonly placeholder="Otomatis">
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Guru Pengganti <span class="req">*</span></label>
+        <select class="piket-input" id="invalGuruPengganti" onchange="invalAutoNip('P')">
+          <option value="">— Pilih Guru —</option>
+        </select>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">NIP Guru Pengganti</label>
+        <input class="piket-input" id="invalNipP" readonly placeholder="Otomatis">
+      </div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">Kelas</label>
+          <select class="piket-input" id="invalKelas">
+            <option value="">— Pilih Kelas —</option>
+          </select>
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">Mata Pelajaran</label>
+          <select class="piket-input" id="invalMapel">
+            <option value="">— Pilih Mapel —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">Jam Ke- <span class="req">*</span></label>
+          <input class="piket-input" id="invalJam" placeholder="Contoh: 1-2">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">Durasi (Menit)</label>
+          <input class="piket-input" id="invalDurasi" type="number" placeholder="45">
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Tugas / Catatan yang Diberikan <span class="req">*</span></label>
+        <textarea class="piket-input" id="invalCatatan" rows="3" placeholder="Deskripsikan tugas atau materi yang diberikan kepada siswa..."></textarea>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Tanda Tangan / Bukti (Foto)</label>
+        <div class="piket-photo-box" onclick="document.getElementById('invalFotoInput').click()">
+          <img id="invalFotoPreview" src="" style="display:none;max-width:100%;max-height:180px;border-radius:8px">
+          <span id="invalFotoPlaceholder">📷 Tap untuk ambil/pilih foto</span>
+          <input type="file" id="invalFotoInput" accept="image/*" capture="environment" style="display:none" onchange="invalPreviewFoto(this)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="piket-btn-cancel" onclick="invalReset()">cancel</button>
+        <button class="piket-btn-save" onclick="invalSave()">save</button>
+      </div>
     </div>
-    <div class="mh-sec-title">Riwayat Piket Inval</div>
+
+    <div class="mh-sec-title" style="margin-top:24px">Riwayat Piket Inval
+      <button class="btn btn-outline" style="font-size:11px;float:right;margin-top:-4px" onclick="invalDownloadPdf()">⬇️ Download PDF</button>
+    </div>
     <div class="piket-table-wrap">
       <table class="piket-table">
-        <thead><tr><th>Tanggal</th><th>Tidak Hadir</th><th>Pengganti</th><th>Kelas/Mapel</th><th>Aksi</th></tr></thead>
-        <tbody id="invalTbody"><tr><td colspan="5" class="piket-empty">Memuat data...</td></tr></tbody>
+        <thead><tr><th>Tanggal</th><th>Tidak Hadir</th><th>Pengganti</th><th>Kelas/Mapel</th><th>Jam</th><th>Aksi</th></tr></thead>
+        <tbody id="invalTbody"><tr><td colspan="6" class="piket-empty">Memuat data...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -6346,21 +6938,151 @@ async function mpLoadSavedIcons() {
   </div>
   <div class="piket-body">
     <div class="piket-form">
-      <div class="piket-form-title">📝 Catat Tamu</div>
-      <input class="piket-input" id="tamuTanggal" type="date">
-      <input class="piket-input" id="tamuNama" placeholder="Nama Tamu">
-      <input class="piket-input" id="tamuInstansi" placeholder="Asal Instansi / Wali Murid">
-      <input class="piket-input" id="tamuKeperluan" placeholder="Keperluan">
-      <input class="piket-input" id="tamuYangDitemui" placeholder="Yang Ditemui">
-      <input class="piket-input" id="tamuJamMasuk" type="time" placeholder="Jam Masuk">
-      <input class="piket-input" id="tamuJamKeluar" type="time" placeholder="Jam Keluar">
-      <button class="piket-btn-save" onclick="tamuSave()">💾 Simpan Data Tamu</button>
+      <div class="piket-form-title">📝 Form Terima Tamu</div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">TANGGAL <span class="req">*</span></label>
+          <input class="piket-input" id="tamuTanggal" type="date">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">HARI</label>
+          <input class="piket-input" id="tamuHari" readonly placeholder="Otomatis">
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Nama Tamu <span class="req">*</span></label>
+        <input class="piket-input" id="tamuNama" placeholder="Nama lengkap tamu">
+      </div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">Asal Instansi / Wali Murid</label>
+          <input class="piket-input" id="tamuInstansi" placeholder="Nama instansi / sekolah">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">No. HP / Identitas</label>
+          <input class="piket-input" id="tamuIdentitas" placeholder="No. KTP / HP">
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Keperluan <span class="req">*</span></label>
+        <select class="piket-input" id="tamuKeperluan">
+          <option value="">— Pilih Keperluan —</option>
+          <option value="Menemui Guru">Menemui Guru</option>
+          <option value="Menemui Siswa">Menemui Siswa</option>
+          <option value="Urusan Administrasi">Urusan Administrasi</option>
+          <option value="Rapat / Pertemuan">Rapat / Pertemuan</option>
+          <option value="Survei / Kunjungan Dinas">Survei / Kunjungan Dinas</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Keterangan Keperluan</label>
+        <textarea class="piket-input" id="tamuKetKeperluan" rows="2" placeholder="Detail keperluan (opsional)"></textarea>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Yang Ditemui <span class="req">*</span></label>
+        <input class="piket-input" id="tamuYangDitemui" placeholder="Nama guru / staf yang ditemui">
+      </div>
+
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">Jam Masuk</label>
+          <input class="piket-input" id="tamuJamMasuk" type="time">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">Jam Keluar</label>
+          <input class="piket-input" id="tamuJamKeluar" type="time">
+        </div>
+      </div>
+
+      <div class="piket-field">
+        <label class="piket-label">Foto Tamu (Opsional)</label>
+        <div class="piket-photo-box" onclick="document.getElementById('tamuFotoInput').click()">
+          <img id="tamuFotoPreview" src="" style="display:none;max-width:100%;max-height:180px;border-radius:8px">
+          <span id="tamuFotoPlaceholder">📷 Tap untuk ambil/pilih foto</span>
+          <input type="file" id="tamuFotoInput" accept="image/*" capture="environment" style="display:none" onchange="tamuPreviewFoto(this)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="piket-btn-cancel" onclick="tamuReset()">cancel</button>
+        <button class="piket-btn-save" onclick="tamuSave()">save</button>
+      </div>
     </div>
-    <div class="mh-sec-title">Riwayat Tamu</div>
+
+    <div class="mh-sec-title" style="margin-top:24px">Buku Tamu
+      <button class="btn btn-outline" style="font-size:11px;float:right;margin-top:-4px" onclick="tamuDownloadPdf()">⬇️ Download PDF</button>
+    </div>
     <div class="piket-table-wrap">
       <table class="piket-table">
-        <thead><tr><th>Tanggal</th><th>Nama Tamu</th><th>Keperluan</th><th>Yang Ditemui</th><th>Jam</th><th>Aksi</th></tr></thead>
-        <tbody id="tamuTbody"><tr><td colspan="6" class="piket-empty">Memuat data...</td></tr></tbody>
+        <thead><tr><th>Tanggal</th><th>Nama Tamu</th><th>Instansi</th><th>Keperluan</th><th>Yang Ditemui</th><th>Jam</th><th>Aksi</th></tr></thead>
+        <tbody id="tamuTbody"><tr><td colspan="7" class="piket-empty">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DATA GURU PIKET ===== -->
+<div id="page-guruPiketDaftar" class="page">
+  <div class="piket-header">
+    <div class="piket-header-row">
+      <button class="piket-back" onclick="goPage('guruPiket')">←</button>
+      <div>
+        <div class="piket-title">👨‍🏫 Data Guru</div>
+        <div class="piket-sub">Kelola daftar guru piket</div>
+      </div>
+    </div>
+  </div>
+  <div class="piket-body">
+
+    <!-- Import Excel -->
+    <div class="piket-form" style="margin-bottom:16px">
+      <div class="piket-form-title">📥 Import dari Excel</div>
+      <p style="font-size:12px;color:var(--text-light);margin:0 0 12px">Format Excel: kolom <strong>Nama</strong>, <strong>NIP</strong>, <strong>Mapel</strong></p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <label class="piket-btn-save" style="cursor:pointer;margin:0;padding:10px 18px;font-size:13px">
+          📂 Pilih File Excel
+          <input type="file" id="guruExcelInput" accept=".xlsx,.xls" style="display:none" onchange="guruImportExcel(this)">
+        </label>
+        <button class="btn btn-outline" style="font-size:12px" onclick="guruDownloadTemplate()">⬇️ Download Template</button>
+      </div>
+      <div id="guruImportStatus" style="margin-top:10px;font-size:12px;color:var(--primary)"></div>
+    </div>
+
+    <!-- Add manual -->
+    <div class="piket-form" style="margin-bottom:16px">
+      <div class="piket-form-title">✏️ Tambah Guru Manual</div>
+      <div class="piket-row-2">
+        <div class="piket-field">
+          <label class="piket-label">Nama Guru <span class="req">*</span></label>
+          <input class="piket-input" id="guruNamaInput" placeholder="Nama lengkap guru">
+        </div>
+        <div class="piket-field">
+          <label class="piket-label">NIP</label>
+          <input class="piket-input" id="guruNipInput" placeholder="NIP guru">
+        </div>
+      </div>
+      <div class="piket-field">
+        <label class="piket-label">Mata Pelajaran</label>
+        <input class="piket-input" id="guruMapelInput" placeholder="Mata pelajaran yang diampu">
+      </div>
+      <button class="piket-btn-save" onclick="guruSaveManual()" style="margin-top:8px">+ Tambah Guru</button>
+    </div>
+
+    <!-- List -->
+    <div class="mh-sec-title">Daftar Guru Piket
+      <button class="btn btn-outline" style="font-size:11px;float:right;margin-top:-4px;color:#dc2626;border-color:#dc2626" onclick="guruDeleteAll()">🗑️ Hapus Semua</button>
+    </div>
+    <div class="piket-table-wrap">
+      <table class="piket-table">
+        <thead><tr><th>No</th><th>Nama Guru</th><th>NIP</th><th>Mata Pelajaran</th><th>Aksi</th></tr></thead>
+        <tbody id="guruPiketTbody"><tr><td colspan="5" class="piket-empty">Belum ada data guru</td></tr></tbody>
       </table>
     </div>
   </div>
