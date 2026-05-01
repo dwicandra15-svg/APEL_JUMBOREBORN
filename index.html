@@ -1374,6 +1374,23 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 <!-- WATERMARK visible label in footer -->
 <div id="toast"></div>
 
+<!-- LIGHTBOX FOTO PIKET -->
+<div id="fotoLightbox" onclick="fotoTutup()" style="
+  display:none; position:fixed; inset:0; z-index:99999;
+  background:rgba(0,0,0,0.88); align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; padding:16px; box-sizing:border-box;">
+  <button onclick="fotoTutup()" style="
+    position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.15);
+    border:none; color:#fff; font-size:24px; width:40px; height:40px;
+    border-radius:50%; cursor:pointer; line-height:1;">✕</button>
+  <img id="fotoLightboxImg" src="" style="
+    max-width:100%; max-height:85vh; object-fit:contain;
+    border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+  <p style="color:rgba(255,255,255,0.6); font-size:12px; text-align:center; margin:0">
+    Tap di luar gambar untuk menutup
+  </p>
+</div>
+
 <!-- ===================== LOGIN PAGE ===================== -->
 <div id="loginPage">
   <div class="login-card">
@@ -4046,8 +4063,10 @@ function getKopData() {
 }
 
 function addKopToPdf(doc, kop) {
+  const pgW = doc.internal.pageSize.getWidth();
+  const pgH = doc.internal.pageSize.getHeight();
   doc.setFillColor(26,86,219);
-  doc.rect(0, 0, 210, 32, 'F');
+  doc.rect(0, 0, pgW, 32, 'F');
   if (kop.logo) {
     try { doc.addImage(kop.logo, 'PNG', 8, 4, 22, 22); } catch(e) {}
   }
@@ -4056,11 +4075,11 @@ function addKopToPdf(doc, kop) {
   doc.setFontSize(8); doc.setFont('helvetica','normal');
   doc.text(kop.subtitle || kop.address || '', 34, 18);
   doc.text(`NPSN: ${kop.npsn} | Telp: ${kop.phone}`, 34, 23);
-  doc.setDrawColor(255,255,255); doc.setLineWidth(0.3); doc.line(0, 30, 210, 30);
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.3); doc.line(0, 30, pgW, 30);
   doc.setTextColor(30,30,30);
   // watermark
   doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 105, 292, {align:'center'});
+  doc.text('Created & Developed by D.D Candra', pgW/2, pgH-3, {align:'center'});
   doc.setTextColor(30,30,30);
 }
 
@@ -5741,6 +5760,21 @@ function piketPopulateGuruDropdowns() {
 }
 
 // ── Foto preview helpers ──────────────────────────────────
+// ══ LIGHTBOX FOTO ═════════════════════════════════════════
+function fotoLihat(src) {
+  const lb  = document.getElementById('fotoLightbox');
+  const img = document.getElementById('fotoLightboxImg');
+  if (!lb || !img) return;
+  img.src = src;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function fotoTutup() {
+  const lb = document.getElementById('fotoLightbox');
+  if (lb) lb.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 // ══ COMPRESS FOTO ═════════════════════════════════════════
 // Kompres gambar ke max 800px & kualitas 65% sebelum simpan
 function compressImage(file, maxPx, quality, callback) {
@@ -5816,7 +5850,12 @@ async function s5Load() {
       <td style="font-size:11px">${r.keterangan||'-'}</td>
       <td><small>${r.minggu||'-'}</small></td>
       <td>
-        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
+        ${r.foto
+          ? `<img src="${r.foto}" onclick="fotoLihat(this.src)"
+               style="width:48px;height:48px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:2px solid #e2e8f0;" title="Klik untuk lihat penuh">`
+          : `<span style="color:#94a3b8;font-size:11px">Tidak ada foto</span>`}
+      </td>
+      <td>
         <button class="btn btn-sm btn-danger" onclick="piketDelete('piket_s5',${r.id},'s5Load')">🗑️</button>
       </td>
     </tr>`).join('');
@@ -5875,16 +5914,66 @@ function s5Reset() {
 async function s5DownloadPdf() {
   const { data } = await db.from('piket_s5').select('*').order('tanggal',{ascending:false});
   if (!data || !data.length) { toast('Tidak ada data','error'); return; }
+  toast('⏳ Menyiapkan PDF dengan foto...', 'success');
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const kop = getKopData();
   addKopToPdf(doc, kop);
+
   doc.setFontSize(13); doc.setFont(undefined,'bold');
-  doc.text('LAPORAN PIKET S5', 105, 45, {align:'center'});
-  doc.setFontSize(9); doc.setFont(undefined,'normal');
-  const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu','Foto']];
-  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-', r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-', r.foto?'✓':'-']);
-  doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:8}, headStyles:{fillColor:[124,58,237]} });
+  doc.text('LAPORAN PIKET S5', 148, 45, {align:'center'});
+
+  // Tabel ringkasan (tanpa foto)
+  const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu']];
+  const rows = data.map((r,i) => [
+    i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-',
+    r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-'
+  ]);
+  doc.autoTable({
+    head, body: rows, startY: 50,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [124,58,237] },
+    columnStyles: { 6: { cellWidth: 60 } }
+  });
+
+  // Halaman bukti foto — satu halaman per record yang punya foto
+  const dataWithFoto = data.filter(r => r.foto);
+  if (dataWithFoto.length > 0) {
+    for (const r of dataWithFoto) {
+      doc.addPage();
+      addKopToPdf(doc, kop);
+      const pgW = doc.internal.pageSize.getWidth();
+
+      doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+      doc.text('BUKTI FOTO PIKET S5', pgW/2, 42, {align:'center'});
+
+      doc.setFontSize(9); doc.setFont(undefined,'normal');
+      doc.text(`Guru       : ${r.guru||'-'} (${r.nip||'-'})`, 14, 52);
+      doc.text(`Tanggal : ${r.tanggal||'-'}, ${r.hari||'-'}     Waktu : ${r.waktu||'-'}`, 14, 58);
+      doc.text(`Keterangan : ${r.keterangan||'-'}     Minggu : ${r.minggu||'-'}`, 14, 64);
+
+      // Garis pembatas
+      doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+      doc.line(14, 67, pgW-14, 67);
+
+      // Embed foto — deteksi format dari data URI
+      try {
+        const fotoSrc = r.foto;
+        let fmt = 'JPEG';
+        if (fotoSrc.startsWith('data:image/png'))       fmt = 'PNG';
+        else if (fotoSrc.startsWith('data:image/webp')) fmt = 'WEBP';
+        else if (fotoSrc.startsWith('data:image/gif'))  fmt = 'GIF';
+
+        const maxW = pgW - 28;
+        const maxH = 120;
+        doc.addImage(fotoSrc, fmt, 14, 70, maxW, maxH, undefined, 'FAST');
+      } catch(e) {
+        doc.setFontSize(9); doc.setTextColor(180,0,0);
+        doc.text('(Foto tidak dapat dimuat: ' + (e.message||'format tidak didukung') + ')', pgW/2, 90, {align:'center'});
+        doc.setTextColor(30,30,30);
+      }
+    }
+  }
   savePdf(doc, 'Laporan_Piket_S5.pdf');
 }
 
@@ -5906,7 +5995,10 @@ async function invalLoad() {
       <td>${getKelasName(r.kelas_id)||'-'} / ${getMapelName(r.mapel_id)||'-'}</td>
       <td>Jam ${r.jam||'-'}${r.durasi?' · '+r.durasi+' mnt':''}</td>
       <td>
-        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
+        ${r.foto
+          ? `<img src="${r.foto}" onclick="fotoLihat(this.src)" style="width:44px;height:44px;object-fit:cover;border-radius:7px;cursor:zoom-in;border:2px solid #e2e8f0;">`
+          : `<span style="color:#94a3b8;font-size:11px">—</span>`}
+      </td>
         <button class="btn btn-sm btn-danger" onclick="piketDelete('piket_inval',${r.id},'invalLoad')">🗑️</button>
       </td>
     </tr>`).join('');
@@ -5987,9 +6079,11 @@ async function tamuLoad() {
       <td>${r.yang_ditemui||'-'}</td>
       <td><small>${r.jam_masuk||'-'} – ${r.jam_keluar||'-'}</small></td>
       <td>
-        ${r.foto ? `<a href="${r.foto}" target="_blank">📷</a> ` : ''}
-        <button class="btn btn-sm btn-danger" onclick="piketDelete('tamu',${r.id},'tamuLoad')">🗑️</button>
+        ${r.foto
+          ? `<img src="${r.foto}" onclick="fotoLihat(this.src)" style="width:44px;height:44px;object-fit:cover;border-radius:7px;cursor:zoom-in;border:2px solid #e2e8f0;">`
+          : `<span style="color:#94a3b8;font-size:11px">—</span>`}
       </td>
+      <td><button class="btn btn-sm btn-danger" onclick="piketDelete('tamu',${r.id},'tamuLoad')">🗑️</button></td>
     </tr>`).join('');
 }
 
@@ -6869,8 +6963,8 @@ async function mpLoadSavedIcons() {
     </div>
     <div class="piket-table-wrap">
       <table class="piket-table">
-        <thead><tr><th>Tanggal</th><th>Waktu</th><th>Guru / NIP</th><th>Keterangan</th><th>Minggu</th><th>Aksi</th></tr></thead>
-        <tbody id="s5Tbody"><tr><td colspan="6" class="piket-empty">Memuat data...</td></tr></tbody>
+        <thead><tr><th>Tanggal</th><th>Waktu</th><th>Guru / NIP</th><th>Keterangan</th><th>Minggu</th><th>Foto</th><th>Aksi</th></tr></thead>
+        <tbody id="s5Tbody"><tr><td colspan="7" class="piket-empty">Memuat data...</td></tr></tbody>
       </table>
     </div>
   </div>
