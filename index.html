@@ -4073,7 +4073,7 @@ function cetakSiswa() {
   doc.text('DATA SISWA', 105, 40, {align:'center'});
   const rows = APP_DATA.siswa.map(s=>[s.nis||'-',s.nama,getKelasName(s.kelas_id),s.jenis_kelamin||'-',s.bimbingan==1?'Ya':'Tidak']);
   doc.autoTable({ startY:44, head:[['NISN','Nama','Kelas','JK','Bimbingan']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
-  doc.save('data-siswa.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'data-siswa.pdf');
 }
 
 function cetakAbsensi() {
@@ -4095,7 +4095,7 @@ function cetakAbsensi() {
   doc.autoTable({ startY:30, head:[['Nama','Kelas','Jml Hari','H','S','I','A','% Hadir']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
   doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
-  doc.save('rekap-absensi.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'rekap-absensi.pdf');
 }
 
 function cetakNilai() {
@@ -4116,7 +4116,7 @@ function cetakNilai() {
   doc.autoTable({ startY:30, head:[['Nama','PR','HRN','TGS','PRJ','PFT','SUM','STS','SAS','AVG']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
   doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
-  doc.save('rekap-nilai.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'rekap-nilai.pdf');
 }
 
 function cetakJadwal() {
@@ -4128,7 +4128,7 @@ function cetakJadwal() {
   doc.text('JADWAL MENGAJAR', 105, 40, {align:'center'});
   const rows = APP_DATA.jadwal.map(j=>[j.hari,`${j.jam_mulai}-${j.jam_selesai}`,getKelasName(j.kelas_id),getMapelName(j.mapel_id),j.ruang||'-']);
   doc.autoTable({ startY:44, head:[['Hari','Jam','Kelas','Mata Pelajaran','Ruang']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
-  doc.save('jadwal-mengajar.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'jadwal-mengajar.pdf');
 }
 
 async function cetakJurnal() {
@@ -4141,7 +4141,7 @@ async function cetakJurnal() {
   const { data } = await db.from('jurnal').select('*').order('tanggal',{ascending:false});
   const rows = (data||[]).map(j=>[j.tanggal, getKelasName(j.kelas_id), getMapelName(j.mapel_id), j.materi||'', (j.deskripsi||'').substring(0,40)+'...']);
   doc.autoTable({ startY:44, head:[['Tanggal','Kelas','Mapel','Materi','Deskripsi']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[26,86,219]} });
-  doc.save('jurnal-mengajar.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'jurnal-mengajar.pdf');
 }
 
 async function cetakBimbingan() {
@@ -4154,7 +4154,7 @@ async function cetakBimbingan() {
   const { data } = await db.from('bimbingan').select('*').order('tanggal',{ascending:false});
   const rows = (data||[]).map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,30), (b.solusi||'').substring(0,30)]);
   doc.autoTable({ startY:44, head:[['Tanggal','Siswa','Kategori','Masalah','Solusi']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[26,86,219]} });
-  doc.save('catatan-bimbingan.pdf'); toast('PDF berhasil diunduh!', 'success');
+  savePdf(doc,'catatan-bimbingan.pdf');
 }
 
 
@@ -4495,7 +4495,7 @@ function cetakUmmi(lvl) {
   });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
   doc.text('Created & Developed by D.D Candra', 148, 200, {align:'center'});
-  doc.save(`rekap-ummi-${lvl}.pdf`);
+  savePdf(doc,`rekap-ummi-${lvl}.pdf`);
   toast('PDF UMMI berhasil diunduh!', 'success');
 }
 
@@ -4969,11 +4969,41 @@ document.querySelectorAll('.modal-overlay').forEach(overlay=>{
   overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('active'); });
 });
 
+let _toastTimer = null;
 function toast(msg, type='success') {
   const t = document.getElementById('toast');
+  if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
   t.textContent = msg; t.className = type;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3000);
+  _toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    _toastTimer = null;
+  }, 3500);
+}
+
+// Download PDF kompatibel HP (Android/iOS)
+function savePdf(doc, filename) {
+  try {
+    // Coba metode blob (kompatibel Android Chrome & iOS)
+    const blob = doc.output('blob');
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.target   = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+  } catch(e) {
+    // Fallback ke data URI (iOS Safari)
+    try {
+      const dataUri = doc.output('datauristring');
+      const w = window.open();
+      if (w) { w.document.write(`<iframe src="${dataUri}" width="100%" height="100%" style="border:none"></iframe>`); }
+      else   { doc.save(filename); } // fallback terakhir
+    } catch(e2) { doc.save(filename); }
+  }
+  toast('PDF berhasil diunduh! ✓', 'success');
 }
 
 // =========================================================
@@ -5711,41 +5741,61 @@ function piketPopulateGuruDropdowns() {
 }
 
 // ── Foto preview helpers ──────────────────────────────────
-function s5PreviewFoto(input) {
-  const file = input.files[0]; if (!file) return;
+// ══ COMPRESS FOTO ═════════════════════════════════════════
+// Kompres gambar ke max 800px & kualitas 65% sebelum simpan
+function compressImage(file, maxPx, quality, callback) {
   const reader = new FileReader();
   reader.onload = e => {
-    s5FotoBase64 = e.target.result;
-    const img = document.getElementById('s5FotoPreview');
-    const ph  = document.getElementById('s5FotoPlaceholder');
-    if (img) { img.src = e.target.result; img.style.display = 'block'; }
-    if (ph)  ph.style.display = 'none';
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else        { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function s5PreviewFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const ph  = document.getElementById('s5FotoPlaceholder');
+  if (ph) ph.textContent = '⏳ Mengompres foto...';
+  compressImage(file, 800, 0.65, compressed => {
+    s5FotoBase64 = compressed;
+    const img = document.getElementById('s5FotoPreview');
+    if (img) { img.src = compressed; img.style.display = 'block'; }
+    if (ph)  { ph.textContent = '📷 Tap untuk ambil/pilih foto'; ph.style.display = 'none'; }
+  });
 }
 function invalPreviewFoto(input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    invalFotoBase64 = e.target.result;
+  const ph = document.getElementById('invalFotoPlaceholder');
+  if (ph) ph.textContent = '⏳ Mengompres foto...';
+  compressImage(file, 800, 0.65, compressed => {
+    invalFotoBase64 = compressed;
     const img = document.getElementById('invalFotoPreview');
-    const ph  = document.getElementById('invalFotoPlaceholder');
-    if (img) { img.src = e.target.result; img.style.display = 'block'; }
-    if (ph) ph.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+    if (img) { img.src = compressed; img.style.display = 'block'; }
+    if (ph)  { ph.textContent = '📷 Tap untuk ambil/pilih foto'; ph.style.display = 'none'; }
+  });
 }
 function tamuPreviewFoto(input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    tamuFotoBase64 = e.target.result;
+  const ph = document.getElementById('tamuFotoPlaceholder');
+  if (ph) ph.textContent = '⏳ Mengompres foto...';
+  compressImage(file, 800, 0.65, compressed => {
+    tamuFotoBase64 = compressed;
     const img = document.getElementById('tamuFotoPreview');
-    const ph  = document.getElementById('tamuFotoPlaceholder');
-    if (img) { img.src = e.target.result; img.style.display = 'block'; }
-    if (ph) ph.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+    if (img) { img.src = compressed; img.style.display = 'block'; }
+    if (ph)  { ph.textContent = '📷 Tap untuk ambil/pilih foto'; ph.style.display = 'none'; }
+  });
 }
 
 // ══ PIKET S5 ══════════════════════════════════════════════
@@ -5835,7 +5885,7 @@ async function s5DownloadPdf() {
   const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu','Foto']];
   const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-', r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-', r.foto?'✓':'-']);
   doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:8}, headStyles:{fillColor:[124,58,237]} });
-  doc.save('Laporan_Piket_S5.pdf');
+  savePdf(doc, 'Laporan_Piket_S5.pdf');
 }
 
 // ══ PIKET INVAL ════════════════════════════════════════════
@@ -5915,7 +5965,7 @@ async function invalDownloadPdf() {
   const head = [['No','Tanggal','Guru Tdk Hadir','NIP','Pengganti','NIP','Kelas/Mapel','Jam']];
   const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.guru_tidak_hadir||'-', r.nip_th||'-', r.guru_pengganti||'-', r.nip_p||'-', (getKelasName(r.kelas_id)||'-')+'/'+(getMapelName(r.mapel_id)||'-'), r.jam||'-']);
   doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:7}, headStyles:{fillColor:[124,58,237]} });
-  doc.save('Laporan_Piket_Inval.pdf');
+  savePdf(doc, 'Laporan_Piket_Inval.pdf');
 }
 
 // ══ TERIMA TAMU ════════════════════════════════════════════
@@ -5992,7 +6042,7 @@ async function tamuDownloadPdf() {
   const head = [['No','Tanggal','Nama Tamu','Instansi','Keperluan','Yang Ditemui','Jam Masuk','Jam Keluar']];
   const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.nama||'-', r.instansi||'-', r.keperluan||'-', r.yang_ditemui||'-', r.jam_masuk||'-', r.jam_keluar||'-']);
   doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:7.5}, headStyles:{fillColor:[124,58,237]} });
-  doc.save('Buku_Tamu_Sekolah.pdf');
+  savePdf(doc, 'Buku_Tamu_Sekolah.pdf');
 }
 
 // ══ DATA GURU PIKET ════════════════════════════════════════
