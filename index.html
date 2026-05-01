@@ -5788,10 +5788,16 @@ async function s5Save() {
   if (!tanggal || !guru || !keterangan || !minggu) {
     toast('Tanggal, guru, keterangan, dan minggu wajib diisi','error'); return;
   }
-  const { error } = await db.from('piket_s5').insert({
-    tanggal, waktu, hari, guru, nip, tahun: parseInt(tahun)||null,
-    semester, minggu, keterangan, foto
-  });
+  // Coba simpan dengan foto, fallback tanpa foto jika kolom belum ada
+  let insertData = { tanggal, waktu, hari, guru, nip, tahun: parseInt(tahun)||null, semester, minggu, keterangan };
+  if (foto) insertData.foto = foto;
+  let { error } = await db.from('piket_s5').insert(insertData);
+  if (error && error.message && error.message.includes("foto")) {
+    // Kolom foto belum ada, simpan tanpa foto
+    delete insertData.foto;
+    const res2 = await db.from('piket_s5').insert(insertData);
+    error = res2.error;
+  }
   if (error) { piketHandleError(error,'piket_s5'); return; }
   toast('Piket S5 berhasil disimpan ✓','success');
   s5Reset();
@@ -5821,12 +5827,13 @@ async function s5DownloadPdf() {
   if (!data || !data.length) { toast('Tidak ada data','error'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  addKopToPdf(doc);
+  const kop = getKopData();
+  addKopToPdf(doc, kop);
   doc.setFontSize(13); doc.setFont(undefined,'bold');
   doc.text('LAPORAN PIKET S5', 105, 45, {align:'center'});
   doc.setFontSize(9); doc.setFont(undefined,'normal');
-  const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu']];
-  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-', r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-']);
+  const head = [['No','Tanggal','Hari','Waktu','Nama Guru','NIP','Keterangan','Minggu','Foto']];
+  const rows = data.map((r,i) => [i+1, r.tanggal||'-', r.hari||'-', r.waktu||'-', r.guru||'-', r.nip||'-', r.keterangan||'-', r.minggu||'-', r.foto?'✓':'-']);
   doc.autoTable({ head, body:rows, startY:50, styles:{fontSize:8}, headStyles:{fillColor:[124,58,237]} });
   doc.save('Laporan_Piket_S5.pdf');
 }
@@ -5876,7 +5883,7 @@ async function invalSave() {
   const { error } = await db.from('piket_inval').insert({
     tanggal, hari, guru_tidak_hadir, nip_th, guru_pengganti, nip_p,
     kelas_id: kelas_id||null, mapel_id: mapel_id||null,
-    jam, durasi: parseInt(durasi)||null, catatan, foto
+    jam, durasi: parseInt(durasi)||null, catatan
   });
   if (error) { piketHandleError(error,'piket_inval'); return; }
   toast('Piket Inval berhasil disimpan ✓','success');
@@ -5901,7 +5908,8 @@ async function invalDownloadPdf() {
   if (!data || !data.length) { toast('Tidak ada data','error'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  addKopToPdf(doc);
+  const kop = getKopData();
+  addKopToPdf(doc, kop);
   doc.setFontSize(13); doc.setFont(undefined,'bold');
   doc.text('LAPORAN PIKET INVAL', 105, 45, {align:'center'});
   const head = [['No','Tanggal','Guru Tdk Hadir','NIP','Pengganti','NIP','Kelas/Mapel','Jam']];
@@ -5953,7 +5961,7 @@ async function tamuSave() {
     toast('Tanggal, nama tamu, keperluan, dan yang ditemui wajib diisi','error'); return;
   }
   const { error } = await db.from('tamu').insert({
-    tanggal, hari, nama, instansi, identitas, keperluan, ket_keperluan, yang_ditemui, jam_masuk, jam_keluar, foto
+    tanggal, hari, nama, instansi, identitas, keperluan, ket_keperluan, yang_ditemui, jam_masuk, jam_keluar
   });
   if (error) { piketHandleError(error,'tamu'); return; }
   toast('Data tamu berhasil disimpan ✓','success');
@@ -5977,7 +5985,8 @@ async function tamuDownloadPdf() {
   if (!data || !data.length) { toast('Tidak ada data','error'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  addKopToPdf(doc);
+  const kop = getKopData();
+  addKopToPdf(doc, kop);
   doc.setFontSize(13); doc.setFont(undefined,'bold');
   doc.text('BUKU TAMU SEKOLAH', 105, 45, {align:'center'});
   const head = [['No','Tanggal','Nama Tamu','Instansi','Keperluan','Yang Ditemui','Jam Masuk','Jam Keluar']];
@@ -6009,7 +6018,7 @@ function guruPiketRender() {
       <td>${i+1}</td>
       <td><strong>${g.nama||'-'}</strong></td>
       <td><small>${g.nip||'-'}</small></td>
-      <td>${g.mapel||'-'}</td>
+      <td>${g.jabatan||g.mapel||'-'}</td>
       <td><button class="btn btn-sm btn-danger" onclick="guruPiketDelete(${i})">🗑️</button></td>
     </tr>`).join('');
 }
@@ -6031,7 +6040,7 @@ async function guruSaveManual() {
   const mapel = document.getElementById('guruMapelInput').value.trim();
   if (!nama) { toast('Nama guru wajib diisi','error'); return; }
   if (GURU_PIKET_LIST.find(g => g.nama===nama)) { toast('Guru sudah ada dalam daftar','error'); return; }
-  GURU_PIKET_LIST.push({ nama, nip, mapel });
+  GURU_PIKET_LIST.push({ nama, nip, jabatan: mapel });
   guruPiketRender();
   await guruPiketSave();
   document.getElementById('guruNamaInput').value = '';
@@ -6058,9 +6067,9 @@ async function guruDeleteAll() {
 function guruDownloadTemplate() {
   if (!window.XLSX) { toast('Library XLSX belum siap','error'); return; }
   const ws = XLSX.utils.aoa_to_sheet([
-    ['Nama', 'NIP', 'Mapel'],
-    ['Contoh: Budi Santoso', '198001012005011001', 'Matematika'],
-    ['Contoh: Siti Rahayu', '197505152000122002', 'Bahasa Indonesia'],
+    ['Nama', 'NIP', 'Jabatan'],
+    ['Contoh: Budi Santoso', '198001012005011001', 'Guru Matematika'],
+    ['Contoh: Siti Rahayu', '197505152000122002', 'Wali Kelas IX-A'],
   ]);
   ws['!cols'] = [{wch:30},{wch:25},{wch:25}];
   const wb = XLSX.utils.book_new();
@@ -6090,7 +6099,7 @@ async function guruImportExcel(input) {
         GURU_PIKET_LIST.push({
           nama: namaStr,
           nip: nip ? String(nip).trim() : '',
-          mapel: mapel ? String(mapel).trim() : ''
+          jabatan: mapel ? String(mapel).trim() : ''
         });
         added++;
       }
@@ -7069,8 +7078,8 @@ async function mpLoadSavedIcons() {
         </div>
       </div>
       <div class="piket-field">
-        <label class="piket-label">Mata Pelajaran</label>
-        <input class="piket-input" id="guruMapelInput" placeholder="Mata pelajaran yang diampu">
+        <label class="piket-label">Jabatan</label>
+        <input class="piket-input" id="guruMapelInput" placeholder="Jabatan guru (contoh: Guru Matematika, Wali Kelas)">
       </div>
       <button class="piket-btn-save" onclick="guruSaveManual()" style="margin-top:8px">+ Tambah Guru</button>
     </div>
@@ -7081,7 +7090,7 @@ async function mpLoadSavedIcons() {
     </div>
     <div class="piket-table-wrap">
       <table class="piket-table">
-        <thead><tr><th>No</th><th>Nama Guru</th><th>NIP</th><th>Mata Pelajaran</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama Guru</th><th>NIP</th><th>Jabatan</th><th>Aksi</th></tr></thead>
         <tbody id="guruPiketTbody"><tr><td colspan="5" class="piket-empty">Belum ada data guru</td></tr></tbody>
       </table>
     </div>
