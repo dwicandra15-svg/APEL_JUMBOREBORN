@@ -1367,6 +1367,158 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .gp-sub-lbl  { font-size:13px; font-weight:700; color:var(--text); line-height:1.3; }
 .gp-sub-desc { font-size:11px; color:var(--text-light); margin-top:2px; }
 
+/* ═══════════════════════════════════
+   DISKUSI / CHAT
+═══════════════════════════════════ */
+#page-diskusi { background:var(--bg); min-height:100vh; display:none; }
+#page-diskusi.active { display:block; }
+
+.chat-page-wrap { display:flex; flex-direction:column; height:calc(100vh - 56px); }
+.chat-kelas-bar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:10px 16px; display:flex; gap:8px; overflow-x:auto;
+  flex-shrink:0; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+.chat-kelas-bar::-webkit-scrollbar { display:none; }
+.chat-kelas-chip {
+  padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600;
+  cursor:pointer; white-space:nowrap; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text-light); transition:all .18s;
+  flex-shrink:0;
+}
+.chat-kelas-chip:hover { border-color:var(--primary); color:var(--primary); }
+.chat-kelas-chip.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.chat-body { display:flex; flex-direction:column; flex:1; min-height:0; }
+.chat-toolbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:10px 16px; display:flex; align-items:center;
+  justify-content:space-between; flex-shrink:0; gap:10px;
+}
+.chat-toolbar-left { display:flex; align-items:center; gap:10px; }
+.chat-toolbar-title { font-size:14px; font-weight:700; }
+.chat-toolbar-sub { font-size:11px; color:var(--text-light); margin-top:1px; }
+.chat-announce-btn {
+  padding:7px 14px; border-radius:9px; border:none;
+  background:var(--primary); color:#fff; font-size:12px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; gap:5px;
+  transition:all .18s; font-family:inherit; white-space:nowrap;
+}
+.chat-announce-btn:hover { background:var(--primary-dark,#1342b0); transform:translateY(-1px); }
+.chat-clear-btn {
+  padding:7px 12px; border-radius:9px; border:1.5px solid #fecaca;
+  background:#fff; color:#dc2626; font-size:12px; font-weight:600;
+  cursor:pointer; font-family:inherit; transition:all .18s;
+}
+.chat-clear-btn:hover { background:#fef2f2; }
+
+.chat-msgs-wrap {
+  flex:1; overflow-y:auto; padding:16px;
+  background:var(--bg); -webkit-overflow-scrolling:touch; min-height:0;
+}
+.chat-day-sep {
+  text-align:center; font-size:11px; color:var(--text-light);
+  font-weight:600; margin:12px 0; position:relative;
+}
+.chat-day-sep::before, .chat-day-sep::after {
+  content:''; position:absolute; top:50%; width:35%; height:1px; background:var(--border);
+}
+.chat-day-sep::before { left:0; } .chat-day-sep::after { right:0; }
+
+/* Bubble */
+.cbw { display:flex; align-items:flex-end; gap:8px; margin-bottom:10px; }
+.cbw.me { flex-direction:row-reverse; }
+.cbav {
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  background:var(--primary-light); color:var(--primary);
+  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.cbav.guru { background:#fef9c3; color:#854d0e; }
+.cbinner { display:flex; flex-direction:column; max-width:min(70%,380px); }
+.cbw.me .cbinner { align-items:flex-end; }
+.cbw.other .cbinner { align-items:flex-start; }
+.cbname { font-size:10px; font-weight:700; color:var(--text-light); margin-bottom:3px; padding:0 4px; }
+.cbname .cb-role { font-weight:400; color:var(--text-light); }
+.cbb {
+  padding:10px 14px; border-radius:16px; font-size:13px;
+  line-height:1.55; word-break:break-word; overflow-wrap:break-word;
+}
+.cbw.me .cbb { background:var(--primary); color:#fff; border-radius:16px 4px 16px 16px; }
+.cbw.other .cbb { background:var(--surface); border:1px solid var(--border); border-radius:4px 16px 16px 16px; }
+.cbw.other.is-guru .cbb { background:#fffbeb; border-color:#fde68a; }
+.cbw.other.is-pengumuman .cbb { background:#f0fdf4; border-color:#86efac; border-left:4px solid #16a34a; }
+.cbtime { font-size:10px; opacity:.6; margin-top:4px; padding:0 4px; }
+
+/* Pengumuman badge */
+.pengumuman-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  background:#dcfce7; color:#16a34a; border-radius:99px;
+  padding:2px 8px; font-size:10px; font-weight:700; margin-bottom:6px;
+}
+
+/* Attach file in bubble */
+.cb-attach {
+  background:rgba(255,255,255,.18); border-radius:10px;
+  padding:8px 10px; margin-top:6px; display:flex;
+  align-items:center; gap:8px; cursor:pointer; min-width:150px;
+}
+.cbw.other .cb-attach { background:var(--bg); border:1px solid var(--border); }
+.cb-attach-icon { font-size:22px; flex-shrink:0; }
+.cb-attach-name { font-size:11px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+.cb-attach-size { font-size:10px; opacity:.7; }
+
+/* Input area */
+.chat-input-area {
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:10px 14px; flex-shrink:0;
+}
+.chat-file-preview { display:none; padding:6px 0; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.chat-file-preview.show { display:flex; }
+.chat-file-chip {
+  display:flex; align-items:center; gap:6px; padding:4px 10px;
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; font-size:11px; font-weight:600;
+}
+.chat-file-rm { background:none; border:none; color:#dc2626; cursor:pointer; font-size:13px; padding:0; }
+.chat-input-row { display:flex; align-items:flex-end; gap:8px; }
+.chat-attach-lbl {
+  width:38px; height:38px; border-radius:10px; background:var(--bg);
+  border:1.5px solid var(--border); display:flex; align-items:center;
+  justify-content:center; font-size:20px; cursor:pointer; flex-shrink:0;
+  transition:all .18s;
+}
+.chat-attach-lbl:hover { background:var(--primary-light); border-color:var(--primary); }
+.chat-tinput {
+  flex:1; padding:9px 14px; border-radius:22px;
+  border:1.5px solid var(--border); font-size:13px;
+  outline:none; resize:none; max-height:100px; line-height:1.5;
+  transition:border-color .2s; background:var(--bg); font-family:inherit;
+}
+.chat-tinput:focus { border-color:var(--primary); background:#fff; }
+.chat-send { width:38px; height:38px; border-radius:50%; background:var(--primary); border:none; color:#fff; font-size:18px; cursor:pointer; flex-shrink:0; transition:all .18s; }
+.chat-send:hover { background:var(--primary-dark,#1342b0); transform:scale(1.05); }
+
+/* Modal Pengumuman */
+.pengumuman-modal {
+  position:fixed; inset:0; z-index:600; background:rgba(0,0,0,.5);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.pengumuman-modal.open { display:flex; }
+.pengumuman-box {
+  background:#fff; border-radius:20px; padding:24px;
+  width:100%; max-width:480px; box-shadow:0 16px 48px rgba(0,0,0,.2);
+  animation:fadeUp .25s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.pengumuman-box h3 { font-size:16px; font-weight:800; margin-bottom:16px; }
+.pengumuman-textarea {
+  width:100%; padding:12px 14px; border-radius:12px;
+  border:1.5px solid var(--border); font-size:13px; font-family:inherit;
+  resize:none; outline:none; height:120px; transition:border-color .2s;
+}
+.pengumuman-textarea:focus { border-color:var(--primary); }
+.pengumuman-actions { display:flex; gap:10px; margin-top:14px; justify-content:flex-end; }
+
 </style>
 </head>
 <body>
@@ -1519,6 +1671,10 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     <div class="nav-item" onclick="absensiKuBuka()">
       <span class="icon">🔗</span> AbsensiKu
     </div>
+    <div class="nav-item" onclick="showPage('diskusi')" id="nav-diskusi">
+      <span class="icon">💬</span> Diskusi Kelas
+      <span id="navChatBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto">0</span>
+    </div>
     <div class="nav-item" onclick="showPage('bimbingan')">
       <span class="icon">💙</span> Bimbingan Wali
     </div>
@@ -1607,6 +1763,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
           <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
           <div class="mh-card" data-id="jurnal" onclick="absensiKuBuka()" style="cursor:pointer"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">🔗</div><div class="mh-card-lbl" id="lbl-jurnal">AbsensiKu</div></div>
+          <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div></div>
         </div>
 
         
@@ -4931,7 +5088,8 @@ function showPage(name) {
     'absensi':'Input Absensi','absenRekap':'Rekap Absensi','nilai':'Input Nilai',
     'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
     'integrasi':'Integrasi ASN','integrasiKinerja':'Integrasi Kinerja','pengaturan':'Pengaturan',
-    'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9'
+    'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9',
+    'diskusi':'Diskusi Kelas'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
   // Mark nav active by matching inner text
@@ -4957,7 +5115,7 @@ function showPage(name) {
       if (prev) fjm.value = prev;
     }
   }
-  if (name==='absenRekap') {
+  if (name==='diskusi') { initChatPage(); }
     // Populate mapel filter
     const rmp = document.getElementById('rekapAbsenMapel');
     if (rmp) {
@@ -6787,6 +6945,197 @@ async function mpLoadSavedIcons() {
     });
   } catch(e) {}
 }
+
+// ═══════════════════════════════════════════════════════
+//  DISKUSI KELAS — Sinkron dengan APBO Siswa
+//  Supported by D.D Candra © 2025
+// ═══════════════════════════════════════════════════════
+
+let chatKelasAktif = null;
+let chatChannel    = null;
+let chatFilesGuru  = [];
+let sentChatKeys   = new Set();
+let unreadChatMap  = {};
+
+function initChatPage() {
+  const bar = document.getElementById('chatKelasBar');
+  if (!APP_DATA || !APP_DATA.kelas || !APP_DATA.kelas.length) {
+    bar.innerHTML += '<span style="font-size:12px;color:var(--text-light)">Belum ada data kelas</span>';
+    return;
+  }
+  const chips = APP_DATA.kelas.map(k =>
+    `<div class="chat-kelas-chip ${chatKelasAktif==k.id?'active':''}" onclick="selectChatKelas(${k.id},'${k.nama}')">${k.nama}</div>`
+  ).join('');
+  bar.innerHTML = `<div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div>${chips}`;
+  if (!chatKelasAktif && APP_DATA.kelas.length) {
+    const k = APP_DATA.kelas[0];
+    selectChatKelas(k.id, k.nama);
+  } else if (chatKelasAktif) {
+    const k = APP_DATA.kelas.find(x=>x.id==chatKelasAktif);
+    if (k) loadChatMessages(chatKelasAktif);
+  }
+}
+
+async function selectChatKelas(kelasId, kelasNama) {
+  chatKelasAktif = kelasId;
+  document.querySelectorAll('.chat-kelas-chip').forEach(c => {
+    c.classList.toggle('active', c.textContent.trim() === kelasNama);
+  });
+  document.getElementById('chatToolbarTitle').textContent  = `💬 Diskusi — ${kelasNama}`;
+  document.getElementById('chatToolbarSub').textContent    = 'Komunikasi guru & orang tua/siswa';
+  document.getElementById('pengumumanKelasLabel').textContent = kelasNama;
+  unreadChatMap[kelasId] = 0; updateNavChatBadge();
+  if (chatChannel) { db.removeChannel(chatChannel); chatChannel = null; }
+  await loadChatMessages(kelasId);
+  subscribeChatKelas(kelasId);
+}
+
+async function loadChatMessages(kelasId) {
+  const el = document.getElementById('chatMsgsWrap');
+  el.innerHTML = '<div style="text-align:center;padding:30px"><div style="width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px"></div><p style="font-size:12px;color:var(--text-light)">Memuat pesan...</p></div>';
+  const { data, error } = await db.from('chat_apbo').select('*').eq('kelas_id',kelasId).order('created_at',{ascending:true}).limit(200);
+  if (error) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:32px;margin-bottom:10px">⚠️</div><p style="font-size:13px">Tabel chat belum dibuat. Jalankan SQL setup.</p></div>`;
+    return;
+  }
+  renderChatMessages(data||[]);
+}
+
+function renderChatMessages(msgs) {
+  const el = document.getElementById('chatMsgsWrap');
+  if (!msgs.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">💬</div><p style="font-size:13px;font-weight:600">Belum ada pesan di kelas ini</p></div>'; return; }
+  let html='', lastDay='';
+  msgs.forEach(m => {
+    const d = m.created_at?new Date(m.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'';
+    if (d!==lastDay) { html+=`<div class="chat-day-sep">${d}</div>`; lastDay=d; }
+    html += buildBubbleGuru(m);
+  });
+  el.innerHTML = html;
+  scrollChatBottom();
+}
+
+function buildBubbleGuru(m) {
+  const isMe     = m.peran==='Guru' && (m.nama||'') === (CONFIG.guru||'');
+  const isGuru   = m.peran==='Guru';
+  const isPengum = m.tipe==='pengumuman';
+  const waktu    = m.created_at?new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'';
+  const inisial  = (m.nama||'?')[0].toUpperCase();
+  const extraCls = isPengum?'is-pengumuman':isGuru?'is-guru':'';
+  let fileHtml='';
+  if (m.file_url) {
+    const ext=(m.file_name||'').split('.').pop().toLowerCase();
+    const ico=['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':['pdf'].includes(ext)?'📄':['doc','docx'].includes(ext)?'📝':['xls','xlsx'].includes(ext)?'📊':'📎';
+    fileHtml=`<div class="cb-attach" onclick="downloadChatFile('${m.file_url}','${m.file_name||'file'}')"><div class="cb-attach-icon">${ico}</div><div style="flex:1;min-width:0"><div class="cb-attach-name">${m.file_name||'File'}</div><div class="cb-attach-size">${m.file_size||''}</div></div><span style="font-size:16px">⬇️</span></div>`;
+  }
+  const pengumHtml = isPengum?`<div class="pengumuman-badge">📢 Pengumuman</div>`:'';
+  return `<div class="cbw ${isMe?'me':'other'} ${extraCls}">
+    ${!isMe?`<div class="cbav ${isGuru?'guru':''}">${inisial}</div>`:''}
+    <div class="cbinner">
+      ${!isMe?`<div class="cbname">${m.nama||'—'} <span class="cb-role">${m.peran||''}</span></div>`:''}
+      <div class="cbb">${pengumHtml}${escChatHtml(m.pesan||'')}${fileHtml}</div>
+      <div class="cbtime">${waktu}</div>
+    </div>
+  </div>`;
+}
+
+function escChatHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+function appendChatBubble(m) {
+  const el=document.getElementById('chatMsgsWrap');
+  const isEmpty=el.innerHTML.includes('Belum ada')||el.innerHTML.includes('Pilih kelas');
+  if(isEmpty) el.innerHTML='';
+  const div=document.createElement('div');
+  div.innerHTML=buildBubbleGuru(m);
+  if(div.firstElementChild) el.appendChild(div.firstElementChild);
+  scrollChatBottom();
+}
+function scrollChatBottom(){const el=document.getElementById('chatMsgsWrap');if(el)el.scrollTop=el.scrollHeight;}
+
+function subscribeChatKelas(kelasId) {
+  chatChannel = db.channel('chat_guru_kelas_'+kelasId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_apbo',filter:`kelas_id=eq.${kelasId}`}, payload=>{
+      const m=payload.new;
+      const key=String(m.nama||'')+'_'+String(m.pesan||'').substring(0,20)+'_'+String(m.kelas_id);
+      if(sentChatKeys.has(key)){sentChatKeys.delete(key);return;}
+      appendChatBubble(m);
+      const onPage=document.getElementById('page-diskusi').classList.contains('active');
+      if(!onPage){unreadChatMap[kelasId]=(unreadChatMap[kelasId]||0)+1;updateNavChatBadge();}
+    }).subscribe();
+}
+function updateNavChatBadge(){
+  const total=Object.values(unreadChatMap).reduce((a,b)=>a+b,0);
+  const badge=document.getElementById('navChatBadge');
+  if(!badge)return;
+  if(total>0){badge.style.display='';badge.textContent=total>9?'9+':total;}
+  else badge.style.display='none';
+}
+
+async function sendChatGuru() {
+  if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
+  const input=document.getElementById('chatMsgInput');
+  const pesan=input.value.trim();
+  if(!pesan&&!chatFilesGuru.length)return;
+  input.value='';input.style.height='';
+  let fileUrl=null,fileName=null,fileSize=null;
+  if(chatFilesGuru.length>0){
+    const f=chatFilesGuru[0];fileName=f.name;fileSize=formatChatFileSize(f.size);
+    fileUrl=await chatFileToBase64(f);chatFilesGuru=[];updateChatFilePreview();
+  }
+  const now=new Date().toISOString();
+  const row={kelas_id:chatKelasAktif,siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pesan',
+    pesan:pesan||(fileName?'[File: '+fileName+']':''),file_url:fileUrl,file_name:fileName,file_size:fileSize,created_at:now};
+  const key=String(row.nama)+'_'+String(row.pesan).substring(0,20)+'_'+String(chatKelasAktif);
+  sentChatKeys.add(key);
+  appendChatBubble(row);
+  const {error}=await db.from('chat_apbo').insert({...row,created_at:undefined});
+  if(error){toast('Gagal kirim: '+error.message,'error');sentChatKeys.delete(key);}
+}
+
+function openPengumuman(){
+  if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
+  document.getElementById('pengumumanText').value='';
+  document.getElementById('pengumumanModal').classList.add('open');
+}
+function closePengumuman(){document.getElementById('pengumumanModal').classList.remove('open');}
+
+async function kirimPengumuman(){
+  const isi=document.getElementById('pengumumanText').value.trim();
+  if(!isi){toast('Isi pengumuman tidak boleh kosong','error');return;}
+  const kls=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
+  const row={kelas_id:chatKelasAktif,siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',pesan:isi};
+  const {error}=await db.from('chat_apbo').insert(row);
+  if(error){toast('Gagal: '+error.message,'error');return;}
+  const notif={id:Date.now(),judul:`📢 Pengumuman ${kls?kls.nama:''}`,isi,waktu:new Date().toLocaleString('id-ID'),dibaca:false};
+  const {data:ex}=await db.from('app_settings').select('value').eq('key','pengumuman').maybeSingle();
+  let list=[];try{list=ex?JSON.parse(ex.value):[];}catch(e){}
+  list.unshift(notif);
+  await db.from('app_settings').upsert({key:'pengumuman',value:JSON.stringify(list.slice(0,50))});
+  closePengumuman();toast('Pengumuman terkirim! 📢','success');
+}
+
+async function clearChatKelas(){
+  if(!chatKelasAktif)return;
+  const kls=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
+  if(!confirm(`Hapus SEMUA riwayat chat kelas ${kls?kls.nama:''}?\nTidak bisa dibatalkan!`))return;
+  const {error}=await db.from('chat_apbo').delete().eq('kelas_id',chatKelasAktif);
+  if(error){toast('Gagal hapus: '+error.message,'error');return;}
+  toast('Riwayat chat dihapus 🗑️','success');
+  document.getElementById('chatMsgsWrap').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">💬</div><p style="font-size:13px;font-weight:600">Belum ada pesan di kelas ini</p></div>';
+}
+
+function onChatFileSelected(input){chatFilesGuru=Array.from(input.files);updateChatFilePreview();input.value='';}
+function updateChatFilePreview(){
+  const bar=document.getElementById('chatFilePreview');
+  if(!chatFilesGuru.length){bar.classList.remove('show');bar.innerHTML='';return;}
+  bar.classList.add('show');
+  bar.innerHTML=chatFilesGuru.map((f,i)=>`<div class="chat-file-chip">📎 ${f.name.substring(0,24)}${f.name.length>24?'...':''}<button class="chat-file-rm" onclick="removeChatFile(${i})">✕</button></div>`).join('');
+}
+function removeChatFile(i){chatFilesGuru.splice(i,1);updateChatFilePreview();}
+function downloadChatFile(url,name){if(url.startsWith('data:')){const a=document.createElement('a');a.href=url;a.download=name;a.click();}else window.open(url,'_blank');}
+function chatFileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
+function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
+function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru();}}
+function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
 </script>
 
 
@@ -7252,6 +7601,68 @@ async function mpLoadSavedIcons() {
         <thead><tr><th>No</th><th>Nama Guru</th><th>NIP</th><th>Jabatan</th><th>Aksi</th></tr></thead>
         <tbody id="guruPiketTbody"><tr><td colspan="5" class="piket-empty">Belum ada data guru</td></tr></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HALAMAN DISKUSI KELAS ═══════════════ -->
+<div id="page-diskusi" class="page">
+  <div class="chat-page-wrap">
+
+    <!-- Pilih Kelas -->
+    <div class="chat-kelas-bar" id="chatKelasBar">
+      <div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div>
+    </div>
+
+    <!-- Body chat -->
+    <div class="chat-body">
+      <div class="chat-toolbar">
+        <div class="chat-toolbar-left">
+          <div>
+            <div class="chat-toolbar-title" id="chatToolbarTitle">💬 Diskusi Kelas</div>
+            <div class="chat-toolbar-sub" id="chatToolbarSub">Pilih kelas untuk mulai diskusi</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="chat-announce-btn" onclick="openPengumuman()">📢 Pengumuman</button>
+          <button class="chat-clear-btn" onclick="clearChatKelas()">🗑️ Hapus</button>
+        </div>
+      </div>
+
+      <div class="chat-msgs-wrap" id="chatMsgsWrap">
+        <div style="text-align:center;padding:40px 20px;color:var(--text-light)">
+          <div style="font-size:36px;margin-bottom:10px">💬</div>
+          <div style="font-size:14px;font-weight:600">Pilih kelas di atas untuk memulai diskusi</div>
+        </div>
+      </div>
+
+      <!-- File preview bar -->
+      <div class="chat-file-preview" id="chatFilePreview"></div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <div class="chat-input-row">
+          <label class="chat-attach-lbl" title="Lampirkan file">
+            📎<input type="file" id="chatFileInput" style="display:none" multiple onchange="onChatFileSelected(this)">
+          </label>
+          <textarea class="chat-tinput" id="chatMsgInput" placeholder="Tulis pesan kepada siswa/orang tua..." rows="1"
+            onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>
+          <button class="chat-send" onclick="sendChatGuru()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pengumuman -->
+<div class="pengumuman-modal" id="pengumumanModal">
+  <div class="pengumuman-box">
+    <h3>📢 Kirim Pengumuman</h3>
+    <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">Pengumuman akan dikirim ke semua siswa kelas <strong id="pengumumanKelasLabel">—</strong> dan muncul sebagai notifikasi di APBO Siswa.</p>
+    <textarea class="pengumuman-textarea" id="pengumumanText" placeholder="Tulis isi pengumuman..."></textarea>
+    <div class="pengumuman-actions">
+      <button onclick="closePengumuman()" style="padding:9px 18px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Batal</button>
+      <button onclick="kirimPengumuman()" style="padding:9px 18px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Kirim Pengumuman</button>
     </div>
   </div>
 </div>
