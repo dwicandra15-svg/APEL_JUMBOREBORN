@@ -2331,16 +2331,52 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
 
-      <div class="card" style="margin-top:20px">
       <div class="card" style="margin-top:20px;display:none">
-        
         <textarea class="form-control" rows="12" readonly id="sqlSetup" style="font-family:monospace;font-size:11px;background:#f8fafc"></textarea>
         <button class="btn btn-outline" style="margin-top:10px" onclick="copySql()">📋 Salin SQL</button>
       </div>
-    </div>
 
-  </div><!-- /content -->
-</div><!-- /main -->
+      <!-- ===== PENGATURAN DISKUSI KELAS ===== -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-header">
+          <span class="card-title">💬 Pengaturan Diskusi Kelas</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">
+          Fitur diskusi memerlukan tabel <strong>chat_apbo</strong> di Supabase dengan kebijakan <em>public access</em> agar dapat dibaca oleh APBO Siswa.
+        </p>
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📋 SQL Setup Tabel Chat (jalankan sekali di Supabase SQL Editor)</div>
+          <textarea id="sqlChatSetup" readonly class="form-control" rows="18" style="font-family:monospace;font-size:11px;background:#1e293b;color:#e2e8f0;border-radius:8px;resize:none"></textarea>
+          <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" style="font-size:12px" onclick="copyChatSql()">📋 Salin SQL</button>
+            <button class="btn btn-outline" style="font-size:12px" onclick="testChatTable()">🔍 Test Koneksi Chat</button>
+          </div>
+          <div id="chatTestResult" style="margin-top:10px;font-size:12px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--primary-light);border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px">📌 Cara Kerja Sinkronisasi</div>
+            <ul style="font-size:11px;color:var(--text);padding-left:16px;line-height:1.8">
+              <li>Guru kirim pesan → simpan ke <code>chat_apbo</code></li>
+              <li>APBO Siswa baca berdasarkan <code>kelas_nama</code></li>
+              <li>Realtime via Supabase Realtime</li>
+              <li>RLS: semua user bisa baca/tulis (public)</li>
+            </ul>
+          </div>
+          <div style="background:#f0fdf4;border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:4px">✅ Syarat Sinkronisasi</div>
+            <ul style="font-size:11px;color:var(--text);padding-left:16px;line-height:1.8">
+              <li>URL &amp; Key Supabase sama di kedua aplikasi</li>
+              <li>Nama kelas di APBO Siswa <strong>sama persis</strong></li>
+              <li>Tabel <code>chat_apbo</code> sudah dibuat</li>
+              <li>Realtime diaktifkan di Supabase</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
 
 <!-- ===================== MODALS ===================== -->
 
@@ -5050,11 +5086,79 @@ BEGIN
 END $$;`;
   const el = document.getElementById('sqlSetup');
   if (el) el.value = sql;
+
+  // SQL untuk tabel chat_apbo
+  const sqlChat = `-- ============================================================
+-- CHAT APBO - Tabel Diskusi Kelas
+-- Sinkron antara APEL JUMBO (Guru) dan APBO Siswa
+-- Jalankan SEKALI di Supabase SQL Editor
+-- Dibuat oleh D.D Candra
+-- ============================================================
+
+-- 1. Buat tabel chat_apbo
+CREATE TABLE IF NOT EXISTS chat_apbo (
+  id          BIGSERIAL PRIMARY KEY,
+  kelas_id    BIGINT NOT NULL,
+  kelas_nama  TEXT DEFAULT '',
+  siswa_id    BIGINT DEFAULT 0,
+  nisn        TEXT DEFAULT '',
+  nama        TEXT NOT NULL DEFAULT 'Anonim',
+  peran       TEXT DEFAULT 'Siswa',
+  tipe        TEXT DEFAULT 'pesan',
+  pesan       TEXT DEFAULT '',
+  file_url    TEXT,
+  file_name   TEXT,
+  file_size   TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Aktifkan RLS
+ALTER TABLE chat_apbo ENABLE ROW LEVEL SECURITY;
+
+-- 3. Hapus policy lama jika ada
+DROP POLICY IF EXISTS "allow_all_chat" ON chat_apbo;
+DROP POLICY IF EXISTS "own_data" ON chat_apbo;
+
+-- 4. Buat policy PUBLIC agar APBO Siswa (anon) bisa akses
+CREATE POLICY "allow_all_chat" ON chat_apbo
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- 5. Aktifkan Realtime untuk tabel ini
+ALTER PUBLICATION supabase_realtime ADD TABLE chat_apbo;
+
+-- 6. Index performa
+CREATE INDEX IF NOT EXISTS idx_chat_apbo_kelas ON chat_apbo(kelas_id);
+CREATE INDEX IF NOT EXISTS idx_chat_apbo_created ON chat_apbo(created_at);
+
+-- SELESAI! Tabel chat siap sinkron APEL JUMBO <-> APBO Siswa.`;
+  const elChat = document.getElementById('sqlChatSetup');
+  if (elChat) elChat.value = sqlChat;
 }
 
 function copySql() {
   const sql = document.getElementById('sqlSetup').value;
   navigator.clipboard.writeText(sql).then(()=>toast('SQL disalin!', 'success'));
+}
+
+function copyChatSql() {
+  const sql = document.getElementById('sqlChatSetup').value;
+  navigator.clipboard.writeText(sql).then(()=>toast('SQL Chat disalin! Paste di Supabase SQL Editor.', 'success'));
+}
+
+async function testChatTable() {
+  const el = document.getElementById('chatTestResult');
+  el.innerHTML = '<span style="color:var(--primary)">Menguji koneksi...</span>';
+  if (!db) { el.innerHTML = '<span style="color:var(--danger)">❌ Supabase belum dikonfigurasi</span>'; return; }
+  try {
+    const { data, error } = await db.from('chat_apbo').select('id').limit(1);
+    if (error) {
+      el.innerHTML = `<span style="color:var(--danger)">❌ Error: ${error.message}<br><small>Jalankan SQL Setup di atas terlebih dahulu.</small></span>`;
+    } else {
+      el.innerHTML = `<span style="color:#16a34a">✅ Tabel chat_apbo terdeteksi! Jumlah pesan: ${data?data.length:0}. Sinkronisasi siap.</span>`;
+    }
+  } catch(e) {
+    el.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+  }
 }
 
 // ===================== HELPERS =====================
@@ -6961,20 +7065,27 @@ let unreadChatMap  = {};
 function initChatPage() {
   const bar = document.getElementById('chatKelasBar');
   if (!APP_DATA || !APP_DATA.kelas || !APP_DATA.kelas.length) {
-    bar.innerHTML += '<span style="font-size:12px;color:var(--text-light)">Belum ada data kelas</span>';
+    bar.innerHTML = '<div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div><span style="font-size:12px;color:var(--text-light)">Belum ada data kelas. Tambah kelas di Pengaturan.</span>';
     return;
   }
   const chips = APP_DATA.kelas.map(k =>
     `<div class="chat-kelas-chip ${chatKelasAktif==k.id?'active':''}" onclick="selectChatKelas(${k.id},'${k.nama}')">${k.nama}</div>`
   ).join('');
   bar.innerHTML = `<div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div>${chips}`;
-  if (!chatKelasAktif && APP_DATA.kelas.length) {
-    const k = APP_DATA.kelas[0];
-    selectChatKelas(k.id, k.nama);
-  } else if (chatKelasAktif) {
+  // Jika sudah ada kelas aktif sebelumnya, reload pesannya
+  if (chatKelasAktif) {
     const k = APP_DATA.kelas.find(x=>x.id==chatKelasAktif);
-    if (k) loadChatMessages(chatKelasAktif);
+    if (k) {
+      document.querySelectorAll('.chat-kelas-chip').forEach(c =>
+        c.classList.toggle('active', c.textContent.trim() === k.nama)
+      );
+      document.getElementById('chatToolbarTitle').textContent = `💬 Diskusi — ${k.nama}`;
+      document.getElementById('chatToolbarSub').textContent = 'Komunikasi guru & orang tua/siswa';
+      document.getElementById('pengumumanKelasLabel').textContent = k.nama;
+      loadChatMessages(chatKelasAktif);
+    }
   }
+  // Tidak auto-select kelas — biarkan guru pilih sendiri
 }
 
 async function selectChatKelas(kelasId, kelasNama) {
@@ -6994,9 +7105,14 @@ async function selectChatKelas(kelasId, kelasNama) {
 async function loadChatMessages(kelasId) {
   const el = document.getElementById('chatMsgsWrap');
   el.innerHTML = '<div style="text-align:center;padding:30px"><div style="width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px"></div><p style="font-size:12px;color:var(--text-light)">Memuat pesan...</p></div>';
-  const { data, error } = await db.from('chat_apbo').select('*').eq('kelas_id',kelasId).order('created_at',{ascending:true}).limit(200);
+  if (!db) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><p>Koneksi Supabase belum dikonfigurasi.</p></div>'; return; }
+  const { data, error } = await db.from('chat_apbo').select('*').eq('kelas_id', kelasId).order('created_at',{ascending:true}).limit(200);
   if (error) {
-    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:32px;margin-bottom:10px">⚠️</div><p style="font-size:13px">Tabel chat belum dibuat. Jalankan SQL setup.</p></div>`;
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)">
+      <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+      <p style="font-size:13px;font-weight:700;margin-bottom:6px">Tabel chat_apbo belum ada atau RLS belum dikonfigurasi</p>
+      <p style="font-size:11px">Buka Pengaturan → Diskusi Kelas → Salin SQL lalu jalankan di Supabase SQL Editor</p>
+    </div>`;
     return;
   }
   renderChatMessages(data||[]);
@@ -7082,8 +7198,9 @@ async function sendChatGuru() {
     const f=chatFilesGuru[0];fileName=f.name;fileSize=formatChatFileSize(f.size);
     fileUrl=await chatFileToBase64(f);chatFilesGuru=[];updateChatFilePreview();
   }
+  const kObjSend=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
   const now=new Date().toISOString();
-  const row={kelas_id:chatKelasAktif,siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pesan',
+  const row={kelas_id:chatKelasAktif,kelas_nama:kObjSend?kObjSend.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pesan',
     pesan:pesan||(fileName?'[File: '+fileName+']':''),file_url:fileUrl,file_name:fileName,file_size:fileSize,created_at:now};
   const key=String(row.nama)+'_'+String(row.pesan).substring(0,20)+'_'+String(chatKelasAktif);
   sentChatKeys.add(key);
@@ -7103,7 +7220,7 @@ async function kirimPengumuman(){
   const isi=document.getElementById('pengumumanText').value.trim();
   if(!isi){toast('Isi pengumuman tidak boleh kosong','error');return;}
   const kls=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
-  const row={kelas_id:chatKelasAktif,siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',pesan:isi};
+  const row={kelas_id:chatKelasAktif,kelas_nama:kls?kls.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',pesan:isi};
   const {error}=await db.from('chat_apbo').insert(row);
   if(error){toast('Gagal: '+error.message,'error');return;}
   const notif={id:Date.now(),judul:`📢 Pengumuman ${kls?kls.nama:''}`,isi,waktu:new Date().toLocaleString('id-ID'),dibaca:false};
