@@ -2,7 +2,9 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>APEL JUMBO Reborn- Aplikasi Elektronik Jurnal Mengajar Berbasis Online</title>
 <meta name="description" content="Aplikasi Elektronik Jurnal Mengajar Berbasis Online berbasis web untuk manajemen kelas, absensi, nilai, jurnal mengajar, dan pembayaran UMMI.">
 
@@ -1370,154 +1372,338 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 /* ═══════════════════════════════════
    DISKUSI / CHAT
 ═══════════════════════════════════ */
-#page-diskusi { background:var(--bg); min-height:100vh; display:none; }
-#page-diskusi.active { display:block; }
+/* ═══════════════════════════════════════════
+   DISKUSI KELAS — Mobile-First Fixed Layout
+   ═══════════════════════════════════════════ */
+#page-diskusi {
+  background: var(--bg);
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  flex-direction: column;
+}
+#page-diskusi.active { display: flex; }
 
-.chat-page-wrap { display:flex; flex-direction:column; height:calc(100vh - 56px); }
+/* Diskusi top header */
+.chat-page-header {
+  background: linear-gradient(135deg, #0f172a, #1a56db);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+.chat-back-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  color: #fff; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.chat-page-title { flex: 1; }
+.chat-page-title h2 { font-size: 16px; font-weight: 800; color: #fff; }
+.chat-page-title p  { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 2px; }
+.chat-header-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Bell button */
+.chat-bell-btn {
+  position: relative; width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; transition: all .18s; color: #fff;
+}
+.chat-bell-btn:hover { background: rgba(255,255,255,.22); }
+.chat-bell-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #ef4444; border: 2px solid #0f172a;
+  display: none; animation: bellPulse 1.5s ease-in-out infinite;
+}
+.chat-bell-dot.show { display: block; }
+@keyframes bellPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+.chat-bell-count {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 18px; height: 18px; border-radius: 99px;
+  background: #ef4444; color: #fff; font-size: 9px; font-weight: 800;
+  display: none; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid #0f172a;
+}
+.chat-bell-count.show { display: flex; }
+
+/* Kelas selector — baris pill */
 .chat-kelas-bar {
-  background:var(--surface); border-bottom:1px solid var(--border);
-  padding:10px 16px; display:flex; gap:8px; overflow-x:auto;
-  flex-shrink:0; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  align-items: center;
 }
-.chat-kelas-bar::-webkit-scrollbar { display:none; }
+.chat-kelas-bar::-webkit-scrollbar { display: none; }
+.chat-kelas-label {
+  font-size: 11px; font-weight: 700; color: var(--text-light);
+  white-space: nowrap; flex-shrink: 0; text-transform: uppercase; letter-spacing: .5px;
+}
 .chat-kelas-chip {
-  padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600;
-  cursor:pointer; white-space:nowrap; border:1.5px solid var(--border);
-  background:var(--surface); color:var(--text-light); transition:all .18s;
-  flex-shrink:0;
+  padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; border: 1.5px solid var(--border);
+  background: #f8fafc; color: var(--text-light); transition: all .18s;
+  flex-shrink: 0; position: relative;
 }
-.chat-kelas-chip:hover { border-color:var(--primary); color:var(--primary); }
-.chat-kelas-chip.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.chat-kelas-chip:hover { border-color: var(--primary); color: var(--primary); }
+.chat-kelas-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.chat-kelas-chip .kelas-unread {
+  position: absolute; top: -4px; right: -4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #ef4444; color: #fff; font-size: 8px; font-weight: 800;
+  display: none; align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
+.chat-kelas-chip .kelas-unread.show { display: flex; }
 
-.chat-body { display:flex; flex-direction:column; flex:1; min-height:0; }
+/* Toolbar sub-header */
 .chat-toolbar {
-  background:var(--surface); border-bottom:1px solid var(--border);
-  padding:10px 16px; display:flex; align-items:center;
-  justify-content:space-between; flex-shrink:0; gap:10px;
+  background: #fff; border-bottom: 1px solid var(--border);
+  padding: 8px 14px; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0; gap: 8px;
 }
-.chat-toolbar-left { display:flex; align-items:center; gap:10px; }
-.chat-toolbar-title { font-size:14px; font-weight:700; }
-.chat-toolbar-sub { font-size:11px; color:var(--text-light); margin-top:1px; }
+.chat-toolbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chat-toolbar-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-toolbar-sub { font-size: 10px; color: var(--text-light); margin-top: 1px; white-space: nowrap; }
+.chat-toolbar-right { display: flex; gap: 6px; flex-shrink: 0; }
 .chat-announce-btn {
-  padding:7px 14px; border-radius:9px; border:none;
-  background:var(--primary); color:#fff; font-size:12px; font-weight:600;
-  cursor:pointer; display:flex; align-items:center; gap:5px;
-  transition:all .18s; font-family:inherit; white-space:nowrap;
+  padding: 6px 12px; border-radius: 9px; border: none;
+  background: var(--primary); color: #fff; font-size: 11px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 4px;
+  transition: all .18s; font-family: inherit; white-space: nowrap;
 }
-.chat-announce-btn:hover { background:var(--primary-dark,#1342b0); transform:translateY(-1px); }
+.chat-announce-btn:hover { background: var(--primary-dark, #1342b0); }
 .chat-clear-btn {
-  padding:7px 12px; border-radius:9px; border:1.5px solid #fecaca;
-  background:#fff; color:#dc2626; font-size:12px; font-weight:600;
-  cursor:pointer; font-family:inherit; transition:all .18s;
+  padding: 6px 10px; border-radius: 9px; border: 1.5px solid #fecaca;
+  background: #fff; color: #dc2626; font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .18s;
 }
-.chat-clear-btn:hover { background:#fef2f2; }
+.chat-log-btn {
+  padding: 6px 10px; border-radius: 9px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--text-light); font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .18s; white-space: nowrap;
+}
+.chat-log-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
+/* Chat messages area */
+.chat-page-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .chat-msgs-wrap {
-  flex:1; overflow-y:auto; padding:16px;
-  background:var(--bg); -webkit-overflow-scrolling:touch; min-height:0;
+  flex: 1; overflow-y: auto; padding: 12px 14px;
+  background: #f0f4ff; -webkit-overflow-scrolling: touch; min-height: 0;
 }
 .chat-day-sep {
-  text-align:center; font-size:11px; color:var(--text-light);
-  font-weight:600; margin:12px 0; position:relative;
+  text-align: center; font-size: 10px; color: var(--text-light);
+  font-weight: 600; margin: 12px 0; position: relative;
 }
 .chat-day-sep::before, .chat-day-sep::after {
-  content:''; position:absolute; top:50%; width:35%; height:1px; background:var(--border);
+  content: ''; position: absolute; top: 50%; width: 30%; height: 1px; background: var(--border);
 }
-.chat-day-sep::before { left:0; } .chat-day-sep::after { right:0; }
+.chat-day-sep::before { left: 0; } .chat-day-sep::after { right: 0; }
 
 /* Bubble */
-.cbw { display:flex; align-items:flex-end; gap:8px; margin-bottom:10px; }
-.cbw.me { flex-direction:row-reverse; }
+.cbw { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 10px; }
+.cbw.me { flex-direction: row-reverse; }
 .cbav {
-  width:32px; height:32px; border-radius:50%; flex-shrink:0;
-  background:var(--primary-light); color:var(--primary);
-  font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
-.cbav.guru { background:#fef9c3; color:#854d0e; }
-.cbinner { display:flex; flex-direction:column; max-width:min(70%,380px); }
-.cbw.me .cbinner { align-items:flex-end; }
-.cbw.other .cbinner { align-items:flex-start; }
-.cbname { font-size:10px; font-weight:700; color:var(--text-light); margin-bottom:3px; padding:0 4px; }
-.cbname .cb-role { font-weight:400; color:var(--text-light); }
+.cbav.guru { background: #fef9c3; color: #854d0e; }
+.cbinner { display: flex; flex-direction: column; max-width: min(75%, 340px); }
+.cbw.me .cbinner { align-items: flex-end; }
+.cbw.other .cbinner { align-items: flex-start; }
+.cbname { font-size: 10px; font-weight: 700; color: var(--text-light); margin-bottom: 3px; padding: 0 4px; }
+.cbname .cb-role { font-weight: 400; }
 .cbb {
-  padding:10px 14px; border-radius:16px; font-size:13px;
-  line-height:1.55; word-break:break-word; overflow-wrap:break-word;
+  padding: 9px 13px; border-radius: 16px; font-size: 13px;
+  line-height: 1.55; word-break: break-word; overflow-wrap: break-word;
 }
-.cbw.me .cbb { background:var(--primary); color:#fff; border-radius:16px 4px 16px 16px; }
-.cbw.other .cbb { background:var(--surface); border:1px solid var(--border); border-radius:4px 16px 16px 16px; }
-.cbw.other.is-guru .cbb { background:#fffbeb; border-color:#fde68a; }
-.cbw.other.is-pengumuman .cbb { background:#f0fdf4; border-color:#86efac; border-left:4px solid #16a34a; }
-.cbtime { font-size:10px; opacity:.6; margin-top:4px; padding:0 4px; }
+.cbw.me .cbb { background: var(--primary); color: #fff; border-radius: 16px 4px 16px 16px; }
+.cbw.other .cbb { background: #fff; border: 1px solid var(--border); border-radius: 4px 16px 16px 16px; }
+.cbw.other.is-guru .cbb { background: #fffbeb; border-color: #fde68a; }
+.cbw.other.is-pengumuman .cbb { background: #f0fdf4; border-color: #86efac; border-left: 4px solid #16a34a; }
+.cbtime { font-size: 10px; opacity: .6; margin-top: 4px; padding: 0 4px; }
 
-/* Pengumuman badge */
 .pengumuman-badge {
-  display:inline-flex; align-items:center; gap:4px;
-  background:#dcfce7; color:#16a34a; border-radius:99px;
-  padding:2px 8px; font-size:10px; font-weight:700; margin-bottom:6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #dcfce7; color: #16a34a; border-radius: 99px;
+  padding: 2px 8px; font-size: 10px; font-weight: 700; margin-bottom: 6px;
 }
 
-/* Attach file in bubble */
 .cb-attach {
-  background:rgba(255,255,255,.18); border-radius:10px;
-  padding:8px 10px; margin-top:6px; display:flex;
-  align-items:center; gap:8px; cursor:pointer; min-width:150px;
+  background: rgba(255,255,255,.18); border-radius: 10px;
+  padding: 8px 10px; margin-top: 6px; display: flex;
+  align-items: center; gap: 8px; cursor: pointer; min-width: 140px;
 }
-.cbw.other .cb-attach { background:var(--bg); border:1px solid var(--border); }
-.cb-attach-icon { font-size:22px; flex-shrink:0; }
-.cb-attach-name { font-size:11px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
-.cb-attach-size { font-size:10px; opacity:.7; }
+.cbw.other .cb-attach { background: #f8fafc; border: 1px solid var(--border); }
+.cb-attach-icon { font-size: 20px; flex-shrink: 0; }
+.cb-attach-name { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.cb-attach-size { font-size: 10px; opacity: .7; }
 
 /* Input area */
 .chat-input-area {
-  background:var(--surface); border-top:1px solid var(--border);
-  padding:10px 14px; flex-shrink:0;
+  background: #fff; border-top: 1px solid var(--border);
+  padding: 10px 12px; flex-shrink: 0;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
-.chat-file-preview { display:none; padding:6px 0; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
-.chat-file-preview.show { display:flex; }
+.chat-file-preview { display: none; padding: 6px 0; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.chat-file-preview.show { display: flex; }
 .chat-file-chip {
-  display:flex; align-items:center; gap:6px; padding:4px 10px;
-  background:var(--bg); border:1px solid var(--border);
-  border-radius:8px; font-size:11px; font-weight:600;
+  display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; font-size: 11px; font-weight: 600;
 }
-.chat-file-rm { background:none; border:none; color:#dc2626; cursor:pointer; font-size:13px; padding:0; }
-.chat-input-row { display:flex; align-items:flex-end; gap:8px; }
+.chat-file-rm { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 13px; padding: 0; }
+.chat-input-row { display: flex; align-items: flex-end; gap: 8px; }
 .chat-attach-lbl {
-  width:38px; height:38px; border-radius:10px; background:var(--bg);
-  border:1.5px solid var(--border); display:flex; align-items:center;
-  justify-content:center; font-size:20px; cursor:pointer; flex-shrink:0;
-  transition:all .18s;
+  width: 38px; height: 38px; border-radius: 10px; background: var(--bg);
+  border: 1.5px solid var(--border); display: flex; align-items: center;
+  justify-content: center; font-size: 19px; cursor: pointer; flex-shrink: 0; transition: all .18s;
 }
-.chat-attach-lbl:hover { background:var(--primary-light); border-color:var(--primary); }
+.chat-attach-lbl:hover { background: var(--primary-light); border-color: var(--primary); }
 .chat-tinput {
-  flex:1; padding:9px 14px; border-radius:22px;
-  border:1.5px solid var(--border); font-size:13px;
-  outline:none; resize:none; max-height:100px; line-height:1.5;
-  transition:border-color .2s; background:var(--bg); font-family:inherit;
+  flex: 1; padding: 9px 14px; border-radius: 22px;
+  border: 1.5px solid var(--border); font-size: 13px;
+  outline: none; resize: none; max-height: 90px; line-height: 1.5;
+  transition: border-color .2s; background: var(--bg); font-family: inherit;
 }
-.chat-tinput:focus { border-color:var(--primary); background:#fff; }
-.chat-send { width:38px; height:38px; border-radius:50%; background:var(--primary); border:none; color:#fff; font-size:18px; cursor:pointer; flex-shrink:0; transition:all .18s; }
-.chat-send:hover { background:var(--primary-dark,#1342b0); transform:scale(1.05); }
+.chat-tinput:focus { border-color: var(--primary); background: #fff; }
+.chat-send { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); border: none; color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: all .18s; display: flex; align-items: center; justify-content: center; }
+.chat-send:hover { background: var(--primary-dark, #1342b0); transform: scale(1.05); }
+
+/* ══ BELL NOTIFICATION PANEL ══ */
+.bell-overlay {
+  position: fixed; inset: 0; z-index: 700; background: rgba(0,0,0,.4);
+  display: none; align-items: flex-start; justify-content: flex-end;
+}
+.bell-overlay.open { display: flex; }
+.bell-panel {
+  background: #fff; border-radius: 0 0 0 20px;
+  width: min(340px, 94vw); max-height: 80vh;
+  overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: -4px 4px 40px rgba(0,0,0,.2);
+  animation: bellSlide .25s ease;
+}
+@keyframes bellSlide { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+.bell-head {
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, #0f172a, #1a56db); color: #fff;
+}
+.bell-head h3 { font-size: 14px; font-weight: 700; }
+.bell-head-sub { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 2px; }
+.bell-close { background: rgba(255,255,255,.15); border: none; color: #fff; font-size: 18px; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.bell-list { flex: 1; overflow-y: auto; }
+.bell-item {
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s; display: flex; gap: 12px; align-items: flex-start;
+}
+.bell-item:hover { background: var(--bg); }
+.bell-item.unread { background: #eff6ff; border-left: 3px solid var(--primary); }
+.bell-item.unread:hover { background: #dbeafe; }
+.bell-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.bell-info { flex: 1; min-width: 0; }
+.bell-nama { font-size: 13px; font-weight: 700; color: var(--text); }
+.bell-kelas { font-size: 10px; color: var(--text-light); font-weight: 600; margin-top: 1px; }
+.bell-pesan { font-size: 12px; color: var(--text-light); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bell-time { font-size: 10px; color: var(--text-light); margin-top: 4px; }
+.bell-empty { text-align: center; padding: 36px 20px; color: var(--text-light); font-size: 13px; }
+.bell-mark-all { padding: 10px 16px; border-bottom: 1px solid var(--border); text-align: right; }
+.bell-mark-all button { background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+/* ══ LOG RIWAYAT DISKUSI PANEL ══ */
+.log-overlay {
+  position: fixed; inset: 0; z-index: 700; background: rgba(0,0,0,.4);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.log-overlay.open { display: flex; }
+.log-panel {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 600px; max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0,0,0,.2);
+  animation: logSlide .3s cubic-bezier(.23,1,.32,1);
+}
+@keyframes logSlide { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.log-head {
+  padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.log-head h3 { font-size: 15px; font-weight: 800; }
+.log-head-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.log-close { background: var(--bg); border: none; color: var(--text-light); font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.log-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+.log-tab { flex: 1; text-align: center; padding: 7px; border-radius: 9px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-light); transition: all .18s; border: 1.5px solid transparent; }
+.log-tab.active { background: var(--primary-light); color: var(--primary); border-color: #bfdbfe; }
+.log-list { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.log-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px; border-radius: 12px; margin-bottom: 8px;
+  border: 1px solid var(--border); cursor: pointer; transition: all .18s;
+  background: #fff;
+}
+.log-item:hover { border-color: var(--primary); background: var(--primary-light); }
+.log-item.ended { opacity: .65; }
+.log-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.log-info { flex: 1; min-width: 0; }
+.log-nama { font-size: 13px; font-weight: 700; }
+.log-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.log-last-msg { font-size: 12px; color: var(--text-light); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-status {
+  flex-shrink: 0; padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; margin-top: 2px;
+}
+.log-status.aktif { background: #dcfce7; color: #16a34a; }
+.log-status.selesai { background: #f1f5f9; color: #64748b; }
 
 /* Modal Pengumuman */
 .pengumuman-modal {
-  position:fixed; inset:0; z-index:600; background:rgba(0,0,0,.5);
-  display:none; align-items:center; justify-content:center; padding:20px;
+  position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,.5);
+  display: none; align-items: flex-end; justify-content: center; 
 }
-.pengumuman-modal.open { display:flex; }
+.pengumuman-modal.open { display: flex; }
 .pengumuman-box {
-  background:#fff; border-radius:20px; padding:24px;
-  width:100%; max-width:480px; box-shadow:0 16px 48px rgba(0,0,0,.2);
-  animation:fadeUp .25s ease;
+  background: #fff; border-radius: 20px 20px 0 0; padding: 24px 20px;
+  width: 100%; max-width: 560px; box-shadow: 0 -8px 40px rgba(0,0,0,.2);
+  animation: logSlide .3s cubic-bezier(.23,1,.32,1);
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.pengumuman-box h3 { font-size:16px; font-weight:800; margin-bottom:16px; }
+.pengumuman-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
 .pengumuman-textarea {
-  width:100%; padding:12px 14px; border-radius:12px;
-  border:1.5px solid var(--border); font-size:13px; font-family:inherit;
-  resize:none; outline:none; height:120px; transition:border-color .2s;
+  width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 1.5px solid var(--border); font-size: 13px; font-family: inherit;
+  resize: none; outline: none; height: 110px; transition: border-color .2s;
 }
-.pengumuman-textarea:focus { border-color:var(--primary); }
-.pengumuman-actions { display:flex; gap:10px; margin-top:14px; justify-content:flex-end; }
+.pengumuman-textarea:focus { border-color: var(--primary); }
+.pengumuman-actions { display: flex; gap: 10px; margin-top: 14px; }
+.pengumuman-actions button { flex: 1; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
 </style>
 </head>
@@ -5353,6 +5539,13 @@ function goHome() {
 }
 
 function goPage(name) {
+  if (name === 'diskusi') {
+    // Diskusi as full-screen fixed overlay
+    const pg = document.getElementById('page-diskusi');
+    if(pg) pg.classList.add('active');
+    initChatPage();
+    return;
+  }
   // Navigate using original showPage
   showPage(name);
   // Show topbar with back button
@@ -5360,6 +5553,20 @@ function goPage(name) {
   if (tb) tb.style.display = '';
   const bb = document.getElementById('backBtn');
   if (bb) bb.classList.add('visible');
+}
+
+function goHome() {
+  // Close diskusi overlay if open
+  const pg = document.getElementById('page-diskusi');
+  if(pg) pg.classList.remove('active');
+  // Original back logic
+  const tb = document.getElementById('mainTopbar');
+  if (tb) tb.style.display = 'none';
+  const bb = document.getElementById('backBtn');
+  if (bb) bb.classList.remove('visible');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const home = document.getElementById('page-home');
+  if(home) home.classList.add('active');
 }
 
 // afterLogin and loadAllData are patched directly above (in their original declarations)
@@ -7056,47 +7263,53 @@ async function mpLoadSavedIcons() {
 //  Supported by D.D Candra © 2025
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+//  DISKUSI KELAS — Sinkron dengan APBO Siswa
+//  Supported by D.D Candra © 2025
+// ═══════════════════════════════════════════════════════
+
 let chatKelasAktif = null;
 let chatChannel    = null;
 let chatFilesGuru  = [];
 let sentChatKeys   = new Set();
 let unreadChatMap  = {};
 
+// Bell notifikasi — menyimpan pesan masuk dari siswa
+let bellNotifs = []; // [{id, nama, kelas_nama, pesan, waktu, kelas_id, dibaca}]
+
 function initChatPage() {
   const bar = document.getElementById('chatKelasBar');
   if (!APP_DATA || !APP_DATA.kelas || !APP_DATA.kelas.length) {
-    bar.innerHTML = '<div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div><span style="font-size:12px;color:var(--text-light)">Belum ada data kelas. Tambah kelas di Pengaturan.</span>';
+    bar.innerHTML = '<span class="chat-kelas-label">Kelas:</span><span style="font-size:12px;color:var(--text-light)">Belum ada data kelas. Tambah kelas di Pengaturan.</span>';
     return;
   }
   const chips = APP_DATA.kelas.map(k =>
-    `<div class="chat-kelas-chip ${chatKelasAktif==k.id?'active':''}" onclick="selectChatKelas(${k.id},'${k.nama}')">${k.nama}</div>`
+    `<div class="chat-kelas-chip ${chatKelasAktif==k.id?'active':''}" id="kelas-chip-${k.id}" onclick="selectChatKelas(${k.id},'${k.nama}')">
+      ${k.nama}
+      <span class="kelas-unread" id="kelas-unread-${k.id}"></span>
+    </div>`
   ).join('');
-  bar.innerHTML = `<div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div>${chips}`;
-  // Jika sudah ada kelas aktif sebelumnya, reload pesannya
+  bar.innerHTML = `<span class="chat-kelas-label">Kelas:</span>${chips}`;
   if (chatKelasAktif) {
     const k = APP_DATA.kelas.find(x=>x.id==chatKelasAktif);
     if (k) {
-      document.querySelectorAll('.chat-kelas-chip').forEach(c =>
-        c.classList.toggle('active', c.textContent.trim() === k.nama)
-      );
       document.getElementById('chatToolbarTitle').textContent = `💬 Diskusi — ${k.nama}`;
       document.getElementById('chatToolbarSub').textContent = 'Komunikasi guru & orang tua/siswa';
       document.getElementById('pengumumanKelasLabel').textContent = k.nama;
       loadChatMessages(chatKelasAktif);
     }
   }
-  // Tidak auto-select kelas — biarkan guru pilih sendiri
 }
 
 async function selectChatKelas(kelasId, kelasNama) {
   chatKelasAktif = kelasId;
   document.querySelectorAll('.chat-kelas-chip').forEach(c => {
-    c.classList.toggle('active', c.textContent.trim() === kelasNama);
+    c.classList.toggle('active', c.id === 'kelas-chip-'+kelasId);
   });
   document.getElementById('chatToolbarTitle').textContent  = `💬 Diskusi — ${kelasNama}`;
   document.getElementById('chatToolbarSub').textContent    = 'Komunikasi guru & orang tua/siswa';
   document.getElementById('pengumumanKelasLabel').textContent = kelasNama;
-  unreadChatMap[kelasId] = 0; updateNavChatBadge();
+  unreadChatMap[kelasId] = 0; updateNavChatBadge(); updateKelasChipBadge(kelasId);
   if (chatChannel) { db.removeChannel(chatChannel); chatChannel = null; }
   await loadChatMessages(kelasId);
   subscribeChatKelas(kelasId);
@@ -7176,15 +7389,178 @@ function subscribeChatKelas(kelasId) {
       if(sentChatKeys.has(key)){sentChatKeys.delete(key);return;}
       appendChatBubble(m);
       const onPage=document.getElementById('page-diskusi').classList.contains('active');
-      if(!onPage){unreadChatMap[kelasId]=(unreadChatMap[kelasId]||0)+1;updateNavChatBadge();}
+      // Hanya tambah notif jika pesan dari Siswa (bukan dari Guru sendiri)
+      if(m.peran==='Siswa'||m.peran==='OrangTua'){
+        // Tambah ke bell notifs
+        addBellNotif(m);
+        if(!onPage){unreadChatMap[kelasId]=(unreadChatMap[kelasId]||0)+1;updateNavChatBadge();updateKelasChipBadge(kelasId);}
+      }
     }).subscribe();
 }
+
+// ═══════ BELL NOTIFICATION FUNCTIONS ═══════
+function addBellNotif(m) {
+  const notif = {
+    id: Date.now() + Math.random(),
+    nama: m.nama || 'Siswa',
+    peran: m.peran || 'Siswa',
+    kelas_nama: m.kelas_nama || '',
+    kelas_id: m.kelas_id,
+    pesan: m.pesan || (m.file_name ? '[File: '+m.file_name+']' : ''),
+    waktu: m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '',
+    dibaca: false
+  };
+  bellNotifs.unshift(notif);
+  if(bellNotifs.length > 50) bellNotifs = bellNotifs.slice(0,50);
+  updateBellCount();
+  renderBellList();
+}
+
+function updateBellCount() {
+  const unread = bellNotifs.filter(n=>!n.dibaca).length;
+  const el = document.getElementById('bellCount');
+  if(!el) return;
+  if(unread > 0) {
+    el.textContent = unread > 9 ? '9+' : unread;
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+function openBellPanel() {
+  document.getElementById('bellOverlay').classList.add('open');
+  renderBellList();
+}
+function closeBellPanel(e) {
+  if(!e || e.target===document.getElementById('bellOverlay'))
+    document.getElementById('bellOverlay').classList.remove('open');
+}
+function markAllBellRead() {
+  bellNotifs.forEach(n=>n.dibaca=true);
+  updateBellCount();
+  renderBellList();
+}
+function renderBellList() {
+  const el = document.getElementById('bellList');
+  const sub = document.getElementById('bellHeadSub');
+  const unread = bellNotifs.filter(n=>!n.dibaca).length;
+  if(sub) sub.textContent = unread > 0 ? `${unread} pesan baru` : 'Semua sudah dibaca';
+  if(!bellNotifs.length) {
+    el.innerHTML = '<div class="bell-empty">🔕 Belum ada notifikasi baru</div>'; return;
+  }
+  el.innerHTML = bellNotifs.map(n=>`
+    <div class="bell-item ${n.dibaca?'':'unread'}" onclick="bellItemClick('${n.id}',${n.kelas_id},'${n.kelas_nama}')">
+      <div class="bell-avatar">${(n.nama||'?')[0].toUpperCase()}</div>
+      <div class="bell-info">
+        <div class="bell-nama">${n.nama} <span style="font-size:10px;color:var(--text-light);font-weight:400">${n.peran}</span></div>
+        <div class="bell-kelas">📚 ${n.kelas_nama}</div>
+        <div class="bell-pesan">${escChatHtml(n.pesan||'')}</div>
+        <div class="bell-time">🕐 ${n.waktu}</div>
+      </div>
+      ${!n.dibaca?'<div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:4px"></div>':''}
+    </div>`).join('');
+}
+function bellItemClick(notifId, kelasId, kelasNama) {
+  // Tandai dibaca
+  const n = bellNotifs.find(x=>String(x.id)===String(notifId));
+  if(n) n.dibaca = true;
+  updateBellCount();
+  closeBellPanel();
+  // Pindah ke kelas tersebut
+  if(kelasId) selectChatKelas(kelasId, kelasNama);
+  // Buka halaman diskusi jika belum
+  goPage('diskusi');
+}
+
+// ═══════ LOG RIWAYAT DISKUSI ═══════
+let logCurrentTab = 'aktif';
+let logData = {}; // {kelasId: [{nama, pesan_terakhir, waktu, jumlah, aktif}]}
+
+function openLogPanel() {
+  document.getElementById('logOverlay').classList.add('open');
+  loadLogData();
+}
+function closeLogPanel(e) {
+  if(!e || e.target===document.getElementById('logOverlay'))
+    document.getElementById('logOverlay').classList.remove('open');
+}
+function switchLogTab(tab) {
+  logCurrentTab = tab;
+  document.getElementById('logTabAktif').classList.toggle('active', tab==='aktif');
+  document.getElementById('logTabSemua').classList.toggle('active', tab==='semua');
+  renderLogList();
+}
+
+async function loadLogData() {
+  const el = document.getElementById('logList');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);font-size:13px">Memuat riwayat...</div>';
+  if(!db) return;
+  // Ambil semua chat, group by kelas
+  const { data, error } = await db.from('chat_apbo').select('*').order('created_at',{ascending:false}).limit(500);
+  if(error||!data) { el.innerHTML = '<div class="bell-empty">Gagal memuat data</div>'; return; }
+  // Proses: per kelas, siapa saja yang aktif chat
+  const kelasMap = {};
+  data.forEach(m => {
+    const kid = m.kelas_id;
+    if(!kelasMap[kid]) kelasMap[kid] = {kelas_id:kid, kelas_nama:m.kelas_nama||'', peserta:new Set(), pesan_terakhir:'', waktu_terakhir:'', jumlah:0};
+    const entry = kelasMap[kid];
+    if(m.peran==='Siswa'||m.peran==='OrangTua') entry.peserta.add(m.nama||'Siswa');
+    if(!entry.pesan_terakhir && m.pesan) { entry.pesan_terakhir=m.pesan; entry.waktu_terakhir=m.created_at||''; }
+    entry.jumlah++;
+  });
+  // Tentukan "aktif" = ada pesan dalam 24 jam terakhir
+  const now = Date.now();
+  logData = Object.values(kelasMap).map(k => {
+    const lastMs = k.waktu_terakhir ? new Date(k.waktu_terakhir).getTime() : 0;
+    return {...k, peserta: Array.from(k.peserta), aktif: (now - lastMs) < 24*60*60*1000};
+  });
+  renderLogList();
+}
+
+function renderLogList() {
+  const el = document.getElementById('logList');
+  const filtered = logCurrentTab==='aktif' ? logData.filter(k=>k.aktif) : logData;
+  if(!filtered.length) {
+    el.innerHTML = `<div class="bell-empty">${logCurrentTab==='aktif'?'🟢 Tidak ada diskusi aktif saat ini':'📭 Belum ada riwayat diskusi'}</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(k => {
+    const waktuStr = k.waktu_terakhir ? new Date(k.waktu_terakhir).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    const pesertaStr = k.peserta.length ? k.peserta.slice(0,3).join(', ')+(k.peserta.length>3?` +${k.peserta.length-3} lainnya`:'') : 'Belum ada siswa';
+    return `<div class="log-item ${k.aktif?'':'ended'}" onclick="logItemClick(${k.kelas_id},'${k.kelas_nama}')">
+      <div class="log-avatar">📚</div>
+      <div class="log-info">
+        <div class="log-nama">${k.kelas_nama}</div>
+        <div class="log-meta">👥 ${pesertaStr}</div>
+        <div class="log-last-msg">💬 ${escChatHtml(k.pesan_terakhir||'Belum ada pesan')}</div>
+        <div class="log-meta" style="margin-top:4px">🕐 ${waktuStr} · ${k.jumlah} pesan</div>
+      </div>
+      <div>
+        <div class="log-status ${k.aktif?'aktif':'selesai'}">${k.aktif?'🟢 Aktif':'⚪ Selesai'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function logItemClick(kelasId, kelasNama) {
+  closeLogPanel();
+  goPage('diskusi');
+  setTimeout(()=>selectChatKelas(kelasId,kelasNama),300);
+}
+
 function updateNavChatBadge(){
   const total=Object.values(unreadChatMap).reduce((a,b)=>a+b,0);
   const badge=document.getElementById('navChatBadge');
   if(!badge)return;
   if(total>0){badge.style.display='';badge.textContent=total>9?'9+':total;}
   else badge.style.display='none';
+}
+function updateKelasChipBadge(kelasId) {
+  const badge = document.getElementById('kelas-unread-'+kelasId);
+  if(!badge) return;
+  const count = unreadChatMap[kelasId]||0;
+  if(count>0){badge.textContent=count>9?'9+':count;badge.classList.add('show');}
+  else badge.classList.remove('show');
 }
 
 async function sendChatGuru() {
@@ -7725,11 +8101,28 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
 
 <!-- ═══════════════ HALAMAN DISKUSI KELAS ═══════════════ -->
 <div id="page-diskusi" class="page">
+
+  <!-- Header Diskusi -->
+  <div class="chat-page-header">
+    <button class="chat-back-btn" onclick="goHome()">←</button>
+    <div class="chat-page-title">
+      <h2>💬 Diskusi Kelas</h2>
+      <p>Komunikasi Guru ↔ Siswa & Orang Tua</p>
+    </div>
+    <div class="chat-header-actions">
+      <!-- Bell Notifikasi -->
+      <button class="chat-bell-btn" onclick="openBellPanel()" title="Notifikasi chat masuk">
+        🔔
+        <span class="chat-bell-count" id="bellCount"></span>
+      </button>
+    </div>
+  </div>
+
   <div class="chat-page-wrap">
 
-    <!-- Pilih Kelas -->
+    <!-- Pilih Kelas Bar -->
     <div class="chat-kelas-bar" id="chatKelasBar">
-      <div style="font-size:12px;color:var(--text-light);display:flex;align-items:center;padding-right:8px;font-weight:600;flex-shrink:0">Kelas:</div>
+      <span class="chat-kelas-label">Kelas:</span>
     </div>
 
     <!-- Body chat -->
@@ -7741,9 +8134,10 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
             <div class="chat-toolbar-sub" id="chatToolbarSub">Pilih kelas untuk mulai diskusi</div>
           </div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="chat-announce-btn" onclick="openPengumuman()">📢 Pengumuman</button>
-          <button class="chat-clear-btn" onclick="clearChatKelas()">🗑️ Hapus</button>
+        <div class="chat-toolbar-right">
+          <button class="chat-log-btn" onclick="openLogPanel()">📋 Riwayat</button>
+          <button class="chat-announce-btn" onclick="openPengumuman()">📢</button>
+          <button class="chat-clear-btn" onclick="clearChatKelas()" title="Hapus riwayat">🗑️</button>
         </div>
       </div>
 
@@ -7751,6 +8145,7 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
         <div style="text-align:center;padding:40px 20px;color:var(--text-light)">
           <div style="font-size:36px;margin-bottom:10px">💬</div>
           <div style="font-size:14px;font-weight:600">Pilih kelas di atas untuk memulai diskusi</div>
+          <div style="font-size:12px;margin-top:6px">Pesan dari siswa akan muncul di sini secara real-time</div>
         </div>
       </div>
 
@@ -7772,15 +8167,54 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
   </div>
 </div>
 
+<!-- ══ BELL NOTIFICATION PANEL ══ -->
+<div class="bell-overlay" id="bellOverlay" onclick="closeBellPanel(event)">
+  <div class="bell-panel" onclick="event.stopPropagation()">
+    <div class="bell-head">
+      <div>
+        <h3>🔔 Notifikasi Chat Masuk</h3>
+        <div class="bell-head-sub" id="bellHeadSub">Pesan baru dari siswa</div>
+      </div>
+      <button class="bell-close" onclick="closeBellPanel()">✕</button>
+    </div>
+    <div class="bell-mark-all">
+      <button onclick="markAllBellRead()">✓ Tandai semua sudah dibaca</button>
+    </div>
+    <div class="bell-list" id="bellList">
+      <div class="bell-empty">🔕 Belum ada notifikasi baru</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOG RIWAYAT DISKUSI PANEL ══ -->
+<div class="log-overlay" id="logOverlay" onclick="closeLogPanel(event)">
+  <div class="log-panel" onclick="event.stopPropagation()">
+    <div class="log-head">
+      <div>
+        <h3>📋 Riwayat Diskusi</h3>
+        <div class="log-head-sub" id="logHeadSub">Semua percakapan diskusi kelas</div>
+      </div>
+      <button class="log-close" onclick="closeLogPanel()">✕</button>
+    </div>
+    <div class="log-tabs">
+      <div class="log-tab active" id="logTabAktif" onclick="switchLogTab('aktif')">🟢 Aktif</div>
+      <div class="log-tab" id="logTabSemua" onclick="switchLogTab('semua')">📋 Semua</div>
+    </div>
+    <div class="log-list" id="logList">
+      <div style="text-align:center;padding:30px;color:var(--text-light);font-size:13px">Memuat riwayat...</div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Pengumuman -->
-<div class="pengumuman-modal" id="pengumumanModal">
-  <div class="pengumuman-box">
+<div class="pengumuman-modal" id="pengumumanModal" onclick="closePengumuman()">
+  <div class="pengumuman-box" onclick="event.stopPropagation()">
     <h3>📢 Kirim Pengumuman</h3>
-    <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">Pengumuman akan dikirim ke semua siswa kelas <strong id="pengumumanKelasLabel">—</strong> dan muncul sebagai notifikasi di APBO Siswa.</p>
+    <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">Pengumuman ke semua siswa kelas <strong id="pengumumanKelasLabel">—</strong> dan muncul sebagai notifikasi di APBO Siswa.</p>
     <textarea class="pengumuman-textarea" id="pengumumanText" placeholder="Tulis isi pengumuman..."></textarea>
     <div class="pengumuman-actions">
-      <button onclick="closePengumuman()" style="padding:9px 18px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Batal</button>
-      <button onclick="kirimPengumuman()" style="padding:9px 18px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Kirim Pengumuman</button>
+      <button onclick="closePengumuman()" style="padding:10px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Batal</button>
+      <button onclick="kirimPengumuman()" style="padding:10px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📢 Kirim</button>
     </div>
   </div>
 </div>
