@@ -2536,8 +2536,14 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
             <button class="btn btn-primary" style="font-size:12px" onclick="copyChatSql()">📋 Salin SQL</button>
             <button class="btn btn-outline" style="font-size:12px" onclick="testChatTable()">🔍 Test Koneksi Chat</button>
+            <button class="btn btn-outline" style="font-size:12px;background:#fef3c7;border-color:#f59e0b;color:#92400e" onclick="copyChatMigrateSql()">🔧 SQL Perbaiki Kolom</button>
           </div>
           <div id="chatTestResult" style="margin-top:10px;font-size:12px"></div>
+          <div id="chatMigrateSqlBox" style="display:none;margin-top:10px">
+            <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px">🔧 SQL Perbaiki Kolom — Jalankan di Supabase SQL Editor jika ada error kelas_nama</div>
+            <textarea id="sqlChatMigrate" readonly class="form-control" rows="12" style="font-family:monospace;font-size:11px;background:#1e293b;color:#e2e8f0;border-radius:8px;resize:none"></textarea>
+            <button class="btn btn-primary" style="font-size:12px;margin-top:8px;background:#f59e0b;border-color:#f59e0b" onclick="docopyChatMigrateSql()">📋 Salin SQL Perbaiki</button>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div style="background:var(--primary-light);border-radius:10px;padding:12px">
@@ -3226,6 +3232,8 @@ async function afterLogin() {
   await loadAllData();
   setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 800);
   setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 1000);
+  // Mulai listener global chat untuk SEMUA kelas (bell + badge)
+  setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 1200);
   goHome(); // ← Show grid home page instead of last sidebar page
 }
 
@@ -5298,6 +5306,19 @@ CREATE TABLE IF NOT EXISTS chat_apbo (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 1b. Tambah kolom yang mungkin belum ada (jika tabel sudah dibuat sebelumnya)
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS kelas_nama TEXT DEFAULT '';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS siswa_id   BIGINT DEFAULT 0;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS nisn       TEXT DEFAULT '';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS peran      TEXT DEFAULT 'Siswa';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS tipe       TEXT DEFAULT 'pesan';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_url   TEXT;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_name  TEXT;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_size  TEXT;
+
+-- 1c. Refresh schema cache Supabase
+NOTIFY pgrst, 'reload schema';
+
 -- 2. Aktifkan RLS
 ALTER TABLE chat_apbo ENABLE ROW LEVEL SECURITY;
 
@@ -5324,6 +5345,39 @@ CREATE INDEX IF NOT EXISTS idx_chat_apbo_created ON chat_apbo(created_at);
 function copySql() {
   const sql = document.getElementById('sqlSetup').value;
   navigator.clipboard.writeText(sql).then(()=>toast('SQL disalin!', 'success'));
+}
+
+function copyChatMigrateSql() {
+  const box = document.getElementById('chatMigrateSqlBox');
+  const el  = document.getElementById('sqlChatMigrate');
+  const sql = `-- ============================================================
+-- SQL PERBAIKI TABEL chat_apbo (jalankan jika ada error kelas_nama)
+-- Tambah kolom yang hilang di tabel yang dibuat dari versi lama
+-- ============================================================
+
+-- Tambah kolom yang mungkin belum ada
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS kelas_nama TEXT DEFAULT '';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS siswa_id   BIGINT DEFAULT 0;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS nisn       TEXT DEFAULT '';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS peran      TEXT DEFAULT 'Siswa';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS tipe       TEXT DEFAULT 'pesan';
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_url   TEXT;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_name  TEXT;
+ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_size  TEXT;
+
+-- Refresh schema cache PostgREST/Supabase
+NOTIFY pgrst, 'reload schema';
+
+-- Verifikasi kolom (opsional, cek hasilnya)
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name = 'chat_apbo' ORDER BY ordinal_position;`;
+  el.value = sql;
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth'});
+}
+function docopyChatMigrateSql() {
+  const sql = document.getElementById('sqlChatMigrate').value;
+  navigator.clipboard.writeText(sql).then(()=>toast('SQL Perbaiki disalin! Tempel di Supabase SQL Editor', 'success'));
 }
 
 function copyChatSql() {
@@ -7310,9 +7364,10 @@ async function selectChatKelas(kelasId, kelasNama) {
   document.getElementById('chatToolbarSub').textContent    = 'Komunikasi guru & orang tua/siswa';
   document.getElementById('pengumumanKelasLabel').textContent = kelasNama;
   unreadChatMap[kelasId] = 0; updateNavChatBadge(); updateKelasChipBadge(kelasId);
-  if (chatChannel) { db.removeChannel(chatChannel); chatChannel = null; }
+  // chatChannel per-kelas tidak digunakan lagi; globalChatChannel menangani semua
+  if (chatChannel) { try { db.removeChannel(chatChannel); } catch(e){} chatChannel = null; }
   await loadChatMessages(kelasId);
-  subscribeChatKelas(kelasId);
+  // subscribeChatKelas sekarang no-op; global listener sudah aktif
 }
 
 async function loadChatMessages(kelasId) {
@@ -7381,21 +7436,42 @@ function appendChatBubble(m) {
 }
 function scrollChatBottom(){const el=document.getElementById('chatMsgsWrap');if(el)el.scrollTop=el.scrollHeight;}
 
-function subscribeChatKelas(kelasId) {
-  chatChannel = db.channel('chat_guru_kelas_'+kelasId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_apbo',filter:`kelas_id=eq.${kelasId}`}, payload=>{
-      const m=payload.new;
-      const key=String(m.nama||'')+'_'+String(m.pesan||'').substring(0,20)+'_'+String(m.kelas_id);
-      if(sentChatKeys.has(key)){sentChatKeys.delete(key);return;}
-      appendChatBubble(m);
-      const onPage=document.getElementById('page-diskusi').classList.contains('active');
-      // Hanya tambah notif jika pesan dari Siswa (bukan dari Guru sendiri)
-      if(m.peran==='Siswa'||m.peran==='OrangTua'){
-        // Tambah ke bell notifs
-        addBellNotif(m);
-        if(!onPage){unreadChatMap[kelasId]=(unreadChatMap[kelasId]||0)+1;updateNavChatBadge();updateKelasChipBadge(kelasId);}
+// ── Global channel: deteksi pesan SEMUA kelas (bell + badge) ──
+let globalChatChannel = null;
+
+function startGlobalChatListener() {
+  if (!db) return;
+  if (globalChatChannel) { db.removeChannel(globalChatChannel); globalChatChannel = null; }
+  globalChatChannel = db.channel('chat_guru_global_all')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_apbo'}, payload => {
+      const m = payload.new;
+      if (m.peran === 'Guru') return; // abaikan pesan dari guru sendiri
+      const kid = m.kelas_id;
+      const key = String(m.nama||'')+'_'+String(m.pesan||'').substring(0,20)+'_'+String(kid);
+      // Jika pesan ini untuk kelas aktif & sudah di-append via chatChannel, skip duplikat
+      if (kid == chatKelasAktif && sentChatKeys.has(key)) { sentChatKeys.delete(key); return; }
+      // Bell notif selalu ditambahkan (semua kelas)
+      addBellNotif(m);
+      // Badge chip & nav — hanya tambah jika bukan kelas yang sedang dibuka
+      const onPageDiskusi = document.getElementById('page-diskusi').classList.contains('active');
+      if (!(onPageDiskusi && kid == chatKelasAktif)) {
+        unreadChatMap[kid] = (unreadChatMap[kid]||0) + 1;
+        updateNavChatBadge();
+        updateKelasChipBadge(kid);
       }
-    }).subscribe();
+      // Jika kelas aktif → append bubble (hindari duplikat dari chatChannel)
+      if (kid == chatKelasAktif) { appendChatBubble(m); }
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') console.log('Global chat listener aktif ✓ (semua kelas)');
+    });
+}
+
+// ── Per-kelas channel: hanya untuk append bubble kelas aktif ──
+function subscribeChatKelas(kelasId) {
+  // Channel per-kelas tidak diperlukan lagi karena globalChatChannel sudah menangani semua
+  // Fungsi ini dipertahankan untuk kompatibilitas — tidak membuat channel baru
+  console.log('subscribeChatKelas: kelas aktif =', kelasId, '(ditangani globalChatChannel)');
 }
 
 // ═══════ BELL NOTIFICATION FUNCTIONS ═══════
@@ -7563,6 +7639,25 @@ function updateKelasChipBadge(kelasId) {
   else badge.classList.remove('show');
 }
 
+async function migrasiChatApbo() {
+  // Tambah kolom yang mungkin hilang karena tabel dibuat dari versi lama
+  const koloms = [
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS kelas_nama TEXT DEFAULT '';",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS siswa_id BIGINT DEFAULT 0;",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS nisn TEXT DEFAULT '';",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS peran TEXT DEFAULT 'Siswa';",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS tipe TEXT DEFAULT 'pesan';",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_url TEXT;",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_name TEXT;",
+    "ALTER TABLE chat_apbo ADD COLUMN IF NOT EXISTS file_size TEXT;"
+  ];
+  for(const sql of koloms){
+    try{ await db.rpc('exec_sql',{sql}); }catch(e){}
+  }
+  // Refresh schema cache
+  try{ await db.rpc('exec_sql',{sql:"NOTIFY pgrst, 'reload schema';"}); }catch(e){}
+}
+
 async function sendChatGuru() {
   if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   const input=document.getElementById('chatMsgInput');
@@ -7581,8 +7676,13 @@ async function sendChatGuru() {
   const key=String(row.nama)+'_'+String(row.pesan).substring(0,20)+'_'+String(chatKelasAktif);
   sentChatKeys.add(key);
   appendChatBubble(row);
-  const {error}=await db.from('chat_apbo').insert({...row,created_at:undefined});
-  if(error){toast('Gagal kirim: '+error.message,'error');sentChatKeys.delete(key);}
+  let {error:errSend}=await db.from('chat_apbo').insert({...row,created_at:undefined});
+  if(errSend && errSend.message && (errSend.message.includes('kelas_nama')||errSend.message.includes('schema cache'))){
+    const {kelas_nama:_kn,...rowFallback}=row;
+    const res2=await db.from('chat_apbo').insert({...rowFallback,created_at:undefined});
+    errSend=res2.error;
+  }
+  if(errSend){toast('Gagal kirim: '+errSend.message,'error');sentChatKeys.delete(key);}
 }
 
 function openPengumuman(){
@@ -7597,8 +7697,13 @@ async function kirimPengumuman(){
   if(!isi){toast('Isi pengumuman tidak boleh kosong','error');return;}
   const kls=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
   const row={kelas_id:chatKelasAktif,kelas_nama:kls?kls.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',pesan:isi};
-  const {error}=await db.from('chat_apbo').insert(row);
-  if(error){toast('Gagal: '+error.message,'error');return;}
+  let {error:errPengum}=await db.from('chat_apbo').insert(row);
+  if(errPengum && errPengum.message && (errPengum.message.includes('kelas_nama')||errPengum.message.includes('schema cache'))){
+    const {kelas_nama:_kn2,...rowFallback2}=row;
+    const res3=await db.from('chat_apbo').insert(rowFallback2);
+    errPengum=res3.error;
+  }
+  if(errPengum){toast('Gagal: '+errPengum.message,'error');return;}
   const notif={id:Date.now(),judul:`📢 Pengumuman ${kls?kls.nama:''}`,isi,waktu:new Date().toLocaleString('id-ID'),dibaca:false};
   const {data:ex}=await db.from('app_settings').select('value').eq('key','pengumuman').maybeSingle();
   let list=[];try{list=ex?JSON.parse(ex.value):[];}catch(e){}
