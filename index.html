@@ -2251,7 +2251,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       <div class="section-header">
         <div><div class="section-title">Input Nilai Akademik</div></div>
       </div>
-      <div class="card" style="max-width:620px">
+      <div class="card" style="max-width:680px">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Kelas</label>
@@ -2262,21 +2262,45 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <select id="nilaiMapel" class="form-control"></select>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Kategori Nilai</label>
-          <select id="nilaiKategori" class="form-control">
-            <option value="PR">PR (Pekerjaan Rumah)</option>
-            <option value="Harian">Harian</option>
-            <option value="Tugas">Tugas</option>
-            <option value="Projek">Projek</option>
-            <option value="Portofolio">Portofolio</option>
-            <option value="Sumatif">Sumatif</option>
-            <option value="STS">STS (Sumatif Tengah Semester)</option>
-            <option value="SAS">SAS (Sumatif Akhir Semester)</option>
-          </select>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Kategori Nilai</label>
+            <select id="nilaiKategori" class="form-control" onchange="nilaiUpdatePertemuanOpts()">
+              <option value="PR">PR (Pekerjaan Rumah)</option>
+              <option value="Harian">Harian</option>
+              <option value="Tugas">Tugas</option>
+              <option value="Projek">Projek</option>
+              <option value="Portofolio">Portofolio</option>
+              <option value="Sumatif">Sumatif</option>
+              <option value="STS">STS (Sumatif Tengah Semester)</option>
+              <option value="SAS">SAS (Sumatif Akhir Semester)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pertemuan / Ke-</label>
+            <select id="nilaiPertemuan" class="form-control">
+              <option value="1">Ke-1</option>
+              <option value="2">Ke-2</option>
+              <option value="3">Ke-3</option>
+              <option value="4">Ke-4</option>
+              <option value="5">Ke-5</option>
+              <option value="6">Ke-6</option>
+            </select>
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="loadSiswaNilai()" style="margin-bottom:20px">Buka Form →</button>
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="loadSiswaNilai()">📋 Buka Form Input →</button>
+          <button class="btn btn-outline" onclick="lihatRiwayatNilai()" style="font-size:13px">📊 Riwayat Nilai Kelas</button>
+        </div>
         <div id="nilaiFormContainer"></div>
+        <!-- Modal Riwayat Nilai -->
+        <div id="riwayatNilaiModal" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="background:var(--primary);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;font-size:14px">📊 Riwayat Nilai — <span id="riwayatNilaiTitle"></span></span>
+            <button onclick="document.getElementById('riwayatNilaiModal').style.display='none'" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
+          </div>
+          <div id="riwayatNilaiBody" style="overflow-x:auto;padding:0"></div>
+        </div>
       </div>
     </div>
 
@@ -3767,46 +3791,169 @@ function updateNilaiMapel() {
     : '<option value="">-- tambah mapel di Pengaturan --</option>';
 }
 
+// Atur opsi pertemuan sesuai kategori
+async function nilaiUpdatePertemuanOpts() {
+  const kat = document.getElementById('nilaiKategori').value;
+  const kelasId = document.getElementById('nilaiKelas').value;
+  const mapelId = document.getElementById('nilaiMapel').value;
+  const sel = document.getElementById('nilaiPertemuan');
+  // Hitung pertemuan yang sudah ada untuk saran otomatis
+  let maxPert = 1;
+  if (kelasId && mapelId && kat) {
+    const { data } = await db.from('nilai').select('pertemuan')
+      .eq('kelas_id', kelasId).eq('mapel_id', mapelId).eq('kategori', kat);
+    const pertemuanAda = [...new Set((data||[]).map(r=>r.pertemuan||1))];
+    maxPert = pertemuanAda.length > 0 ? Math.max(...pertemuanAda) + 1 : 1;
+  }
+  // STS dan SAS biasanya 1x saja, Sumatif 3x, lainnya 6x
+  const maxOpts = ['STS','SAS'].includes(kat) ? 3 : ['Sumatif'].includes(kat) ? 4 : 6;
+  sel.innerHTML = Array.from({length: maxOpts}, (_,i)=>
+    `<option value="${i+1}" ${i+1==maxPert?'selected':'Ke-'+(i+1)}>Ke-${i+1}</option>`
+  ).join('');
+}
+
 async function loadSiswaNilai() {
   const kelasId = document.getElementById('nilaiKelas').value;
   const mapelId = document.getElementById('nilaiMapel').value;
   const kategori = document.getElementById('nilaiKategori').value;
+  const pertemuan = parseInt(document.getElementById('nilaiPertemuan').value)||1;
+  if (!kelasId || !mapelId) { toast('Pilih kelas dan mapel terlebih dahulu','error'); return; }
   const siswaKelas = APP_DATA.siswa.filter(s=>s.kelas_id==kelasId);
-  
-  // Load existing nilai
+  if (!siswaKelas.length) { toast('Tidak ada siswa di kelas ini','error'); return; }
+
+  // Load nilai yang sudah ada untuk pertemuan ini (jika edit)
   const { data: existing } = await db.from('nilai').select('*')
-    .eq('kelas_id', kelasId).eq('mapel_id', mapelId).eq('kategori', kategori);
+    .eq('kelas_id', kelasId).eq('mapel_id', mapelId)
+    .eq('kategori', kategori).eq('pertemuan', pertemuan);
   const nilaiMap = {};
   (existing||[]).forEach(n=>{ nilaiMap[n.siswa_id] = n.skor; });
-  
+
+  const mapelNama = APP_DATA.mapel.find(m=>m.id==mapelId)?.nama || '';
+  const kelasNama = APP_DATA.kelas.find(k=>k.id==kelasId)?.nama || '';
+  const isEdit = (existing||[]).length > 0;
+
   document.getElementById('nilaiFormContainer').innerHTML = `
+    <div style="background:var(--primary-light);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px">
+      <strong>${kelasNama}</strong> · ${mapelNama} · ${kategori} · 
+      <span style="color:var(--primary);font-weight:700">Pertemuan Ke-${pertemuan}</span>
+      ${isEdit ? '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;margin-left:8px;font-size:11px">✏️ Mode Edit</span>' : '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:20px;margin-left:8px;font-size:11px">✨ Entri Baru</span>'}
+    </div>
     <div style="margin-bottom:12px">
-      <div style="display:grid;grid-template-columns:1fr 100px;gap:10px;padding:8px 0;border-bottom:2px solid var(--border)">
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;padding:8px 0;border-bottom:2px solid var(--border)">
         <span style="font-size:11px;font-weight:700;color:var(--text-light)">NAMA MURID</span>
-        <span style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">SKOR NILAI</span>
+        <span style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">SKOR NILAI (0–100)</span>
       </div>
       ${siswaKelas.map(s=>`
         <div class="nilai-row">
           <span class="nilai-name">${s.nama}</span>
-          <input type="number" class="nilai-input" id="nilai_${s.id}" value="${nilaiMap[s.id]||0}" min="0" max="100">
+          <input type="number" class="nilai-input" id="nilai_${s.id}" 
+            value="${nilaiMap[s.id] !== undefined ? nilaiMap[s.id] : ''}" 
+            placeholder="0" min="0" max="100">
         </div>
       `).join('')}
     </div>
-    <button class="btn btn-success btn-lg" style="width:100%" onclick="simpanNilai('${kelasId}','${mapelId}','${kategori}')">💾 Simpan Entri Nilai Baru</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-success btn-lg" style="flex:1" 
+        onclick="simpanNilai('${kelasId}','${mapelId}','${kategori}','${pertemuan}')">
+        💾 ${isEdit ? 'Update' : 'Simpan'} Nilai Ke-${pertemuan}
+      </button>
+      ${isEdit ? `<button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);font-size:13px"
+        onclick="hapusNilaiPertemuan('${kelasId}','${mapelId}','${kategori}','${pertemuan}')">
+        🗑️ Hapus Ke-${pertemuan}
+      </button>` : ''}
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-light);text-align:center">
+      💡 Nilai setiap pertemuan disimpan terpisah. Rekap Nilai menampilkan <strong>rata-rata</strong> per kategori.
+    </div>
   `;
 }
 
-async function simpanNilai(kelasId, mapelId, kategori) {
+async function simpanNilai(kelasId, mapelId, kategori, pertemuan) {
+  pertemuan = parseInt(pertemuan)||1;
   const siswaKelas = APP_DATA.siswa.filter(s=>s.kelas_id==kelasId);
+  // Hapus entri lama untuk pertemuan ini dulu (upsert manual)
+  await db.from('nilai').delete()
+    .eq('kelas_id', kelasId).eq('mapel_id', mapelId)
+    .eq('kategori', kategori).eq('pertemuan', pertemuan);
   const rows = siswaKelas.map(s=>({
     siswa_id: s.id, kelas_id: parseInt(kelasId), mapel_id: parseInt(mapelId),
-    kategori, skor: parseInt(document.getElementById(`nilai_${s.id}`)?.value||0),
-    tanggal: new Date().toISOString().split('T')[0], user_id: currentUser.id
+    kategori, pertemuan,
+    skor: parseInt(document.getElementById(`nilai_${s.id}`)?.value||0),
+    tanggal: new Date().toISOString().split('T')[0],
+    user_id: currentUser.id
   }));
-  await db.from('nilai').delete().eq('kelas_id', kelasId).eq('mapel_id', mapelId).eq('kategori', kategori);
   const { error } = await db.from('nilai').insert(rows);
   if (error) return toast(error.message, 'error');
-  toast('Nilai berhasil disimpan!', 'success');
+  toast(`✅ Nilai ${kategori} Ke-${pertemuan} berhasil disimpan!`, 'success');
+  // Refresh form untuk tampilkan mode edit
+  loadSiswaNilai();
+}
+
+async function hapusNilaiPertemuan(kelasId, mapelId, kategori, pertemuan) {
+  if (!confirm(`Hapus nilai ${kategori} Ke-${pertemuan}? Semua skor siswa untuk pertemuan ini akan dihapus.`)) return;
+  await db.from('nilai').delete()
+    .eq('kelas_id', kelasId).eq('mapel_id', mapelId)
+    .eq('kategori', kategori).eq('pertemuan', pertemuan);
+  toast(`🗑️ Nilai ${kategori} Ke-${pertemuan} dihapus`, 'success');
+  document.getElementById('nilaiFormContainer').innerHTML = '';
+}
+
+async function lihatRiwayatNilai() {
+  const kelasId = document.getElementById('nilaiKelas').value;
+  const mapelId = document.getElementById('nilaiMapel').value;
+  const kategori = document.getElementById('nilaiKategori').value;
+  if (!kelasId || !mapelId) { toast('Pilih kelas dan mapel terlebih dahulu','error'); return; }
+  const siswaKelas = APP_DATA.siswa.filter(s=>s.kelas_id==kelasId);
+  const { data } = await db.from('nilai').select('*')
+    .eq('kelas_id', kelasId).eq('mapel_id', mapelId).eq('kategori', kategori)
+    .order('pertemuan');
+  const records = data || [];
+  const pertemuanList = [...new Set(records.map(r=>r.pertemuan||1))].sort((a,b)=>a-b);
+  const kelasNama = APP_DATA.kelas.find(k=>k.id==kelasId)?.nama||'';
+  const mapelNama = APP_DATA.mapel.find(m=>m.id==mapelId)?.nama||'';
+  document.getElementById('riwayatNilaiTitle').textContent = `${kelasNama} · ${mapelNama} · ${kategori}`;
+
+  if (!records.length) {
+    document.getElementById('riwayatNilaiBody').innerHTML = 
+      '<div style="text-align:center;padding:30px;color:var(--text-light)">Belum ada nilai untuk kategori ini</div>';
+    document.getElementById('riwayatNilaiModal').style.display = 'block';
+    return;
+  }
+  // Tabel: baris = siswa, kolom = pertemuan + rata-rata
+  const html = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="background:var(--primary);color:#fff">
+        <th style="padding:8px 10px;text-align:left;white-space:nowrap">Nama Siswa</th>
+        ${pertemuanList.map(p=>`<th style="padding:8px;text-align:center;white-space:nowrap">Ke-${p}</th>`).join('')}
+        <th style="padding:8px;text-align:center;background:#1d4ed8;white-space:nowrap">Rata-rata</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${siswaKelas.map((s,idx)=>{
+        const sMap = {};
+        records.filter(r=>r.siswa_id==s.id).forEach(r=>{ sMap[r.pertemuan||1]=r.skor; });
+        const scores = pertemuanList.map(p=>sMap[p]);
+        const filled = scores.filter(v=>v!==undefined && v>0);
+        const avg = filled.length ? Math.round(filled.reduce((a,b)=>a+b,0)/filled.length) : 0;
+        const avgCls = avg>=80?'color:#16a34a;font-weight:800':avg>=60?'color:#d97706;font-weight:800':'color:#dc2626;font-weight:800';
+        return `<tr style="background:${idx%2===0?'#fff':'#f8fafc'}">
+          <td style="padding:8px 10px;font-weight:600">${s.nama}</td>
+          ${scores.map(sc=>{
+            const v = sc!==undefined?sc:'-';
+            const cls = sc>=80?'color:#16a34a':sc>=60?'color:#d97706':sc>0?'color:#dc2626':'color:#9ca3af';
+            return `<td style="padding:8px;text-align:center;${cls}">${v}</td>`;
+          }).join('')}
+          <td style="padding:8px;text-align:center;${avgCls};background:#eff6ff">${avg||'-'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  <div style="padding:10px 14px;font-size:11px;color:var(--text-light);border-top:1px solid var(--border)">
+    📌 Rata-rata dihitung dari nilai &gt; 0 saja. Nilai kosong (–) tidak dihitung.
+  </div>`;
+  document.getElementById('riwayatNilaiBody').innerHTML = html;
+  document.getElementById('riwayatNilaiModal').style.display = 'block';
+  document.getElementById('riwayatNilaiModal').scrollIntoView({behavior:'smooth'});
 }
 
 // ===================== REKAP NILAI =====================
@@ -3826,17 +3973,33 @@ async function loadRekapNilai() {
   const records = data || [];
   const siswaKelas = APP_DATA.siswa.filter(s=>s.kelas_id==kelasId);
   const cats = ['PR','Harian','Tugas','Projek','Portofolio','Sumatif','STS','SAS'];
-  
+
+  // Hitung rata-rata per kategori per siswa (dari semua pertemuan)
+  function rataKategori(siswaId, kat) {
+    const entries = records.filter(r=>r.siswa_id==siswaId && r.kategori==kat && r.skor>0);
+    if (!entries.length) return 0;
+    return Math.round(entries.reduce((a,b)=>a+b.skor,0)/entries.length);
+  }
+
+  // Hitung jumlah pertemuan per kategori (untuk tooltip info)
+  function jumlahPertemuan(siswaId, kat) {
+    return records.filter(r=>r.siswa_id==siswaId && r.kategori==kat && r.skor>0).length;
+  }
+
   document.getElementById('rekapNilaiTbody').innerHTML = siswaKelas.map(s=>{
-    const nilaiMap = {};
-    records.filter(r=>r.siswa_id==s.id).forEach(r=>{ nilaiMap[r.kategori] = r.skor; });
-    const scores = cats.map(c=>nilaiMap[c]||0);
+    const scores = cats.map(c=>rataKategori(s.id, c));
+    const pertemuans = cats.map(c=>jumlahPertemuan(s.id, c));
     const filled = scores.filter(x=>x>0);
     const avg = filled.length ? Math.round(filled.reduce((a,b)=>a+b,0)/filled.length) : 0;
     return `<tr>
       <td><strong>${s.nama}</strong></td>
-      ${scores.map(sc=>`<td class="score-cell ${sc>=80?'score-high':sc>=60?'score-mid':sc>0?'score-low':''}">${sc||0}</td>`).join('')}
-      <td class="score-cell avg-col">${avg}</td>
+      ${scores.map((sc,i)=>{
+        const cls = sc>=80?'score-high':sc>=60?'score-mid':sc>0?'score-low':'';
+        const title = pertemuans[i]>0 ? `title="Rata-rata dari ${pertemuans[i]} pertemuan"` : '';
+        const label = sc>0 ? `${sc}<sup style="font-size:9px;opacity:.7">${pertemuans[i]>1?'×'+pertemuans[i]:''}</sup>` : '0';
+        return `<td class="score-cell ${cls}" ${title}>${label}</td>`;
+      }).join('')}
+      <td class="score-cell avg-col">${avg||'–'}</td>
     </tr>`;
   }).join('');
 }
@@ -5178,11 +5341,14 @@ CREATE TABLE IF NOT EXISTS nilai (
   kelas_id BIGINT REFERENCES kelas(id),
   mapel_id BIGINT REFERENCES mapel(id),
   kategori TEXT,
+  pertemuan INTEGER DEFAULT 1,
   skor INTEGER DEFAULT 0,
   tanggal DATE,
   user_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+-- Tambah kolom pertemuan jika tabel sudah ada sebelumnya
+ALTER TABLE nilai ADD COLUMN IF NOT EXISTS pertemuan INTEGER DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS jurnal (
   id BIGSERIAL PRIMARY KEY,
