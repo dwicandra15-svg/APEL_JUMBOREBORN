@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js" defer></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>APEL JUMBO Reborn- Aplikasi Elektronik Jurnal Mengajar Berbasis Online</title>
@@ -321,6 +322,65 @@ tr:hover td { background: #f8fafc; }
 .badge-gray { background: #f1f5f9; color: #64748b; }
 .badge-blue { background: #dbeafe; color: #1d4ed8; }
 .badge-purple { background: #ede9fe; color: #7c3aed; }
+
+/* ═══════════════ LAB IPA ═══════════════ */
+.lab-tabs { display:flex; gap:4px; padding:0 0 16px; border-bottom:1px solid var(--border); margin-bottom:18px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.lab-tabs::-webkit-scrollbar { display:none; }
+.lab-tab { padding:7px 16px; border-radius:99px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; border:1.5px solid var(--border); background:#fff; color:var(--text-light); transition:all .18s; }
+.lab-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.lab-status-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+.lab-status-chip.dipinjam  { background:#fef9c3; color:#854d0e; }
+.lab-status-chip.tersedia  { background:#dcfce7; color:#16a34a; }
+.lab-status-chip.rusak     { background:#fee2e2; color:#dc2626; }
+.lab-status-chip.kembali   { background:#e0e7ff; color:#4338ca; }
+.lab-status-chip.hadir     { background:#dcfce7; color:#16a34a; }
+.lab-status-chip.izin      { background:#fef9c3; color:#854d0e; }
+.lab-status-chip.tanpa-izin{ background:#fee2e2; color:#dc2626; }
+
+.lab-inv-card {
+  background:#fff; border:1px solid var(--border); border-radius:14px;
+  padding:14px 16px; display:flex; align-items:center; gap:14px;
+  transition:box-shadow .18s; cursor:pointer;
+}
+.lab-inv-card:hover { box-shadow:0 4px 18px rgba(0,0,0,.1); }
+.lab-inv-ico { width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg,#e0f2fe,#bae6fd); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.lab-inv-info { flex:1; min-width:0; }
+.lab-inv-nama { font-size:14px; font-weight:700; color:var(--text); }
+.lab-inv-meta { font-size:11px; color:var(--text-light); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+.lab-inv-stok { text-align:right; flex-shrink:0; }
+.lab-inv-stok-num { font-size:20px; font-weight:800; color:var(--primary); }
+.lab-inv-stok-lbl { font-size:10px; color:var(--text-light); }
+
+.lab-pinjam-card {
+  background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px;
+  transition:box-shadow .18s;
+}
+.lab-pinjam-card:hover { box-shadow:0 4px 18px rgba(0,0,0,.1); }
+.lab-pinjam-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.lab-pinjam-nama { font-size:14px; font-weight:700; }
+.lab-pinjam-meta { font-size:11px; color:var(--text-light); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap; }
+.lab-pinjam-items { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.lab-pinjam-item-chip { padding:4px 10px; border-radius:8px; background:var(--bg); border:1px solid var(--border); font-size:11px; font-weight:600; }
+
+.lab-presensi-card {
+  background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px 16px;
+  display:flex; align-items:center; gap:12px;
+}
+.lab-presensi-av { width:40px; height:40px; border-radius:50%; background:var(--primary-light); color:var(--primary); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* QR Scanner button */
+.lab-qr-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:10px; background:linear-gradient(135deg,#0ea5e9,#2563eb); color:#fff; font-size:13px; font-weight:700; border:none; cursor:pointer; transition:all .18s; font-family:inherit; }
+.lab-qr-btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(37,99,235,.3); }
+
+/* QR Scanner modal */
+#qrScannerModal .modal { max-width:420px; }
+#qrVideoWrap { position:relative; width:100%; border-radius:14px; overflow:hidden; background:#000; aspect-ratio:1; }
+#qrVideoWrap video { width:100%; height:100%; object-fit:cover; }
+.qr-frame { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.qr-frame::before { content:''; width:60%; height:60%; border:3px solid #fff; border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,.5); }
+.qr-scan-line { position:absolute; width:60%; height:2px; background:linear-gradient(90deg,transparent,#0ea5e9,transparent); animation:scanLine 1.8s ease-in-out infinite; }
+@keyframes scanLine { 0%{top:20%} 100%{top:80%} }
 
 /* MODAL */
 .modal-overlay {
@@ -2063,8 +2123,144 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mp-sub-ico ic-pink" id="ico-mapel_bimbingan">💙</div>
             <div class="mp-sub-lbl" id="lbl-mapel_bimbingan">Bimbingan Wali</div>
           </div>
+          <!-- ── LAB IPA (hanya tampil jika mapel IPA) ── -->
+          <div id="labIpaSection" style="display:none;contents">
+            <div class="mp-sub-card" onclick="mpGoSubLab('inventaris')" style="position:relative">
+              <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_lab_inv','Inventaris Lab')" title="Edit ikon">⋮</button>
+              <div class="mp-sub-ico ic-teal" id="ico-mapel_lab_inv">🔬</div>
+              <div class="mp-sub-lbl" id="lbl-mapel_lab_inv">Inventaris Lab</div>
+            </div>
+            <div class="mp-sub-card" onclick="mpGoSubLab('peminjaman')" style="position:relative">
+              <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_lab_pinjam','Peminjaman Alat')" title="Edit ikon">⋮</button>
+              <div class="mp-sub-ico ic-yellow" id="ico-mapel_lab_pinjam">🧪</div>
+              <div class="mp-sub-lbl" id="lbl-mapel_lab_pinjam">Peminjaman Alat</div>
+            </div>
+            <div class="mp-sub-card" onclick="mpGoSubLab('presensi')" style="position:relative">
+              <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_lab_presensi','Presensi Lab')" title="Edit ikon">⋮</button>
+              <div class="mp-sub-ico ic-green" id="ico-mapel_lab_presensi">🏛️</div>
+              <div class="mp-sub-lbl" id="lbl-mapel_lab_presensi">Presensi Lab</div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- ===== LAB IPA: INVENTARIS ===== -->
+    <div id="page-lab-inventaris" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🔬 Inventaris Laboratorium IPA</div>
+          <div class="section-sub">Daftar dan stok peralatan praktik lab</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="lab-qr-btn" onclick="labQrScan('inventaris')">📷 Scan QR</button>
+          <button class="btn btn-primary" onclick="showModalInv()">+ Tambah Alat</button>
+        </div>
+      </div>
+      <!-- Filter -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="form-row" style="align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="form-label">Kategori</label>
+            <select id="filterInvKat" class="form-control" onchange="loadInventaris()">
+              <option value="">Semua Kategori</option>
+              <option>Alat Optik</option><option>Alat Ukur</option>
+              <option>Alat Kimia</option><option>Alat Biologi</option>
+              <option>Alat Fisika</option><option>Alat Listrik</option>
+              <option>Alat Keselamatan</option><option>Lainnya</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="form-label">Status</label>
+            <select id="filterInvStatus" class="form-control" onchange="loadInventaris()">
+              <option value="">Semua Status</option>
+              <option value="tersedia">Tersedia</option>
+              <option value="dipinjam">Sedang Dipinjam</option>
+              <option value="rusak">Rusak</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:2;min-width:160px">
+            <label class="form-label">Cari Alat</label>
+            <input type="text" id="searchInv" class="form-control" placeholder="Nama alat atau kode QR..." oninput="loadInventaris()">
+          </div>
+        </div>
+      </div>
+      <div id="invSummaryBar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div id="inventarisList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- ===== LAB IPA: PEMINJAMAN ALAT ===== -->
+    <div id="page-lab-peminjaman" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🧪 Peminjaman Alat Praktik</div>
+          <div class="section-sub">Catat peminjaman dan pengembalian alat lab</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="lab-qr-btn" onclick="labQrScan('peminjaman')">📷 Scan QR</button>
+          <button class="btn btn-primary" onclick="showModalPinjam()">+ Buat Peminjaman</button>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div class="lab-tabs">
+        <div class="lab-tab active" id="tabPinjamAktif" onclick="switchPinjamTab('aktif')">🔄 Sedang Dipinjam</div>
+        <div class="lab-tab" id="tabPinjamSemua"  onclick="switchPinjamTab('semua')">📋 Semua Riwayat</div>
+      </div>
+      <!-- Filter -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="form-row" style="align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:130px">
+            <label class="form-label">Kelas</label>
+            <select id="filterPinjamKelas" class="form-control" onchange="loadPeminjaman()">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:2;min-width:160px">
+            <label class="form-label">Cari Peminjam / Alat</label>
+            <input type="text" id="searchPinjam" class="form-control" placeholder="Nama siswa atau nama alat..." oninput="loadPeminjaman()">
+          </div>
+        </div>
+      </div>
+      <div id="peminjamanList" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <!-- ===== LAB IPA: PRESENSI LAB ===== -->
+    <div id="page-lab-presensi" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🏛️ Presensi Laboratorium IPA</div>
+          <div class="section-sub">Cegah siswa siluman dari kelas lain</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="lab-qr-btn" onclick="labQrScan('presensi')">📷 Scan QR Siswa</button>
+          <button class="btn btn-primary" onclick="showModalPresensiLab()">+ Input Manual</button>
+        </div>
+      </div>
+      <!-- Sesi aktif info -->
+      <div id="labSesiAktifBanner" style="display:none" class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac">
+      </div>
+      <!-- Pilih kelas & tanggal -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="form-row" style="align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:130px">
+            <label class="form-label">Kelas</label>
+            <select id="filterPresensiKelas" class="form-control" onchange="loadPresensiLab()">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="form-label">Tanggal</label>
+            <input type="date" id="filterPresensiTgl" class="form-control" onchange="loadPresensiLab()">
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="form-label">Praktikum</label>
+            <input type="text" id="filterPresensiTopik" class="form-control" placeholder="Nama topik/praktikum" oninput="loadPresensiLab()">
+          </div>
+        </div>
+      </div>
+      <!-- Summary -->
+      <div id="presensiLabSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div id="presensiLabList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 
     <!-- ===== DASHBOARD ===== -->
@@ -3009,6 +3205,279 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   </div>
 </div>
 
+<!-- ══ Modal Inventaris Lab ══ -->
+<div class="modal-overlay" id="modalInv">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="modalInvTitle">🔬 Tambah Peralatan Lab</h3>
+      <button class="btn-close" onclick="closeModal('modalInv')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editInvId">
+      <input type="hidden" id="invKodeQr">
+      <!-- QR hasil scan tampil di sini -->
+      <div id="invQrResult" style="display:none;margin-bottom:12px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;font-size:12px;font-weight:700;color:#16a34a"></div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label class="form-label">Nama Alat <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="invNama" class="form-control" placeholder="cth: Mikroskop Cahaya, Tabung Reaksi...">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Kode / No. Inventaris</label>
+          <input type="text" id="invKode" class="form-control" placeholder="INV-001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kategori <span style="color:var(--danger)">*</span></label>
+          <select id="invKategori" class="form-control">
+            <option value="">— Pilih —</option>
+            <option>Alat Optik</option><option>Alat Ukur</option>
+            <option>Alat Kimia</option><option>Alat Biologi</option>
+            <option>Alat Fisika</option><option>Alat Listrik</option>
+            <option>Alat Keselamatan</option><option>Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Satuan</label>
+          <input type="text" id="invSatuan" class="form-control" placeholder="cth: unit, buah, set, pasang">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jumlah Total <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="invJumlah" class="form-control" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jumlah Baik</label>
+          <input type="number" id="invJumlahBaik" class="form-control" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jumlah Rusak</label>
+          <input type="number" id="invJumlahRusak" class="form-control" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tahun Pengadaan</label>
+          <input type="number" id="invTahun" class="form-control" placeholder="2024" min="2000" max="2099">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lokasi Penyimpanan</label>
+          <input type="text" id="invLokasi" class="form-control" placeholder="cth: Lemari A, Rak 2, Laci 3">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan / Spesifikasi</label>
+        <textarea id="invKeterangan" class="form-control" rows="2" style="resize:vertical" placeholder="Spesifikasi teknis, merek, kondisi, dll..."></textarea>
+      </div>
+      <div id="invQrInfo" style="margin-top:8px;padding:10px 14px;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;font-size:11px;color:var(--text-light)">
+        💡 <b>QR Code:</b> Tempelkan stiker QR pada alat, lalu scan menggunakan tombol <b>📷 Scan QR</b> untuk mengisi kode otomatis. Kode QR tersimpan: <span id="invQrDisplay" style="font-weight:700;color:var(--primary)">—</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalInv')">Batal</button>
+      <button class="btn btn-primary" onclick="saveInventaris()">💾 Simpan Alat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal Peminjaman Alat ══ -->
+<div class="modal-overlay" id="modalPinjam">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <h3 id="modalPinjamTitle">🧪 Buat Peminjaman Alat</h3>
+      <button class="btn-close" onclick="closeModal('modalPinjam')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editPinjamId">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label class="form-label">Nama Peminjam <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="pinjamNama" class="form-control" placeholder="Nama guru / siswa peminjam">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Kelas</label>
+          <select id="pinjamKelas" class="form-control">
+            <option value="">— Pilih —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Topik Praktikum <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="pinjamTopik" class="form-control" placeholder="cth: Pengamatan Sel, Rangkaian Listrik...">
+        </div>
+      </div>
+      <!-- Daftar alat yang dipinjam -->
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Daftar Alat yang Dipinjam <span style="color:var(--danger)">*</span></span>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="lab-qr-btn" style="font-size:11px;padding:5px 10px" onclick="labQrScan('pinjam-alat')">📷 Scan QR Alat</button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="addPinjamRow()">+ Tambah Baris</button>
+          </div>
+        </label>
+        <div id="pinjamAlatRows" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <!-- rows injected by JS -->
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tanggal Pinjam <span style="color:var(--danger)">*</span></label>
+          <input type="date" id="pinjamTglPinjam" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rencana Kembali</label>
+          <input type="date" id="pinjamTglKembali" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kondisi Alat <span style="color:var(--danger)">*</span></label>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;border:2px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;flex:1;justify-content:center;transition:all .2s" id="kondisiLabelBaik">
+            <input type="radio" name="pinjamKondisi" id="pinjamKondisiBaik" value="Baik" style="display:none" onchange="highlightKondisi()">
+            <span>✅ Baik</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;border:2px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;flex:1;justify-content:center;transition:all .2s" id="kondisiLabelRusak">
+            <input type="radio" name="pinjamKondisi" id="pinjamKondisiRusak" value="Rusak" style="display:none" onchange="highlightKondisi()">
+            <span>❌ Rusak</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan Tambahan</label>
+        <input type="text" id="pinjamCatatan" class="form-control" placeholder="Catatan tambahan, dll...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalPinjam')">Batal</button>
+      <button class="btn btn-primary" onclick="savePeminjaman()">💾 Simpan Peminjaman</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal Pengembalian Alat ══ -->
+<div class="modal-overlay" id="modalKembali">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>✅ Konfirmasi Pengembalian</h3>
+      <button class="btn-close" onclick="closeModal('modalKembali')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="kembaliPinjamId">
+      <div id="kembaliDetail" style="padding:12px;background:var(--bg);border-radius:10px;margin-bottom:14px;font-size:13px"></div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Kembali</label>
+        <input type="date" id="kembaliTgl" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kondisi Alat Saat Kembali</label>
+        <select id="kembaliKondisi" class="form-control">
+          <option value="baik">Baik / Lengkap</option>
+          <option value="rusak_ringan">Rusak Ringan</option>
+          <option value="rusak_berat">Rusak Berat / Hilang</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan Pengembalian</label>
+        <input type="text" id="kembaliCatatan" class="form-control" placeholder="Keterangan kondisi alat...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalKembali')">Batal</button>
+      <button class="btn btn-primary" onclick="konfirmasiKembali()">✅ Konfirmasi Kembali</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal Presensi Lab ══ -->
+<div class="modal-overlay" id="modalPresensiLab">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="modalPresensiLabTitle">🏛️ Input Presensi Lab</h3>
+      <button class="btn-close" onclick="closeModal('modalPresensiLab')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editPresensiLabId">
+      <!-- QR scan result -->
+      <div id="presensiLabQrResult" style="display:none;margin-bottom:12px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;font-size:12px;font-weight:700;color:#16a34a"></div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label class="form-label">Nama Siswa <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="presensiLabNama" class="form-control" placeholder="Nama lengkap siswa">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">NIS / NISN</label>
+          <input type="text" id="presensiLabNis" class="form-control" placeholder="NIS">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kelas Asal <span style="color:var(--danger)">*</span></label>
+          <select id="presensiLabKelas" class="form-control">
+            <option value="">— Pilih Kelas —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status <span style="color:var(--danger)">*</span></label>
+          <select id="presensiLabStatus" class="form-control">
+            <option value="hadir">✅ Hadir (terdaftar)</option>
+            <option value="izin">🟡 Izin</option>
+            <option value="tanpa-izin">🔴 Tanpa Izin / Siluman</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tanggal <span style="color:var(--danger)">*</span></label>
+          <input type="date" id="presensiLabTgl" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jam Masuk</label>
+          <input type="time" id="presensiLabJam" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topik Praktikum</label>
+        <input type="text" id="presensiLabTopik" class="form-control" placeholder="cth: Pengamatan Sel Daun">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <input type="text" id="presensiLabKet" class="form-control" placeholder="Catatan tambahan (opsional)">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalPresensiLab')">Batal</button>
+      <button class="btn btn-primary" onclick="savePresensiLab()">💾 Simpan Presensi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal QR Scanner ══ -->
+<div class="modal-overlay" id="qrScannerModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>📷 Scan QR Code</h3>
+      <button class="btn-close" onclick="closeQrScanner()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="qrVideoWrap">
+        <video id="qrVideo" autoplay playsinline muted style="width:100%;border-radius:12px;display:block"></video>
+        <div class="qr-frame"><div class="qr-scan-line"></div></div>
+      </div>
+      <div id="qrManualWrap" style="margin-top:14px">
+        <div style="text-align:center;font-size:12px;color:var(--text-light);margin-bottom:8px">— atau input kode manual —</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="qrManualInput" class="form-control" placeholder="Ketik / paste kode QR di sini..." style="flex:1">
+          <button class="btn btn-primary" onclick="qrManualSubmit()">OK</button>
+        </div>
+      </div>
+      <div id="qrResultMsg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Bimbingan -->
 <div class="modal-overlay" id="modalBimbingan">
   <div class="modal">
@@ -3316,11 +3785,15 @@ async function afterLogin() {
   document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
-  setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 800);
+  setTimeout(() => { try { if(db) ecmLoadAll().then(()=>resetMapelLabels()); } catch(e){} }, 800);
   setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 1000);
   // Mulai listener global chat untuk SEMUA kelas (bell + badge)
   setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 1200);
-  goHome(); // ← Show grid home page instead of last sidebar page
+  // Restore halaman dari hash (jika ada) — jika tidak ada, tampilkan home
+  const restored = _restoreFromHash();
+  if (!restored) goHome();
+  // Fire event untuk modul lain
+  document.dispatchEvent(new CustomEvent('apel-after-login'));
 }
 
 // ===================== SETUP / CONFIG =====================
@@ -5895,7 +6368,8 @@ function showPage(name) {
     'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
     'integrasi':'Integrasi ASN','integrasiKinerja':'Integrasi Kinerja','pengaturan':'Pengaturan',
     'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9',
-    'diskusi':'Diskusi Kelas'
+    'diskusi':'Diskusi Kelas',
+    'lab-inventaris':'🔬 Inventaris Lab','lab-peminjaman':'🧪 Peminjaman Alat','lab-presensi':'🏛️ Presensi Lab'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
   // Mark nav active by matching inner text
@@ -5945,6 +6419,8 @@ function showPage(name) {
   if (name==='guruPiketDaftar') setTimeout(()=>{ try{guruPiketLoad();}catch(e){} }, 100);
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
+  // Save hash for refresh persistence
+  try { location.hash = 'page='+name; } catch(e){}
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -6051,7 +6527,7 @@ function goHome() {
   // Render mapel grid
   mpRenderHomeGrid();
   // Load saved customizations from Supabase
-  setTimeout(() => { ecmLoadAll(); mpLoadSavedIcons(); }, 300);
+  setTimeout(() => { ecmLoadAll().then(()=>resetMapelLabels()); mpLoadSavedIcons(); }, 300);
 }
 
 function goPage(name) {
@@ -6167,6 +6643,44 @@ function ecmApplyToDOM(id, data) {
 }
 
 // ── Load ALL saved cards from Supabase ───────────────────────────────────────
+// Reset label kartu mapel ke default (panggil jika label tampil sebagai ID)
+async function resetMapelLabels() {
+  const defaults = {
+    'mapel_absensi'     : 'Input Absensi',
+    'mapel_absenRekap'  : 'Rekap Absensi',
+    'mapel_nilai'       : 'Input Nilai',
+    'mapel_nilaiRekap'  : 'Rekap Nilai',
+    'mapel_jurnal'      : 'Jurnal Mengajar',
+    'mapel_bimbingan'   : 'Bimbingan Wali',
+    'mapel_lab_inv'     : 'Inventaris Lab',
+    'mapel_lab_pinjam'  : 'Peminjaman Alat',
+    'mapel_lab_presensi': 'Presensi Lab',
+  };
+  // Reset di DOM
+  Object.entries(defaults).forEach(([id, name]) => {
+    const el = document.getElementById('lbl-' + id);
+    if (el) el.textContent = name;
+  });
+  // Reset di database juga jika ada data rusak
+  try {
+    const { data } = await db.from('app_settings').select('value').eq('key','mapel_icons').maybeSingle();
+    if (data?.value) {
+      const saved = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      let dirty = false;
+      Object.entries(saved).forEach(([id, cardData]) => {
+        if (defaults[id] && (!cardData.name || /^mapel_/.test(cardData.name) || cardData.name === id)) {
+          saved[id].name = defaults[id];
+          dirty = true;
+        }
+      });
+      if (dirty) {
+        await db.from('app_settings').upsert({key:'mapel_icons', value: JSON.stringify(saved)});
+        toast('✅ Label kartu berhasil diperbaiki!', 'success');
+      }
+    }
+  } catch(e) {}
+}
+
 async function ecmLoadAll() {
   try {
     if (!db) return;
@@ -6191,7 +6705,11 @@ async function ecmLoadAll() {
           if (cardData.img) icoEl.innerHTML = `<img src="${cardData.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
           else if (cardData.emoji) icoEl.textContent = cardData.emoji;
         }
-        if (lblEl && cardData.name) lblEl.textContent = cardData.name;
+        if (lblEl && cardData.name) {
+          // Jika name yang tersimpan = ID card (bug lama), abaikan & pakai label HTML
+          const isIdValue = /^mapel_|^ico-|^lbl-/.test(cardData.name) || cardData.name === id;
+          if (!isIdValue) lblEl.textContent = cardData.name;
+        }
       });
     }
   } catch(e) { /* silently ignore - table may not exist yet */ }
@@ -6521,6 +7039,10 @@ function mpOpenDetail(id, name, kode) {
   document.getElementById('mp-mapel-name').textContent = name;
   document.getElementById('mp-mapel-kode').textContent = kode ? 'Kode: ' + kode : 'Mata Pelajaran';
 
+  // Tampilkan kartu Lab IPA hanya jika mapel mengandung "IPA"
+  const labSec = document.getElementById('labIpaSection');
+  if (labSec) labSec.style.display = /ipa/i.test(name) ? 'contents' : 'none';
+
   // Set icon
   const { emoji, color } = mpGetEmoji(name);
   const ico = document.getElementById('mp-mapel-ico');
@@ -6559,6 +7081,13 @@ function mpEditCard(event, mapelId, mapelName) {
 
 // ── Edit sub-feature card icon (titik 3 di sub card) ─────────────────────────
 function mpEditSubCard(event, cardKey, defaultName) {
+  // Pastikan label saat ini tampil benar sebelum buka editor
+  const lblEl = document.getElementById('lbl-' + cardKey);
+  if (lblEl) {
+    const cur = lblEl.textContent.trim();
+    // Jika label = ID (bug), reset ke defaultName
+    if (!cur || /^mapel_/.test(cur) || cur === cardKey) lblEl.textContent = defaultName;
+  }
   event.stopPropagation();
   mpEditName = defaultName;
   ecmOpen(event, cardKey);
@@ -6616,6 +7145,767 @@ function mpPreSelectMapel(page, mapelId) {
 
 // ── Refresh mapel grid when data loads ───────────────────────────────────────
 // (called from goHome and after loadAllData)
+
+// ══════════════════════════════════════════════════════════════
+//  LAB IPA — Inventaris, Peminjaman, Presensi, QR Scanner
+// ══════════════════════════════════════════════════════════════
+
+// Navigator khusus Lab — selalu kembali ke mapel detail
+function mpGoSubLab(sub) {
+  if (!MP_SELECTED_ID) return;
+  const pageId = `page-lab-${sub}`;
+  // Save hash state
+  location.hash = `lab-${sub}`;
+  // Hide all pages, show lab page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById(pageId);
+  if (pg) pg.classList.add('active');
+  // Topbar
+  const tb = document.getElementById('mainTopbar');
+  const bb = document.getElementById('backBtn');
+  const labels = { inventaris:'🔬 Inventaris Lab', peminjaman:'🧪 Peminjaman Alat', presensi:'🏛️ Presensi Lab' };
+  if (tb) tb.style.display = '';
+  if (bb) { bb.classList.add('visible'); bb.onclick = () => { location.hash = `mapel-${MP_SELECTED_ID}`; mpOpenDetail(MP_SELECTED_ID, MP_SELECTED_NAME, ''); }; }
+  document.getElementById('pageTitle').textContent = labels[sub] || 'Lab IPA';
+  // Populate kelas dropdowns
+  _labPopulateKelas();
+  // Load page data
+  if (sub === 'inventaris') loadInventaris();
+  if (sub === 'peminjaman') { loadPeminjaman(); _labPopulateKelasSelect('filterPinjamKelas'); }
+  if (sub === 'presensi')   { document.getElementById('filterPresensiTgl').value = new Date().toISOString().split('T')[0]; loadPresensiLab(); }
+}
+
+function _labPopulateKelas() {
+  ['filterPinjamKelas','filterPresensiKelas','pinjamKelas','presensiLabKelas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const hasAll = id.startsWith('filter');
+    const prev = el.value;
+    el.innerHTML = (hasAll ? '<option value="">Semua Kelas</option>' : '<option value="">— Pilih —</option>') +
+      (APP_DATA.kelas||[]).map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+    if (prev) el.value = prev;
+  });
+}
+function _labPopulateKelasSelect(id) { _labPopulateKelas(); }
+
+// ─────────────────────────────────────────────────────────────
+//  INVENTARIS
+// ─────────────────────────────────────────────────────────────
+async function loadInventaris() {
+  const el = document.getElementById('inventarisList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="load-spin"></div></div>';
+  const kat    = document.getElementById('filterInvKat')?.value;
+  const status = document.getElementById('filterInvStatus')?.value;
+  const cari   = (document.getElementById('searchInv')?.value||'').trim().toLowerCase();
+
+  let q = db.from('lab_inventaris').select('*').order('nama', {ascending:true});
+  if (kat)    q = q.eq('kategori', kat);
+  if (status) q = q.eq('status', status);
+  const { data, error } = await q;
+
+  if (error) { el.innerHTML = _labErrHtml('lab_inventaris', _labInvSql()); return; }
+
+  let rows = data || [];
+  if (cari) rows = rows.filter(r => (r.nama||'').toLowerCase().includes(cari) || (r.kode||'').toLowerCase().includes(cari) || (r.kode_qr||'').toLowerCase().includes(cari));
+
+  // Summary bar
+  const totalAlat = rows.length;
+  const totalBaik = rows.reduce((s,r)=>s+(r.jumlah_baik||0),0);
+  const totalRusak= rows.reduce((s,r)=>s+(r.jumlah_rusak||0),0);
+  const dipinjam  = rows.filter(r=>r.status==='dipinjam').length;
+  document.getElementById('invSummaryBar').innerHTML = [
+    {label:'Total Jenis Alat', val:totalAlat, bg:'#eff6ff', cl:'#1d4ed8'},
+    {label:'Unit Kondisi Baik', val:totalBaik, bg:'#f0fdf4', cl:'#16a34a'},
+    {label:'Unit Rusak',        val:totalRusak,bg:'#fff7ed', cl:'#c2410c'},
+    {label:'Sedang Dipinjam',   val:dipinjam,  bg:'#fefce8', cl:'#854d0e'},
+  ].map(s=>`<div style="flex:1;min-width:110px;padding:12px 14px;border-radius:12px;background:${s.bg};border:1.5px solid ${s.cl}22">
+    <div style="font-size:20px;font-weight:800;color:${s.cl}">${s.val}</div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:2px">${s.label}</div>
+  </div>`).join('');
+
+  if (!rows.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔬</div><h3>Belum Ada Alat</h3><p>Klik "+ Tambah Alat" atau Scan QR untuk menambahkan peralatan</p></div>'; return; }
+
+  const statusMap = { tersedia:'tersedia', dipinjam:'dipinjam', rusak:'rusak' };
+  el.innerHTML = rows.map(r => {
+    const stokBaik  = r.jumlah_baik  ?? (r.jumlah||0);
+    const stokRusak = r.jumlah_rusak ?? 0;
+    const stokTotal = r.jumlah ?? 0;
+    return `<div class="lab-inv-card" onclick="showModalInvEdit(${r.id})">
+      <div class="lab-inv-ico">🔬</div>
+      <div class="lab-inv-info">
+        <div class="lab-inv-nama">${r.nama||'—'}</div>
+        <div class="lab-inv-meta">
+          <span>📦 ${r.kategori||'—'}</span>
+          <span>📍 ${r.lokasi||'—'}</span>
+          ${r.kode?`<span>🏷️ ${r.kode}</span>`:''}
+          ${r.kode_qr?`<span>📷 QR: ${r.kode_qr.substring(0,10)}…</span>`:''}
+        </div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="lab-status-chip ${statusMap[r.status]||'tersedia'}">${_labStatusLabel(r.status)}</span>
+          ${stokRusak>0?`<span class="lab-status-chip rusak">⚠️ ${stokRusak} ${r.satuan||'unit'} rusak</span>`:''}
+        </div>
+      </div>
+      <div class="lab-inv-stok">
+        <div class="lab-inv-stok-num">${stokTotal}</div>
+        <div class="lab-inv-stok-lbl">${r.satuan||'unit'}</div>
+        <div style="font-size:10px;color:#16a34a;margin-top:2px">${stokBaik} baik</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _labStatusLabel(s) {
+  return {tersedia:'✅ Tersedia', dipinjam:'🔄 Dipinjam', rusak:'❌ Rusak'}[s] || '✅ Tersedia';
+}
+
+function showModalInv() {
+  document.getElementById('editInvId').value = '';
+  document.getElementById('invKodeQr').value = '';
+  document.getElementById('invKode').value = '';
+  document.getElementById('invNama').value = '';
+  document.getElementById('invKategori').value = '';
+  document.getElementById('invSatuan').value = 'unit';
+  document.getElementById('invJumlah').value = '';
+  document.getElementById('invJumlahBaik').value = '';
+  document.getElementById('invJumlahRusak').value = '';
+  document.getElementById('invTahun').value = new Date().getFullYear();
+  document.getElementById('invLokasi').value = '';
+  document.getElementById('invKeterangan').value = '';
+  document.getElementById('invQrResult').style.display = 'none';
+  document.getElementById('invQrDisplay').textContent = '—';
+  document.getElementById('modalInvTitle').textContent = '🔬 Tambah Peralatan Lab';
+  openModal('modalInv');
+}
+
+async function showModalInvEdit(id) {
+  const { data } = await db.from('lab_inventaris').select('*').eq('id',id).single();
+  if (!data) return;
+  document.getElementById('editInvId').value      = id;
+  document.getElementById('invKodeQr').value      = data.kode_qr||'';
+  document.getElementById('invKode').value        = data.kode||'';
+  document.getElementById('invNama').value        = data.nama||'';
+  document.getElementById('invKategori').value    = data.kategori||'';
+  document.getElementById('invSatuan').value      = data.satuan||'unit';
+  document.getElementById('invJumlah').value      = data.jumlah||0;
+  document.getElementById('invJumlahBaik').value  = data.jumlah_baik||0;
+  document.getElementById('invJumlahRusak').value = data.jumlah_rusak||0;
+  document.getElementById('invTahun').value       = data.tahun||'';
+  document.getElementById('invLokasi').value      = data.lokasi||'';
+  document.getElementById('invKeterangan').value  = data.keterangan||'';
+  document.getElementById('invQrDisplay').textContent = data.kode_qr || '—';
+  document.getElementById('invQrResult').style.display = data.kode_qr ? '' : 'none';
+  if (data.kode_qr) document.getElementById('invQrResult').textContent = `✅ QR Terdaftar: ${data.kode_qr}`;
+  document.getElementById('modalInvTitle').textContent = '✏️ Edit Peralatan Lab';
+  openModal('modalInv');
+}
+
+async function saveInventaris() {
+  const nama = document.getElementById('invNama').value.trim();
+  const kat  = document.getElementById('invKategori').value;
+  const jml  = parseInt(document.getElementById('invJumlah').value)||0;
+  if (!nama) { toast('Nama alat wajib diisi','error'); return; }
+  if (!kat)  { toast('Pilih kategori alat','error'); return; }
+  const row = {
+    kode_qr      : document.getElementById('invKodeQr').value.trim()||null,
+    kode         : document.getElementById('invKode').value.trim()||null,
+    nama, kategori: kat,
+    satuan       : document.getElementById('invSatuan').value.trim()||'unit',
+    jumlah       : jml,
+    jumlah_baik  : parseInt(document.getElementById('invJumlahBaik').value)||jml,
+    jumlah_rusak : parseInt(document.getElementById('invJumlahRusak').value)||0,
+    tahun        : parseInt(document.getElementById('invTahun').value)||null,
+    lokasi       : document.getElementById('invLokasi').value.trim()||null,
+    keterangan   : document.getElementById('invKeterangan').value.trim()||null,
+    status       : 'tersedia',
+    user_id      : currentUser.id,
+  };
+  const eid = document.getElementById('editInvId').value;
+  let err;
+  if (eid) { const r=await db.from('lab_inventaris').update(row).eq('id',eid); err=r.error; }
+  else     { const r=await db.from('lab_inventaris').insert(row);              err=r.error; }
+  if (err) { toast(err.message,'error'); return; }
+  toast(eid?'Alat diperbarui ✓':'Alat ditambahkan ✓','success');
+  closeModal('modalInv'); loadInventaris();
+}
+
+async function deleteInventaris(id) {
+  if (!confirm('Hapus data alat ini?')) return;
+  await db.from('lab_inventaris').delete().eq('id',id);
+  toast('Alat dihapus','success'); loadInventaris();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PEMINJAMAN ALAT
+// ─────────────────────────────────────────────────────────────
+let pinjamTab = 'aktif';
+let _pinjamAlatRows = []; // [{invId, nama, jumlah}]
+
+function switchPinjamTab(tab) {
+  pinjamTab = tab;
+  document.getElementById('tabPinjamAktif').classList.toggle('active', tab==='aktif');
+  document.getElementById('tabPinjamSemua').classList.toggle('active', tab==='semua');
+  loadPeminjaman();
+}
+
+async function loadPeminjaman() {
+  const el = document.getElementById('peminjamanList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="load-spin"></div></div>';
+  const kelasId = document.getElementById('filterPinjamKelas')?.value;
+  const cari    = (document.getElementById('searchPinjam')?.value||'').trim().toLowerCase();
+
+  let q = db.from('lab_peminjaman').select('*').order('tgl_pinjam',{ascending:false});
+  if (pinjamTab==='aktif') q = q.eq('status','dipinjam');
+  if (kelasId) q = q.eq('kelas_id', kelasId);
+  const { data, error } = await q;
+  if (error) { el.innerHTML = _labErrHtml('lab_peminjaman', _labPinjamSql()); return; }
+
+  let rows = data||[];
+  if (cari) rows = rows.filter(r => (r.nama_peminjam||'').toLowerCase().includes(cari) || (r.topik||'').toLowerCase().includes(cari));
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🧪</div><h3>${pinjamTab==='aktif'?'Tidak Ada Peminjaman Aktif':'Belum Ada Riwayat'}</h3></div>`;
+    return;
+  }
+  const getNK = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama||'—';
+  el.innerHTML = rows.map(r => {
+    const alats = _parsePinjamAlat(r.alat_json);
+    const tglP  = r.tgl_pinjam ? new Date(r.tgl_pinjam+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const tglK  = r.tgl_kembali_rencana ? new Date(r.tgl_kembali_rencana+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}) : '—';
+    const tglKA = r.tgl_kembali_aktual  ? new Date(r.tgl_kembali_aktual+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : null;
+    const isAktif = r.status==='dipinjam';
+    const terlambat = isAktif && r.tgl_kembali_rencana && new Date(r.tgl_kembali_rencana) < new Date();
+    return `<div class="lab-pinjam-card">
+      <div class="lab-pinjam-head">
+        <div>
+          <div class="lab-pinjam-nama">${r.nama_peminjam||'—'}
+            ${terlambat?`<span class="lab-status-chip rusak" style="margin-left:6px">⚠️ Terlambat</span>`:''}
+          </div>
+          <div class="lab-pinjam-meta">
+            <span>🏫 ${getNK(r.kelas_id)}</span>
+            <span>📅 Pinjam: ${tglP}</span>
+            <span>📅 Rencana kembali: ${tglK}</span>
+            ${tglKA?`<span>✅ Dikembalikan: ${tglKA}</span>`:''}
+            ${r.topik?`<span>🔬 ${r.topik}</span>`:''}
+            ${r.kondisi_alat?`<span style="font-weight:700;color:${r.kondisi_alat==='Rusak'?'#dc2626':'#16a34a'}">${r.kondisi_alat==='Rusak'?'❌':'✅'} Kondisi: ${r.kondisi_alat}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <span class="lab-status-chip ${isAktif?'dipinjam':'kembali'}">${isAktif?'🔄 Dipinjam':'✅ Kembali'}</span>
+          <div style="display:flex;gap:6px">
+            ${isAktif?`<button class="btn btn-sm btn-primary" onclick="showModalKembali(${r.id})">↩️ Kembalikan</button>`:''}
+            <button class="btn btn-sm btn-danger" onclick="deletePeminjaman(${r.id})">🗑️</button>
+          </div>
+        </div>
+      </div>
+      <div class="lab-pinjam-items">${alats.map(a=>`<div class="lab-pinjam-item-chip">🔬 ${a.nama} × ${a.jumlah}</div>`).join('')}</div>
+      ${r.catatan?`<div style="margin-top:8px;font-size:11px;color:var(--text-light)">📝 ${r.catatan}</div>`:''}
+      ${r.catatan_kembali?`<div style="margin-top:4px;font-size:11px;color:var(--text-light)">🔄 Kondisi kembali: ${r.catatan_kembali}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function _parsePinjamAlat(json) {
+  try { return JSON.parse(json||'[]'); } catch { return []; }
+}
+
+function showModalPinjam() {
+  document.getElementById('editPinjamId').value = '';
+  document.getElementById('pinjamNama').value = '';
+  document.getElementById('pinjamTopik').value = '';
+  document.getElementById('pinjamCatatan').value = '';
+  document.querySelectorAll('input[name="pinjamKondisi"]').forEach(r=>r.checked=false);
+  highlightKondisi();
+  document.getElementById('pinjamTglPinjam').value = new Date().toISOString().split('T')[0];
+  document.getElementById('pinjamTglKembali').value = '';
+  _pinjamAlatRows = [{id:Date.now(), invId:'', nama:'', jumlah:1}];
+  _renderPinjamAlatRows();
+  _labPopulateKelas();
+  document.getElementById('modalPinjamTitle').textContent = '🧪 Buat Peminjaman Alat';
+  openModal('modalPinjam');
+}
+
+function _renderPinjamAlatRows() {
+  const el = document.getElementById('pinjamAlatRows');
+  el.innerHTML = _pinjamAlatRows.map((row,i) => `
+    <div style="display:flex;gap:8px;align-items:center" id="pinjamRow-${row.id}">
+      <input type="text" class="form-control" style="flex:3" placeholder="Nama alat" value="${row.nama}"
+        oninput="_pinjamAlatRows[${i}].nama=this.value">
+      <input type="number" class="form-control" style="width:80px;flex-shrink:0" placeholder="Jml" value="${row.jumlah}" min="1"
+        oninput="_pinjamAlatRows[${i}].jumlah=parseInt(this.value)||1">
+      <button type="button" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;flex-shrink:0;padding:4px" onclick="removePinjamRow(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addPinjamRow() {
+  _pinjamAlatRows.push({id:Date.now(), invId:'', nama:'', jumlah:1});
+  _renderPinjamAlatRows();
+}
+function removePinjamRow(i) {
+  _pinjamAlatRows.splice(i,1);
+  if (!_pinjamAlatRows.length) _pinjamAlatRows = [{id:Date.now(),invId:'',nama:'',jumlah:1}];
+  _renderPinjamAlatRows();
+}
+
+// Called by QR scan when mode is 'pinjam-alat'
+function _pinjamAddAlatByQr(kodeQr) {
+  // Look up inventaris by QR
+  if (!db) return;
+  db.from('lab_inventaris').select('*').eq('kode_qr',kodeQr).single().then(({data})=>{
+    if (!data) { toast('Alat dengan QR ini tidak ditemukan di inventaris','error'); return; }
+    const idx = _pinjamAlatRows.findIndex(r=>!r.nama);
+    if (idx >= 0) {
+      _pinjamAlatRows[idx] = {id:_pinjamAlatRows[idx].id, invId:data.id, nama:data.nama, jumlah:1};
+    } else {
+      _pinjamAlatRows.push({id:Date.now(), invId:data.id, nama:data.nama, jumlah:1});
+    }
+    _renderPinjamAlatRows();
+    toast(`Alat "${data.nama}" ditambahkan ke daftar`, 'success');
+  });
+}
+
+function highlightKondisi() {
+  const baik  = document.getElementById('pinjamKondisiBaik');
+  const rusak = document.getElementById('pinjamKondisiRusak');
+  const lBaik  = document.getElementById('kondisiLabelBaik');
+  const lRusak = document.getElementById('kondisiLabelRusak');
+  if (!lBaik || !lRusak) return;
+  lBaik.style.border  = baik?.checked  ? '2px solid #16a34a' : '2px solid var(--border)';
+  lBaik.style.background  = baik?.checked  ? '#f0fdf4' : '';
+  lRusak.style.border = rusak?.checked ? '2px solid #dc2626' : '2px solid var(--border)';
+  lRusak.style.background = rusak?.checked ? '#fef2f2' : '';
+}
+
+async function savePeminjaman() {
+  const nama  = document.getElementById('pinjamNama').value.trim();
+  const topik = document.getElementById('pinjamTopik').value.trim();
+  const tglP  = document.getElementById('pinjamTglPinjam').value;
+  const alats = _pinjamAlatRows.filter(r=>r.nama.trim());
+  if (!nama)  { toast('Nama peminjam wajib diisi','error'); return; }
+  if (!topik) { toast('Topik praktikum wajib diisi','error'); return; }
+  if (!alats.length) { toast('Tambahkan minimal satu alat','error'); return; }
+  const row = {
+    nama_peminjam     : nama,
+    kelas_id          : parseInt(document.getElementById('pinjamKelas').value)||null,
+    topik,
+    alat_json         : JSON.stringify(alats),
+    tgl_pinjam        : tglP||new Date().toISOString().split('T')[0],
+    tgl_kembali_rencana: document.getElementById('pinjamTglKembali').value||null,
+    catatan           : document.getElementById('pinjamCatatan').value.trim()||null,
+    kondisi_alat      : document.querySelector('input[name="pinjamKondisi"]:checked')?.value || 'Baik',
+    status            : 'dipinjam',
+    user_id           : currentUser.id,
+  };
+  const { error } = await db.from('lab_peminjaman').insert(row);
+  if (error) { toast(error.message,'error'); return; }
+  toast('Peminjaman disimpan ✓','success');
+  closeModal('modalPinjam'); loadPeminjaman();
+}
+
+async function showModalKembali(pinjamId) {
+  const { data } = await db.from('lab_peminjaman').select('*').eq('id',pinjamId).single();
+  if (!data) return;
+  const alats = _parsePinjamAlat(data.alat_json);
+  document.getElementById('kembaliPinjamId').value = pinjamId;
+  document.getElementById('kembaliTgl').value = new Date().toISOString().split('T')[0];
+  document.getElementById('kembaliKondisi').value = 'baik';
+  document.getElementById('kembaliCatatan').value = '';
+  document.getElementById('kembaliDetail').innerHTML = `
+    <b>${data.nama_peminjam}</b> — ${data.topik||'—'}<br>
+    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${alats.map(a=>`<span class="lab-pinjam-item-chip">🔬 ${a.nama} × ${a.jumlah}</span>`).join('')}</div>`;
+  openModal('modalKembali');
+}
+
+async function konfirmasiKembali() {
+  const pid = document.getElementById('kembaliPinjamId').value;
+  const row = {
+    status            : 'kembali',
+    tgl_kembali_aktual: document.getElementById('kembaliTgl').value||null,
+    kondisi_kembali   : document.getElementById('kembaliKondisi').value,
+    catatan_kembali   : document.getElementById('kembaliCatatan').value.trim()||null,
+  };
+  const { error } = await db.from('lab_peminjaman').update(row).eq('id',pid);
+  if (error) { toast(error.message,'error'); return; }
+  toast('Pengembalian dikonfirmasi ✓','success');
+  closeModal('modalKembali'); loadPeminjaman();
+}
+
+async function deletePeminjaman(id) {
+  if (!confirm('Hapus data peminjaman ini?')) return;
+  await db.from('lab_peminjaman').delete().eq('id',id);
+  toast('Data dihapus','success'); loadPeminjaman();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PRESENSI LAB
+// ─────────────────────────────────────────────────────────────
+async function loadPresensiLab() {
+  const el = document.getElementById('presensiLabList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="load-spin"></div></div>';
+  const kelasId = document.getElementById('filterPresensiKelas')?.value;
+  const tgl     = document.getElementById('filterPresensiTgl')?.value;
+  const topik   = (document.getElementById('filterPresensiTopik')?.value||'').trim().toLowerCase();
+
+  let q = db.from('lab_presensi').select('*').order('created_at',{ascending:false});
+  if (kelasId) q = q.eq('kelas_id', kelasId);
+  if (tgl)     q = q.eq('tanggal', tgl);
+  const { data, error } = await q;
+  if (error) { el.innerHTML = _labErrHtml('lab_presensi', _labPresensiSql()); return; }
+
+  let rows = data||[];
+  if (topik) rows = rows.filter(r=>(r.topik||'').toLowerCase().includes(topik));
+
+  // Summary
+  const hadir  = rows.filter(r=>r.status==='hadir').length;
+  const izin   = rows.filter(r=>r.status==='izin').length;
+  const siluman= rows.filter(r=>r.status==='tanpa-izin').length;
+  document.getElementById('presensiLabSummary').innerHTML = [
+    {label:'Hadir Terdaftar', val:hadir,   bg:'#f0fdf4', cl:'#16a34a'},
+    {label:'Izin',            val:izin,    bg:'#fefce8', cl:'#854d0e'},
+    {label:'Tanpa Izin 👻',   val:siluman, bg:'#fef2f2', cl:'#dc2626'},
+    {label:'Total',           val:rows.length, bg:'#f0f4ff', cl:'#1d4ed8'},
+  ].map(s=>`<div style="flex:1;min-width:100px;padding:10px 12px;border-radius:12px;background:${s.bg};border:1.5px solid ${s.cl}22">
+    <div style="font-size:18px;font-weight:800;color:${s.cl}">${s.val}</div>
+    <div style="font-size:11px;color:var(--text-light)">${s.label}</div>
+  </div>`).join('');
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏛️</div><h3>Belum Ada Data Presensi</h3><p>Klik "Input Manual" atau Scan QR Siswa</p></div>';
+    return;
+  }
+  const getNK = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama||'—';
+  el.innerHTML = rows.map(r => {
+    const jam = r.jam_masuk ? r.jam_masuk.slice(0,5) : '—';
+    const tglStr = r.tanggal ? new Date(r.tanggal+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}) : '—';
+    return `<div class="lab-presensi-card">
+      <div class="lab-presensi-av">${(r.nama||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${r.nama||'—'} ${r.nis?`<span style="font-size:10px;color:var(--text-light);font-weight:400">(${r.nis})</span>`:''}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap">
+          <span>🏫 ${getNK(r.kelas_id)}</span>
+          <span>📅 ${tglStr}</span>
+          <span>🕐 ${jam}</span>
+          ${r.topik?`<span>🔬 ${r.topik}</span>`:''}
+        </div>
+        ${r.keterangan?`<div style="font-size:11px;color:var(--text-light);margin-top:3px">📝 ${r.keterangan}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <span class="lab-status-chip ${r.status}">${{hadir:'✅ Hadir',izin:'🟡 Izin','tanpa-izin':'👻 Siluman!'}[r.status]||r.status}</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-sm btn-outline" onclick="editPresensiLab(${r.id})" title="Edit">✏️</button>
+          <button class="btn btn-sm btn-danger"  onclick="deletePresensiLab(${r.id})" title="Hapus">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showModalPresensiLab() {
+  document.getElementById('editPresensiLabId').value = '';
+  document.getElementById('presensiLabNama').value = '';
+  document.getElementById('presensiLabNis').value = '';
+  document.getElementById('presensiLabTopik').value = document.getElementById('filterPresensiTopik')?.value||'';
+  document.getElementById('presensiLabTgl').value = document.getElementById('filterPresensiTgl')?.value || new Date().toISOString().split('T')[0];
+  document.getElementById('presensiLabJam').value = new Date().toTimeString().slice(0,5);
+  document.getElementById('presensiLabStatus').value = 'hadir';
+  document.getElementById('presensiLabKet').value = '';
+  document.getElementById('presensiLabQrResult').style.display = 'none';
+  _labPopulateKelas();
+  const fk = document.getElementById('filterPresensiKelas')?.value;
+  if (fk) setTimeout(()=>{ document.getElementById('presensiLabKelas').value = fk; },50);
+  document.getElementById('modalPresensiLabTitle').textContent = '🏛️ Input Presensi Lab';
+  openModal('modalPresensiLab');
+}
+
+async function editPresensiLab(id) {
+  const { data } = await db.from('lab_presensi').select('*').eq('id',id).single();
+  if (!data) return;
+  document.getElementById('editPresensiLabId').value    = id;
+  document.getElementById('presensiLabNama').value      = data.nama||'';
+  document.getElementById('presensiLabNis').value       = data.nis||'';
+  document.getElementById('presensiLabTopik').value     = data.topik||'';
+  document.getElementById('presensiLabTgl').value       = data.tanggal||'';
+  document.getElementById('presensiLabJam').value       = (data.jam_masuk||'').slice(0,5);
+  document.getElementById('presensiLabStatus').value    = data.status||'hadir';
+  document.getElementById('presensiLabKet').value       = data.keterangan||'';
+  document.getElementById('presensiLabQrResult').style.display = 'none';
+  _labPopulateKelas();
+  setTimeout(()=>{ document.getElementById('presensiLabKelas').value = String(data.kelas_id||''); },60);
+  document.getElementById('modalPresensiLabTitle').textContent = '✏️ Edit Presensi Lab';
+  openModal('modalPresensiLab');
+}
+
+async function savePresensiLab() {
+  const nama = document.getElementById('presensiLabNama').value.trim();
+  const kelas= document.getElementById('presensiLabKelas').value;
+  if (!nama)  { toast('Nama siswa wajib diisi','error'); return; }
+  if (!kelas) { toast('Pilih kelas asal siswa','error'); return; }
+  const row = {
+    nama,
+    nis       : document.getElementById('presensiLabNis').value.trim()||null,
+    kelas_id  : parseInt(kelas),
+    topik     : document.getElementById('presensiLabTopik').value.trim()||null,
+    tanggal   : document.getElementById('presensiLabTgl').value||new Date().toISOString().split('T')[0],
+    jam_masuk : document.getElementById('presensiLabJam').value||null,
+    status    : document.getElementById('presensiLabStatus').value||'hadir',
+    keterangan: document.getElementById('presensiLabKet').value.trim()||null,
+    user_id   : currentUser.id,
+  };
+  const eid = document.getElementById('editPresensiLabId').value;
+  let err;
+  if (eid) { const r=await db.from('lab_presensi').update(row).eq('id',eid); err=r.error; }
+  else     { const r=await db.from('lab_presensi').insert(row);              err=r.error; }
+  if (err) { toast(err.message,'error'); return; }
+  toast(eid?'Presensi diperbarui ✓':'Presensi disimpan ✓','success');
+  closeModal('modalPresensiLab'); loadPresensiLab();
+}
+
+async function deletePresensiLab(id) {
+  if (!confirm('Hapus data presensi ini?')) return;
+  await db.from('lab_presensi').delete().eq('id',id);
+  toast('Data dihapus','success'); loadPresensiLab();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  QR SCANNER (pakai jsQR via CDN)
+// ─────────────────────────────────────────────────────────────
+let _qrStream = null;
+let _qrMode   = null; // 'inventaris' | 'peminjaman' | 'pinjam-alat' | 'presensi'
+let _qrAnimId = null;
+
+function labQrScan(mode) {
+  _qrMode = mode;
+  document.getElementById('qrResultMsg').style.display = 'none';
+  document.getElementById('qrManualInput').value = '';
+  openModal('qrScannerModal');
+  _startQrCamera();
+}
+
+async function _startQrCamera() {
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } });
+    const vid = document.getElementById('qrVideo');
+    vid.srcObject = _qrStream;
+    vid.play();
+    vid.onloadedmetadata = () => _qrScanLoop();
+  } catch(e) {
+    // Camera not available — just show manual input
+    console.warn('QR camera error:', e);
+    document.getElementById('qrVideoWrap').innerHTML = `<div style="padding:30px;text-align:center;color:var(--text-light);font-size:12px">📵 Kamera tidak tersedia di perangkat ini.<br>Gunakan input manual di bawah.</div>`;
+  }
+}
+
+function _qrScanLoop() {
+  const vid = document.getElementById('qrVideo');
+  if (!vid || vid.readyState < 2) { _qrAnimId = requestAnimationFrame(_qrScanLoop); return; }
+  const canvas = document.createElement('canvas');
+  canvas.width  = vid.videoWidth;
+  canvas.height = vid.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(vid, 0, 0);
+  try {
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Try jsQR if loaded
+    if (window.jsQR) {
+      const code = window.jsQR(imgData.data, imgData.width, imgData.height);
+      if (code && code.data) { _qrHandleResult(code.data); return; }
+    }
+  } catch(e) {}
+  _qrAnimId = requestAnimationFrame(_qrScanLoop);
+}
+
+function _qrHandleResult(code) {
+  cancelAnimationFrame(_qrAnimId);
+  closeQrScanner();
+  _qrDispatch(code.trim());
+}
+
+function qrManualSubmit() {
+  const v = document.getElementById('qrManualInput').value.trim();
+  if (!v) { toast('Masukkan kode QR terlebih dahulu','error'); return; }
+  closeQrScanner();
+  _qrDispatch(v);
+}
+
+function _qrDispatch(kode) {
+  if (_qrMode === 'inventaris') {
+    // Isi kode QR di modal inventaris & auto-lookup
+    document.getElementById('invKodeQr').value = kode;
+    document.getElementById('invQrDisplay').textContent = kode;
+    document.getElementById('invQrResult').style.display = '';
+    document.getElementById('invQrResult').textContent = `✅ QR Ter-scan: ${kode}`;
+    // Cek apakah sudah ada di inventaris
+    if (db) db.from('lab_inventaris').select('*').eq('kode_qr',kode).single().then(({data})=>{
+      if (data) { showModalInvEdit(data.id); toast(`Alat ditemukan: ${data.nama}`,'success'); }
+      else { showModalInv(); setTimeout(()=>{ document.getElementById('invKodeQr').value=kode; document.getElementById('invQrDisplay').textContent=kode; document.getElementById('invQrResult').style.display=''; document.getElementById('invQrResult').textContent=`✅ QR baru: ${kode} (alat belum terdaftar)`; },100); }
+    });
+  } else if (_qrMode === 'pinjam-alat') {
+    _pinjamAddAlatByQr(kode);
+  } else if (_qrMode === 'peminjaman') {
+    // Buka modal pinjam dengan QR kode alat di baris pertama
+    showModalPinjam();
+    setTimeout(() => _pinjamAddAlatByQr(kode), 300);
+  } else if (_qrMode === 'presensi') {
+    // Lookup siswa by QR (QR pada kartu siswa biasanya berisi NIS)
+    document.getElementById('presensiLabNis').value = kode;
+    document.getElementById('presensiLabQrResult').style.display = '';
+    document.getElementById('presensiLabQrResult').textContent = `✅ QR Siswa ter-scan: ${kode}`;
+    showModalPresensiLab();
+    toast(`QR siswa ter-scan: ${kode}`, 'success');
+  }
+}
+
+function closeQrScanner() {
+  if (_qrStream) { _qrStream.getTracks().forEach(t=>t.stop()); _qrStream=null; }
+  cancelAnimationFrame(_qrAnimId);
+  closeModal('qrScannerModal');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SQL SETUP HELPER (tampil saat tabel belum ada)
+// ─────────────────────────────────────────────────────────────
+function _labErrHtml(tabel, sql) {
+  return `<div class="empty-state">
+    <div class="empty-icon">⚠️</div>
+    <h3>Tabel <code>${tabel}</code> belum ada</h3>
+    <p style="font-size:12px;max-width:420px;margin:8px auto 0">Jalankan SQL berikut di <b>Supabase → SQL Editor</b>:</p>
+    <pre style="background:#f1f5f9;border-radius:10px;padding:14px;font-size:11px;text-align:left;margin:14px 0;overflow-x:auto;max-width:540px;white-space:pre-wrap">${sql}</pre>
+    <button class="btn btn-primary" onclick="loadInventaris();loadPeminjaman();loadPresensiLab()">🔄 Coba Lagi</button>
+  </div>`;
+}
+
+function _labInvSql() {
+  return `CREATE TABLE IF NOT EXISTS lab_inventaris (
+  id             bigserial PRIMARY KEY,
+  kode_qr        text UNIQUE,
+  kode           text,
+  nama           text NOT NULL,
+  kategori       text,
+  satuan         text DEFAULT 'unit',
+  jumlah         int  DEFAULT 0,
+  jumlah_baik    int  DEFAULT 0,
+  jumlah_rusak   int  DEFAULT 0,
+  tahun          int,
+  lokasi         text,
+  keterangan     text,
+  status         text DEFAULT 'tersedia',
+  user_id        uuid REFERENCES auth.users(id),
+  created_at     timestamptz DEFAULT now()
+);
+ALTER TABLE lab_inventaris ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated" ON lab_inventaris FOR ALL USING (auth.uid() IS NOT NULL);`;
+}
+
+function _labPinjamSql() {
+  return `CREATE TABLE IF NOT EXISTS lab_peminjaman (
+  id                   bigserial PRIMARY KEY,
+  nama_peminjam        text NOT NULL,
+  kelas_id             int8,
+  topik                text,
+  alat_json            jsonb,
+  tgl_pinjam           date,
+  tgl_kembali_rencana  date,
+  tgl_kembali_aktual   date,
+  kondisi_alat         text DEFAULT 'Baik',
+  kondisi_kembali      text,
+  catatan              text,
+  catatan_kembali      text,
+  status               text DEFAULT 'dipinjam',
+  user_id              uuid REFERENCES auth.users(id),
+  created_at           timestamptz DEFAULT now()
+);
+ALTER TABLE lab_peminjaman ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated" ON lab_peminjaman FOR ALL USING (auth.uid() IS NOT NULL);
+-- Tambah kolom jika tabel sudah ada
+ALTER TABLE lab_peminjaman ADD COLUMN IF NOT EXISTS kondisi_alat text DEFAULT 'Baik';`;
+}
+
+function _labPresensiSql() {
+  return `CREATE TABLE IF NOT EXISTS lab_presensi (
+  id          bigserial PRIMARY KEY,
+  nama        text NOT NULL,
+  nis         text,
+  kelas_id    int8,
+  topik       text,
+  tanggal     date,
+  jam_masuk   time,
+  status      text DEFAULT 'hadir',
+  keterangan  text,
+  user_id     uuid REFERENCES auth.users(id),
+  created_at  timestamptz DEFAULT now()
+);
+ALTER TABLE lab_presensi ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated" ON lab_presensi FOR ALL USING (auth.uid() IS NOT NULL);`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HASH-BASED ROUTING — refresh tetap di halaman yang sama
+// ─────────────────────────────────────────────────────────────
+function _routeSaveHash(hashVal) {
+  try { location.hash = hashVal; } catch(e) {}
+}
+
+// Override showPage to also save hash
+const _origShowPage = showPage;
+window.showPage = function(name) {
+  _origShowPage(name);
+  _routeSaveHash('page=' + name);
+};
+
+// Override mpOpenDetail to save hash
+const _origMpOpenDetail = mpOpenDetail;
+window.mpOpenDetail = function(id, name, kode) {
+  _origMpOpenDetail(id, name, kode);
+  _routeSaveHash('mapel=' + id + '&name=' + encodeURIComponent(name) + '&kode=' + encodeURIComponent(kode||''));
+};
+
+// Override mpGoSubLab to save hash
+const _origGoSubLab = mpGoSubLab;
+window.mpGoSubLab = function(sub) {
+  _routeSaveHash('lab=' + sub + '&mid=' + (MP_SELECTED_ID||'') + '&mname=' + encodeURIComponent(MP_SELECTED_NAME||''));
+  _origGoSubLab(sub);
+};
+
+// Restore location from hash after login / refresh
+function _restoreFromHash() {
+  const hash = location.hash.replace('#','');
+  if (!hash) return false;
+  const params = Object.fromEntries(hash.split('&').map(p=>p.split('=')).map(([k,v])=>[k,decodeURIComponent(v||'')]));
+
+  if (params.lab && params.mid) {
+    MP_SELECTED_ID   = parseInt(params.mid);
+    MP_SELECTED_NAME = params.mname||'';
+    setTimeout(() => mpGoSubLab(params.lab), 400);
+    return true;
+  }
+  if (params.mapel && params.mid) {
+    setTimeout(() => mpOpenDetail(parseInt(params.mid), params.mname||'', params.kode||''), 400);
+    return true;
+  }
+  if (params.page) {
+    setTimeout(() => showPage(params.page), 300);
+    return true;
+  }
+  return false;
+}
+
+// Patch afterLogin to restore hash after data loads
+const _origAfterLogin = window.afterLogin;
+if (typeof afterLogin === 'function') {
+  // patch via prototype override
+}
+// Simpler: hook into the DOMContentLoaded or post-login flow
+document.addEventListener('apel-after-login', () => {
+  setTimeout(_restoreFromHash, 500);
+});
+
+// Also try on hash change
+window.addEventListener('hashchange', () => {
+  if (!currentUser) return;
+  _restoreFromHash();
+});
 
 // =========================================================
 //  GURU PIKET FEATURE
