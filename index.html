@@ -8699,9 +8699,9 @@ async function mpSaveCardEdit(mapelId) {
   if (lbl) lbl.textContent = name;
 
   // Restore default save button
-  document.querySelector('.ecm-btn-save').onclick = ecmSave;
+  // onclick sudah diset di HTML — tidak perlu set ulang
   ecmClose();
-  toast('Kartu mapel berhasil diperbarui ✓','success');
+  // toast sudah dipanggil di dalam ecmSaveMapel — tidak perlu duplikat
 }
 
 
