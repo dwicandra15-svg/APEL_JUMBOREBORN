@@ -1953,7 +1953,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   </nav>
   <div class="sidebar-footer">
     <div style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center">
-      Created & Developed by D.D Candra
+      Created & Developed by D.D Candra © 2024
     </div>
     <button class="btn-logout" onclick="doLogout()">⇠ Keluar</button>
   </div>
@@ -2052,7 +2052,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <div class="mh-card" data-id="logout" onclick="doLogout()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'logout')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-red" id="ico-logout">🚪</div><div class="mh-card-lbl" id="lbl-logout">Keluar</div></div>
         </div>
 
-        <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
+        <div class="mh-footer">Created &amp; Developed by D.D Candra © 2024</div>
       </div>
     </div>
 
@@ -3616,7 +3616,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 <script>
 // ================================================================
 // APEL JUMBO  - Application Logic
-// Created & Developed by D.D Candra
+// Created & Developed by D.D Candra © 2024
 // ================================================================
 
 let db = null;
@@ -5405,7 +5405,7 @@ function addKopToPdf(doc, kop) {
   doc.setTextColor(30,30,30);
   // watermark
   doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', pgW/2, pgH-3, {align:'center'});
+  doc.text('Created & Developed by D.D Candra © 2024', pgW/2, pgH-3, {align:'center'});
   doc.setTextColor(30,30,30);
 }
 
@@ -5439,7 +5439,7 @@ function cetakAbsensi() {
   });
   doc.autoTable({ startY:30, head:[['Nama','Kelas','Jml Hari','H','S','I','A','% Hadir']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
+  doc.text('Created & Developed by D.D Candra © 2024', 148,200,{align:'center'});
   savePdf(doc,'rekap-absensi.pdf');
 }
 
@@ -5460,7 +5460,7 @@ function cetakNilai() {
   });
   doc.autoTable({ startY:30, head:[['Nama','PR','HRN','TGS','PRJ','PFT','SUM','STS','SAS','AVG']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
+  doc.text('Created & Developed by D.D Candra © 2024', 148,200,{align:'center'});
   savePdf(doc,'rekap-nilai.pdf');
 }
 
@@ -5827,7 +5827,7 @@ function cetakUmmi(lvl) {
     columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 15 } }
   });
   doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148, 200, {align:'center'});
+  doc.text('Created & Developed by D.D Candra © 2024', 148, 200, {align:'center'});
   savePdf(doc,`rekap-ummi-${lvl}.pdf`);
   toast('PDF UMMI berhasil diunduh!', 'success');
 }
@@ -6034,7 +6034,7 @@ function setSqlSetup() {
   const sql = `-- ============================================
 -- APEL JUMBO - Database Setup SQL
 -- Jalankan di Supabase SQL Editor
--- Created & Developed by D.D Candra
+-- Created & Developed by D.D Candra © 2024
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS kelas (
