@@ -3789,9 +3789,13 @@ async function afterLogin() {
   setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 1000);
   // Mulai listener global chat untuk SEMUA kelas (bell + badge)
   setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 1200);
-  // Restore halaman dari hash (jika ada) — jika tidak ada, tampilkan home
-  const restored = _restoreFromHash();
-  if (!restored) goHome();
+  // Restore halaman terakhir dari localStorage
+  const lastPage = localStorage.getItem('apel_last_page');
+  if (lastPage && lastPage !== 'home') {
+    setTimeout(() => { try { showPage(lastPage); } catch(e) { goHome(); } }, 400);
+  } else {
+    goHome();
+  }
   // Fire event untuk modul lain
   document.dispatchEvent(new CustomEvent('apel-after-login'));
 }
@@ -6420,7 +6424,7 @@ function showPage(name) {
   if (name==='ummi8') renderUmmiPage('ummi8');
   if (name==='ummi9') renderUmmiPage('ummi9');
   // Save hash for refresh persistence
-  try { location.hash = 'page='+name; } catch(e){}
+  // Simpan halaman terakhir ke localStorage (tidak pakai location.hash — mencegah hashchange loop)
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -7844,7 +7848,8 @@ CREATE POLICY "authenticated" ON lab_presensi FOR ALL USING (auth.uid() IS NOT N
 //  HASH-BASED ROUTING — refresh tetap di halaman yang sama
 // ─────────────────────────────────────────────────────────────
 function _routeSaveHash(hashVal) {
-  try { location.hash = hashVal; } catch(e) {}
+  // Simpan ke localStorage untuk restore setelah refresh
+  try { localStorage.setItem('apel_last_page', hashVal); } catch(e) {}
 }
 
 // Override showPage to also save hash
@@ -7868,27 +7873,28 @@ window.mpGoSubLab = function(sub) {
   _origGoSubLab(sub);
 };
 
-// Restore location from hash after login / refresh
+// Restore halaman terakhir dari localStorage setelah login / refresh
 function _restoreFromHash() {
-  const hash = location.hash.replace('#','');
-  if (!hash) return false;
-  const params = Object.fromEntries(hash.split('&').map(p=>p.split('=')).map(([k,v])=>[k,decodeURIComponent(v||'')]));
+  const saved = localStorage.getItem('apel_last_page') || '';
+  if (!saved || saved === 'home') return false;
 
-  if (params.lab && params.mid) {
+  // Format lama: "lab=inventaris&mid=1&mname=IPA"
+  if (saved.includes('lab=') && saved.includes('mid=')) {
+    const params = Object.fromEntries(saved.split('&').map(p=>p.split('=')).map(([k,v])=>[k,decodeURIComponent(v||'')]));
     MP_SELECTED_ID   = parseInt(params.mid);
     MP_SELECTED_NAME = params.mname||'';
-    setTimeout(() => mpGoSubLab(params.lab), 400);
+    setTimeout(() => mpGoSubLab(params.lab), 500);
     return true;
   }
-  if (params.mapel && params.mid) {
-    setTimeout(() => mpOpenDetail(parseInt(params.mid), params.mname||'', params.kode||''), 400);
+  // Format: "mapel=1&mid=1&mname=IPA&kode=..."
+  if (saved.includes('mapel=') && saved.includes('mid=')) {
+    const params = Object.fromEntries(saved.split('&').map(p=>p.split('=')).map(([k,v])=>[k,decodeURIComponent(v||'')]));
+    setTimeout(() => mpOpenDetail(parseInt(params.mid), params.mname||'', params.kode||''), 500);
     return true;
   }
-  if (params.page) {
-    setTimeout(() => showPage(params.page), 300);
-    return true;
-  }
-  return false;
+  // Format biasa: nama halaman langsung (jurnal, nilai, dll)
+  setTimeout(() => { try { showPage(saved); } catch(e) { goHome(); } }, 400);
+  return true;
 }
 
 // Patch afterLogin to restore hash after data loads
@@ -7897,15 +7903,10 @@ if (typeof afterLogin === 'function') {
   // patch via prototype override
 }
 // Simpler: hook into the DOMContentLoaded or post-login flow
-document.addEventListener('apel-after-login', () => {
-  setTimeout(_restoreFromHash, 500);
-});
+// apel-after-login: restore sudah ditangani di afterLogin langsung
 
-// Also try on hash change
-window.addEventListener('hashchange', () => {
-  if (!currentUser) return;
-  _restoreFromHash();
-});
+// hashchange listener dihapus — menyebabkan loop toast
+// Restore halaman kini hanya dari localStorage di afterLogin
 
 // =========================================================
 //  GURU PIKET FEATURE
@@ -8698,10 +8699,8 @@ async function mpSaveCardEdit(mapelId) {
   }
   if (lbl) lbl.textContent = name;
 
-  // Restore default save button
-  // onclick sudah diset di HTML — tidak perlu set ulang
   ecmClose();
-  // toast sudah dipanggil di dalam ecmSaveMapel — tidak perlu duplikat
+  toast('Ikon berhasil disimpan! ✓', 'success');
 }
 
 
