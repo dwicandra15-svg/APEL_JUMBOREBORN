@@ -1929,6 +1929,67 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .pres-riwayat-title { font-size:14px;font-weight:700;color:var(--text); }
 .pres-riwayat-sub   { font-size:11px;color:var(--text-light);margin-top:2px; }
 
+/* ═══════════════════════════════════
+   HOME BOTTOM NAV BAR
+═══════════════════════════════════ */
+#homeBottomNav {
+  position:fixed; bottom:0; left:0; right:0; height:62px;
+  background:#fff; border-top:1px solid var(--border);
+  display:none; align-items:center; z-index:300;
+  box-shadow:0 -4px 20px rgba(0,0,0,.08);
+}
+#homeBottomNav.visible { display:flex; }
+.hbn-item {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:3px; padding:6px 4px; cursor:pointer;
+  color:var(--text-light); border:none; background:transparent;
+  font-family:inherit; transition:all .18s; position:relative;
+}
+.hbn-item.active { color:var(--primary); }
+.hbn-item.active .hbn-active-bar {
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  width:28px; height:3px; background:var(--primary); border-radius:99px;
+}
+.hbn-icon { font-size:24px; line-height:1; }
+.hbn-label { font-size:10px; font-weight:700; letter-spacing:.2px; }
+.hbn-badge {
+  position:absolute; top:4px; right:calc(50% - 18px);
+  min-width:16px; height:16px; background:#ef4444;
+  border-radius:99px; color:#fff; font-size:9px; font-weight:800;
+  display:none; align-items:center; justify-content:center;
+  padding:0 3px; border:2px solid #fff;
+}
+.hbn-badge.show { display:flex; }
+
+/* Home tab sections */
+.home-tab-sec { display:none; }
+.home-tab-sec.active { display:block; }
+#page-home .mh-body { padding-bottom:80px !important; }
+
+/* Mapel tab list */
+.mapel-tab-list { display:flex; flex-direction:column; gap:10px; padding:16px; }
+.mapel-tab-card {
+  background:#fff; border-radius:14px; border:1px solid var(--border);
+  padding:14px 16px; display:flex; align-items:center; gap:14px;
+  cursor:pointer; transition:all .18s; box-shadow:0 1px 6px rgba(0,0,0,.04);
+}
+.mapel-tab-card:hover { border-color:var(--primary); transform:translateY(-1px); box-shadow:0 4px 16px rgba(26,86,219,.12); }
+.mapel-tab-ico { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.mapel-tab-name { font-size:14px; font-weight:700; color:var(--text); }
+.mapel-tab-kode { font-size:11px; color:var(--text-light); margin-top:2px; }
+
+/* Quick cards grid */
+.hbn-quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
+.hbn-quick-card {
+  background:#fff; border-radius:14px; border:1px solid var(--border);
+  padding:18px 14px; text-align:center; cursor:pointer;
+  transition:all .18s; box-shadow:0 1px 6px rgba(0,0,0,.04);
+}
+.hbn-quick-card:hover { border-color:var(--primary); transform:translateY(-2px); }
+.hbn-quick-ico { font-size:32px; margin-bottom:8px; }
+.hbn-quick-lbl { font-size:13px; font-weight:700; color:var(--text); }
+.hbn-quick-sub { font-size:11px; color:var(--text-light); margin-top:3px; }
+
 </style>
 </head>
 <body>
@@ -2223,10 +2284,133 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
         <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
       </div>
-    </div>
+      <!-- ──── TAB: MAPEL ──── -->
+      <div id="homeTabMapel" class="home-tab-sec" style="padding-bottom:80px">
+        <div style="padding:16px 16px 4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Mata Pelajaran</div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:2px">Pilih mapel untuk mulai aktivitas</div>
+        </div>
+        <div class="mapel-tab-list" id="mapelTabList">
+          <div style="text-align:center;padding:40px;color:var(--text-light)">
+            <div style="font-size:32px;margin-bottom:8px">📚</div>
+            <div style="font-size:13px">Memuat daftar mapel...</div>
+          </div>
+        </div>
+      </div>
+      <!-- ──── TAB: ABSENSI ──── -->
+      <div id="homeTabAbsensi" class="home-tab-sec" style="padding-bottom:80px">
+        <div style="padding:16px 16px 4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Absensi</div>
+        </div>
+        <div class="hbn-quick-grid">
+          <div class="hbn-quick-card" onclick="goPage('absensi')">
+            <div class="hbn-quick-ico">✅</div>
+            <div class="hbn-quick-lbl">Input Absensi</div>
+            <div class="hbn-quick-sub">Catat kehadiran siswa</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('absenRekap')">
+            <div class="hbn-quick-ico">📋</div>
+            <div class="hbn-quick-lbl">Rekap Absensi</div>
+            <div class="hbn-quick-sub">Lihat laporan kehadiran</div>
+          </div>
+          <div class="hbn-quick-card" onclick="gpOpen()">
+            <div class="hbn-quick-ico">👮</div>
+            <div class="hbn-quick-lbl">Guru Piket</div>
+            <div class="hbn-quick-sub">Piket S5, Inval & Tamu</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('labPresensi')">
+            <div class="hbn-quick-ico">🪪</div>
+            <div class="hbn-quick-lbl">Presensi Lab</div>
+            <div class="hbn-quick-sub">Kehadiran masuk lab IPA</div>
+          </div>
+        </div>
+      </div>
+      <!-- ──── TAB: NILAI ──── -->
+      <div id="homeTabNilai" class="home-tab-sec" style="padding-bottom:80px">
+        <div style="padding:16px 16px 4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Nilai & Laporan</div>
+        </div>
+        <div class="hbn-quick-grid">
+          <div class="hbn-quick-card" onclick="goPage('nilai')">
+            <div class="hbn-quick-ico">📝</div>
+            <div class="hbn-quick-lbl">Input Nilai</div>
+            <div class="hbn-quick-sub">Entry nilai siswa</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('nilaiRekap')">
+            <div class="hbn-quick-ico">📈</div>
+            <div class="hbn-quick-lbl">Rekap Nilai</div>
+            <div class="hbn-quick-sub">Lihat laporan nilai</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('bimbingan')">
+            <div class="hbn-quick-ico">💙</div>
+            <div class="hbn-quick-lbl">Bimbingan Wali</div>
+            <div class="hbn-quick-sub">Catatan bimbingan siswa</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('ummiTingkatan')">
+            <div class="hbn-quick-ico">📚</div>
+            <div class="hbn-quick-lbl">UMMI</div>
+            <div class="hbn-quick-sub">Pembayaran & tingkatan</div>
+          </div>
+        </div>
+      </div>
+      <!-- ──── TAB: LAINNYA ──── -->
+      <div id="homeTabLainnya" class="home-tab-sec" style="padding-bottom:80px">
+        <div style="padding:16px 16px 4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px">Lainnya</div>
+        </div>
+        <div class="hbn-quick-grid">
+          <div class="hbn-quick-card" onclick="goPage('diskusi')">
+            <div class="hbn-quick-ico">💬</div>
+            <div class="hbn-quick-lbl">Diskusi Kelas</div>
+            <div class="hbn-quick-sub">Chat dengan siswa & ortu</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('labInventaris')">
+            <div class="hbn-quick-ico">🔬</div>
+            <div class="hbn-quick-lbl">Lab IPA</div>
+            <div class="hbn-quick-sub">Inventaris & peminjaman</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('integrasiKinerja')">
+            <div class="hbn-quick-ico">🔀</div>
+            <div class="hbn-quick-lbl">Shortcut App</div>
+            <div class="hbn-quick-sub">Integrasi layanan ASN</div>
+          </div>
+          <div class="hbn-quick-card" onclick="goPage('pengaturan')">
+            <div class="hbn-quick-ico">⚙️</div>
+            <div class="hbn-quick-lbl">Pengaturan</div>
+            <div class="hbn-quick-sub">Konfigurasi aplikasi</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /page-home -->
 
-
-    <!-- ===== MAPEL SECTION on Home ===== -->
+    <!-- HOME BOTTOM NAVIGATION BAR -->
+    <nav id="homeBottomNav">
+      <button class="hbn-item active" id="hbn-beranda" onclick="switchHomeTab('beranda')">
+        <div class="hbn-active-bar"></div>
+        <div class="hbn-icon">🏠</div>
+        <div class="hbn-label">Beranda</div>
+      </button>
+      <button class="hbn-item" id="hbn-mapel" onclick="switchHomeTab('mapel')">
+        <div class="hbn-active-bar"></div>
+        <div class="hbn-icon">📚</div>
+        <div class="hbn-label">Mapel</div>
+      </button>
+      <button class="hbn-item" id="hbn-absensi" onclick="switchHomeTab('absensi')">
+        <div class="hbn-active-bar"></div>
+        <div class="hbn-icon">✅</div>
+        <div class="hbn-label">Absensi</div>
+      </button>
+      <button class="hbn-item" id="hbn-nilai" onclick="switchHomeTab('nilai')">
+        <div class="hbn-active-bar"></div>
+        <div class="hbn-icon">📝</div>
+        <div class="hbn-label">Nilai</div>
+      </button>
+      <button class="hbn-item" id="hbn-lainnya" onclick="switchHomeTab('lainnya')">
+        <div class="hbn-active-bar"></div>
+        <div class="hbn-icon">⋯</div>
+        <div class="hbn-label">Lainnya</div>
+      </button>
+    </nav>
     <!-- (rendered dynamically by JS inside mh-body) -->
 
     <!-- ===== MAPEL DETAIL PAGE ===== -->
@@ -6290,19 +6474,80 @@ function goHome() {
   mpRenderHomeGrid();
   // Load saved customizations from Supabase
   setTimeout(() => { ecmLoadAll(); mpLoadSavedIcons(); }, 300);
+  // Tampilkan bottom nav
+  document.getElementById('homeBottomNav').classList.add('visible');
+  // Kembali ke tab beranda
+  switchHomeTab('beranda');
+}
+
+// ── HOME BOTTOM NAV ───────────────────────────────────
+let _currentHomeTab = 'beranda';
+
+function switchHomeTab(tab) {
+  _currentHomeTab = tab;
+  // Update tombol aktif
+  ['beranda','mapel','absensi','nilai','lainnya'].forEach(t => {
+    document.getElementById('hbn-'+t).classList.toggle('active', t===tab);
+  });
+  // Sembunyikan semua section kecuali mh-body (beranda)
+  const mhBody = document.querySelector('#page-home .mh-body');
+  const tabs = ['homeTabMapel','homeTabAbsensi','homeTabNilai','homeTabLainnya'];
+  if (tab === 'beranda') {
+    if (mhBody) mhBody.style.display = '';
+    tabs.forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('active'); });
+  } else {
+    if (mhBody) mhBody.style.display = 'none';
+    tabs.forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('active'); });
+    const target = document.getElementById(
+      tab==='mapel'?'homeTabMapel':
+      tab==='absensi'?'homeTabAbsensi':
+      tab==='nilai'?'homeTabNilai':'homeTabLainnya'
+    );
+    if (target) target.classList.add('active');
+    if (tab==='mapel') renderMapelTab();
+  }
+}
+
+function renderMapelTab() {
+  const el = document.getElementById('mapelTabList');
+  if (!el || !APP_DATA || !APP_DATA.mapel) return;
+  if (!APP_DATA.mapel.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:32px;margin-bottom:8px">📚</div><div style="font-size:13px">Belum ada mata pelajaran</div></div>';
+    return;
+  }
+  el.innerHTML = APP_DATA.mapel.map(m => {
+    const ico = m.icon || '📚';
+    const warna = m.warna || 'var(--primary-light)';
+    return `<div class="mapel-tab-card" onclick="goMapel(${m.id},'${(m.nama||'').replace(/'/g,"\\'")}','${m.kode||''}')">
+      <div class="mapel-tab-ico" style="background:${warna}">${ico}</div>
+      <div class="mapel-tab-info">
+        <div class="mapel-tab-name">${m.nama||'—'}</div>
+        <div class="mapel-tab-kode">${m.kode||'Mata Pelajaran'}</div>
+      </div>
+      <div class="mapel-tab-arr">›</div>
+    </div>`;
+  }).join('');
+}
+
+function goMapel(id, nama, kode) {
+  // Gunakan mpOpenDetail yang sudah ada
+  if (typeof mpOpenDetail === 'function') {
+    mpOpenDetail(id, nama, kode);
+  } else {
+    goPage('mapel');
+  }
 }
 
 function goPage(name) {
+  // Sembunyikan bottom nav
+  document.getElementById('homeBottomNav').classList.remove('visible');
   if (name === 'diskusi') {
-    // Diskusi as full-screen fixed overlay
     const pg = document.getElementById('page-diskusi');
     if(pg) pg.classList.add('active');
     initChatPage();
     return;
   }
-  // Navigate using original showPage
   showPage(name);
-  // Show topbar with back button
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = '';
   const bb = document.getElementById('backBtn');
