@@ -319,6 +319,8 @@ tr:hover td { background: #f8fafc; }
 .badge-warning { background: #fef3c7; color: #92400e; }
 .badge-danger { background: #fee2e2; color: #9b1c1c; }
 .badge-gray { background: #f1f5f9; color: #64748b; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-purple { background: #ede9fe; color: #7c3aed; }
 
 /* MODAL */
 .modal-overlay {
@@ -2051,10 +2053,10 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mp-sub-ico ic-teal" id="ico-mapel_nilaiRekap">📈</div>
             <div class="mp-sub-lbl" id="lbl-mapel_nilaiRekap">Rekap Nilai</div>
           </div>
-          <div class="mp-sub-card" onclick="absensiKuBuka()" style="position:relative">
-            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_jurnal','AbsensiKu')" title="Edit ikon">⋮</button>
-            <div class="mp-sub-ico ic-purple" id="ico-mapel_jurnal">🔗</div>
-            <div class="mp-sub-lbl" id="lbl-mapel_jurnal">AbsensiKu</div>
+          <div class="mp-sub-card" onclick="mpGoSub('jurnal')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_jurnal','Jurnal Mengajar')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-purple" id="ico-mapel_jurnal">📔</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_jurnal">Jurnal Mengajar</div>
           </div>
           <div class="mp-sub-card" onclick="mpGoSub('bimbingan')" style="position:relative">
             <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_bimbingan','Bimbingan Wali')" title="Edit ikon">⋮</button>
@@ -2345,15 +2347,49 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       </div>
     </div>
 
-    <!-- ===== JURNAL ===== -->
+    <!-- ===== JURNAL MENGAJAR ===== -->
     <div id="page-jurnal" class="page">
       <div class="section-header">
-        <div><div class="section-title">AbsensiKu</div></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="showAddJurnal()">+ Tambah Link</button>
+        <div>
+          <div class="section-title">📔 Jurnal Mengajar</div>
+          <div class="section-sub">Catatan kegiatan belajar mengajar per pertemuan</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="showAddJurnal()">+ Tambah Jurnal</button>
           <button class="btn btn-print" onclick="cetakJurnal()">🖨️ Cetak PDF</button>
         </div>
       </div>
+
+      <!-- Filter bar -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Filter Kelas</label>
+            <select id="filterJurnalKelas" class="form-control" onchange="loadJurnal()">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter Mapel</label>
+            <select id="filterJurnalMapel" class="form-control" onchange="loadJurnal()">
+              <option value="">Semua Mapel</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter Bulan</label>
+            <select id="filterJurnalBulan" class="form-control" onchange="loadJurnal()">
+              <option value="">Semua Bulan</option>
+              <option value="01">Januari</option><option value="02">Februari</option>
+              <option value="03">Maret</option><option value="04">April</option>
+              <option value="05">Mei</option><option value="06">Juni</option>
+              <option value="07">Juli</option><option value="08">Agustus</option>
+              <option value="09">September</option><option value="10">Oktober</option>
+              <option value="11">November</option><option value="12">Desember</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div id="jurnalList"></div>
     </div>
 
@@ -2902,47 +2938,73 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   </div>
 </div>
 
-<!-- Modal AbsensiKu (Link) -->
+<!-- Modal Jurnal Mengajar -->
 <div class="modal-overlay" id="modalJurnal">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="modalJurnalTitle">Tambah Link Absensi</h3>
+      <h3 id="modalJurnalTitle">Tambah Jurnal Mengajar</h3>
       <button class="btn-close" onclick="closeModal('modalJurnal')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="editJurnalId">
-      <div class="form-group">
-        <label class="form-label">Nama Layanan <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="jurnalMateri" class="form-control" placeholder="Contoh: Absensi Kelas 7A, E-Presensi, dll">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Ikon (Emoji)</label>
-        <input type="text" id="jurnalPertemuan" class="form-control" placeholder="🔗" maxlength="4" style="font-size:22px;text-align:center;width:80px">
-      </div>
-      <div class="form-group">
-        <label class="form-label">URL / Link <span style="color:var(--danger)">*</span></label>
-        <input type="url" id="jurnalDesc" class="form-control" placeholder="https://...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Deskripsi Singkat</label>
-        <input type="text" id="jurnalCatatan" class="form-control" placeholder="Keterangan singkat tentang link ini...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Logo / Gambar (Opsional)</label>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:1.5px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;background:#fff">
-            📁 Pilih Gambar
-            <input type="file" id="jurnalLogoFile" accept="image/*" style="display:none" onchange="jurnalPreviewLogo(this)">
-          </label>
-          <img id="jurnalLogoPreview" src="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;display:none;border:2px solid var(--border)">
-          <span style="font-size:11px;color:var(--text-light)">PNG/JPG, akan menggantikan emoji</span>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tanggal <span style="color:var(--danger)">*</span></label>
+          <input type="date" id="jurnalTanggal" class="form-control">
         </div>
-        <input type="hidden" id="jurnalLogoBase64">
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:6px">
+            Pertemuan Ke-
+            <span id="jurnalPertemuanBadge" style="display:none;font-size:10px;font-weight:600;background:#dcfce7;color:#16a34a;border-radius:99px;padding:2px 8px">✨ Otomatis</span>
+          </label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="jurnalPertemuan" class="form-control" placeholder="—" min="1" max="999" style="width:90px" oninput="jurnalPertemuanManual()">
+            <div id="jurnalPertemuanHint" style="font-size:11px;color:var(--text-light);display:none">
+              <span id="jurnalPertemuanHintText"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kelas <span style="color:var(--danger)">*</span></label>
+          <select id="jurnalKelas" class="form-control" onchange="jurnalAutoPertemuan()">
+            <option value="">— Pilih Kelas —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mata Pelajaran <span style="color:var(--danger)">*</span></label>
+          <select id="jurnalMapel" class="form-control" onchange="jurnalAutoPertemuan()">
+            <option value="">— Pilih Mapel —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Materi / Topik <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="jurnalMateri" class="form-control" placeholder="Judul/topik materi yang diajarkan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kegiatan Pembelajaran</label>
+        <textarea id="jurnalDesc" class="form-control" rows="3" style="resize:vertical" placeholder="Uraikan kegiatan belajar mengajar yang dilakukan (pendahuluan, inti, penutup)..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jam Mulai</label>
+          <input type="time" id="jurnalJamMulai" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jam Selesai</label>
+          <input type="time" id="jurnalJamSelesai" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catatan / Keterangan</label>
+        <input type="text" id="jurnalCatatan" class="form-control" placeholder="cth: Siswa antusias, PR diberikan, dll">
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalJurnal')">Batal</button>
-      <button class="btn btn-primary" onclick="saveJurnal()">Simpan</button>
+      <button class="btn btn-primary" onclick="saveJurnal()">Simpan Jurnal</button>
     </div>
   </div>
 </div>
@@ -3403,10 +3465,11 @@ function populateAllSelects() {
     if (savedVal && [...el.options].some(o => o.value === savedVal)) el.value = savedVal;
   });
   // Populate mapel selects
-  ['jadwalMapel','jurnalMapel','rekapNilaiMapel'].forEach(id => {
+  ['jadwalMapel','jurnalMapel','rekapNilaiMapel','filterJurnalMapel'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+    const hasAll = ['filterJurnalMapel'].includes(id);
+    el.innerHTML = (hasAll ? '<option value="">Semua Mapel</option>' : '') + APP_DATA.mapel.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
   });
   // Bimbingan siswa filter
   const bimbSiswa = document.getElementById('filterBimbinganSiswa');
@@ -3472,16 +3535,22 @@ async function loadDashboard() {
   `).join('') : '<div class="empty-state" style="padding:30px"><div class="empty-icon">🎉</div><p>Tidak ada jadwal hari ini</p></div>';
   
   // Jurnal terbaru
-  const { data: jurnals } = await db.from('jurnal').select('*').order('created_at',{ascending:false}).limit(3);
+  const { data: jurnals } = await db.from('jurnal').select('*').order('tanggal',{ascending:false}).order('created_at',{ascending:false}).limit(3);
+  const getNK2 = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama||'—';
+  const getNM2 = id => (APP_DATA.mapel||[]).find(m=>String(m.id)===String(id))?.nama||'—';
   document.getElementById('jurnalRecent').innerHTML = (jurnals||[]).length ? (jurnals||[]).map(j=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:22px">${j.pertemuan||'🔗'}</div>
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📔</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">${j.materi||'-'}</div>
-        <a href="${j.deskripsi||'#'}" target="_blank" style="font-size:11px;color:var(--primary);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${j.deskripsi||'-'}</a>
+        <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.materi||'Tanpa Judul'}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
+          <span>🏫 ${getNK2(j.kelas_id)}</span>
+          <span>📚 ${getNM2(j.mapel_id)}</span>
+        </div>
+        ${j.tanggal?`<div style="font-size:10px;color:var(--text-light);margin-top:2px">📅 ${new Date(j.tanggal+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>`:''}
       </div>
     </div>`).join('')
-    : '<div class="empty-state" style="padding:30px"><div class="empty-icon">🔗</div><p>Belum ada link</p></div>';
+    : '<div class="empty-state" style="padding:30px"><div class="empty-icon">📔</div><p>Belum ada jurnal mengajar</p></div>';
 }
 
 // ===================== SISWA =====================
@@ -4004,111 +4073,326 @@ async function loadRekapNilai() {
   }).join('');
 }
 
-// ===================== JURNAL =====================
-// ===================== ABSENSI KU (Link Manager) =====================
+// ===================== JURNAL MENGAJAR =====================
+// Tabel: jurnal (kolom: tanggal, pertemuan, kelas_id, mapel_id, materi, deskripsi, jam_mulai, jam_selesai, catatan, user_id)
+
 async function loadJurnal() {
-  const { data } = await db.from('jurnal').select('*').order('created_at',{ascending:false});
-  document.getElementById('jurnalList').innerHTML = (data||[]).length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:4px 0">`
-      + (data||[]).map(j => {
-        const ikon   = j.logo
-          ? `<img src="${j.logo}" style="width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0">`
-          : `<div style="width:44px;height:44px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${j.pertemuan||'🔗'}</div>`;
-        return `
-        <div class="jurnal-card" style="display:flex;flex-direction:column;gap:10px;padding:16px">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            ${ikon}
+  const el = document.getElementById('jurnalList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="load-spin"></div></div>';
+
+  const kelasFilter = document.getElementById('filterJurnalKelas')?.value;
+  const mapelFilter = document.getElementById('filterJurnalMapel')?.value;
+  const bulanFilter = document.getElementById('filterJurnalBulan')?.value;
+
+  let q = db.from('jurnal').select('*').order('tanggal', { ascending: false }).order('created_at', { ascending: false });
+  if (kelasFilter) q = q.eq('kelas_id', kelasFilter);
+  if (mapelFilter) q = q.eq('mapel_id', mapelFilter);
+  if (bulanFilter) {
+    const yr = new Date().getFullYear();
+    q = q.gte('tanggal', `${yr}-${bulanFilter}-01`).lte('tanggal', `${yr}-${bulanFilter}-31`);
+  }
+
+  const { data, error } = await q;
+  if (error) {
+    // Tabel mungkin belum ada kolom baru — tampilkan pesan setup SQL
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <h3>Tabel jurnal perlu diperbarui</h3>
+      <p style="font-size:12px;color:var(--text-light);max-width:380px;margin:8px auto 0">
+        Jalankan SQL berikut di Supabase SQL Editor untuk menambahkan kolom yang diperlukan:
+      </p>
+      <pre style="background:#f1f5f9;border-radius:10px;padding:14px;font-size:11px;text-align:left;margin:14px 0;overflow-x:auto;max-width:480px">ALTER TABLE jurnal
+  ADD COLUMN IF NOT EXISTS tanggal date,
+  ADD COLUMN IF NOT EXISTS kelas_id int8 REFERENCES kelas(id),
+  ADD COLUMN IF NOT EXISTS mapel_id int8 REFERENCES mapel(id),
+  ADD COLUMN IF NOT EXISTS jam_mulai time,
+  ADD COLUMN IF NOT EXISTS jam_selesai time;</pre>
+      <button class="btn btn-primary" onclick="loadJurnal()">🔄 Coba Lagi</button>
+    </div>`;
+    return;
+  }
+
+  const rows = data || [];
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📔</div>
+      <h3>Belum Ada Jurnal Mengajar</h3>
+      <p>Klik <strong>+ Tambah Jurnal</strong> untuk mencatat kegiatan belajar mengajar</p>
+    </div>`;
+    return;
+  }
+
+  const getNamaKelas = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama || '—';
+  const getNamaMapel = id => (APP_DATA.mapel||[]).find(m=>String(m.id)===String(id))?.nama || '—';
+
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">` +
+    rows.map(j => {
+      const tgl = j.tanggal ? new Date(j.tanggal+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '—';
+      const jam = j.jam_mulai ? `${j.jam_mulai.slice(0,5)}${j.jam_selesai?' – '+j.jam_selesai.slice(0,5):''}` : '';
+      return `
+      <div class="jurnal-card" style="padding:18px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+            <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary-light),#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📔</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:14px;font-weight:700;margin-bottom:2px;color:var(--text)">${j.materi||'Tanpa Nama'}</div>
-              ${j.catatan?`<div style="font-size:11px;color:var(--text-light);margin-bottom:4px">${j.catatan}</div>`:''}
-              <a href="${j.deskripsi||'#'}" target="_blank" rel="noopener"
-                 style="font-size:11px;color:var(--primary);text-decoration:none;word-break:break-all;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px"
-                 title="${j.deskripsi||''}">${j.deskripsi||'-'}</a>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-              <button class="btn btn-sm btn-outline" onclick="editJurnal(${j.id})" title="Edit">✏️</button>
-              <button class="btn btn-sm btn-danger"  onclick="deleteJurnal(${j.id})" title="Hapus">🗑️</button>
+              <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.materi||'Tanpa Judul'}</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <span class="badge badge-blue" style="font-size:11px">🏫 ${getNamaKelas(j.kelas_id)}</span>
+                <span class="badge badge-purple" style="font-size:11px">📚 ${getNamaMapel(j.mapel_id)}</span>
+                ${j.pertemuan ? `<span class="badge badge-gray" style="font-size:11px">Pertemuan ke-${j.pertemuan}</span>` : ''}
+              </div>
             </div>
           </div>
-          <a href="${j.deskripsi||'#'}" target="_blank" rel="noopener"
-             style="display:block;text-align:center;padding:9px;border-radius:9px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;text-decoration:none">
-            🔗 Buka Link
-          </a>
-        </div>`;
-      }).join('') + `</div>`
-    : '<div class="empty-state"><div class="empty-icon">🔗</div><h3>Belum Ada Link</h3><p>Tambahkan link absensi pertama Anda</p></div>';
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-sm btn-outline" onclick="editJurnal(${j.id})" title="Edit">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteJurnal(${j.id})" title="Hapus">🗑️</button>
+          </div>
+        </div>
+        <div class="jurnal-meta" style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap">
+          <span>📅 ${tgl}</span>
+          ${jam ? `<span>🕐 ${jam}</span>` : ''}
+        </div>
+        ${j.deskripsi ? `<div class="jurnal-content" style="margin-top:10px;padding:10px 14px;background:var(--bg);border-radius:9px;border-left:3px solid var(--primary)">${j.deskripsi.replace(/\n/g,'<br>')}</div>` : ''}
+        ${j.catatan ? `<div style="margin-top:8px;font-size:12px;color:var(--text-light)">📝 ${j.catatan}</div>` : ''}
+      </div>`;
+    }).join('') + `</div>`;
 }
 
-function jurnalPreviewLogo(input) {
-  const file = input.files[0]; if (!file) return;
-  compressImage(file, 200, 0.8, b64 => {
-    document.getElementById('jurnalLogoBase64').value = b64;
-    const prev = document.getElementById('jurnalLogoPreview');
-    prev.src = b64; prev.style.display = 'block';
-  });
-}
+// Flag: apakah nilai pertemuan sudah diubah manual oleh guru
+let _jurnalPertemuanIsAuto = true;
 
 function showAddJurnal() {
   editingId = null;
+  _jurnalPertemuanIsAuto = true;
   document.getElementById('editJurnalId').value = '';
+  document.getElementById('jurnalTanggal').value = new Date().toISOString().split('T')[0];
+  document.getElementById('jurnalPertemuan').value = '';
   document.getElementById('jurnalMateri').value = '';
-  document.getElementById('jurnalPertemuan').value = '🔗';
   document.getElementById('jurnalDesc').value = '';
+  document.getElementById('jurnalJamMulai').value = '';
+  document.getElementById('jurnalJamSelesai').value = '';
   document.getElementById('jurnalCatatan').value = '';
-  document.getElementById('jurnalLogoBase64').value = '';
-  document.getElementById('jurnalLogoPreview').style.display = 'none';
-  document.getElementById('jurnalLogoPreview').src = '';
-  document.getElementById('jurnalLogoFile').value = '';
-  document.getElementById('modalJurnalTitle').textContent = 'Tambah Link Absensi';
+
+  // Reset hint UI
+  _jurnalPertemuanHintReset();
+
+  // Populate kelas & mapel dropdowns in modal
+  _jurnalPopulateDropdowns();
+
+  // Pre-select mapel jika sedang di context mapel
+  if (MP_SELECTED_ID) {
+    setTimeout(async () => {
+      const sm = document.getElementById('jurnalMapel');
+      if (sm) { sm.value = String(MP_SELECTED_ID); }
+      // Juga cek apakah ada kelas yg sudah dipilih di filter halaman jurnal
+      const fk = document.getElementById('filterJurnalKelas');
+      const sk = document.getElementById('jurnalKelas');
+      if (fk && fk.value && sk) { sk.value = fk.value; }
+      await jurnalAutoPertemuan();
+    }, 80);
+  }
+
+  document.getElementById('modalJurnalTitle').textContent = 'Tambah Jurnal Mengajar';
   openModal('modalJurnal');
 }
 
+function _jurnalPopulateDropdowns() {
+  const sk = document.getElementById('jurnalKelas');
+  const sm = document.getElementById('jurnalMapel');
+  if (sk) sk.innerHTML = '<option value="">— Pilih Kelas —</option>' +
+    (APP_DATA.kelas||[]).map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+  if (sm) sm.innerHTML = '<option value="">— Pilih Mapel —</option>' +
+    (APP_DATA.mapel||[]).map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+}
+
+// ─── Auto-fill pertemuan berdasarkan kelas + mapel ───────────────────────────
+async function jurnalAutoPertemuan() {
+  // Hanya auto-fill jika ini mode tambah baru (bukan edit) DAN belum diubah manual
+  if (!_jurnalPertemuanIsAuto) return;
+
+  const kelasId = document.getElementById('jurnalKelas')?.value;
+  const mapelId = document.getElementById('jurnalMapel')?.value;
+
+  const badge = document.getElementById('jurnalPertemuanBadge');
+  const hint  = document.getElementById('jurnalPertemuanHint');
+  const hintTxt = document.getElementById('jurnalPertemuanHintText');
+  const inp   = document.getElementById('jurnalPertemuan');
+
+  if (!kelasId || !mapelId) {
+    // Belum lengkap — reset
+    _jurnalPertemuanHintReset();
+    return;
+  }
+
+  // Tampilkan loading hint
+  if (hint) { hint.style.display = ''; }
+  if (hintTxt) hintTxt.textContent = '⏳ Mengecek...';
+  if (badge) badge.style.display = 'none';
+
+  // Query jurnal terakhir untuk kombinasi kelas + mapel ini
+  const { data, error } = await db.from('jurnal')
+    .select('pertemuan, tanggal, materi')
+    .eq('kelas_id', kelasId)
+    .eq('mapel_id', mapelId)
+    .not('pertemuan', 'is', null)
+    .order('pertemuan', { ascending: false })
+    .limit(1);
+
+  if (error || !data) {
+    _jurnalPertemuanHintReset();
+    return;
+  }
+
+  const namaKelas = (APP_DATA.kelas||[]).find(k=>String(k.id)===String(kelasId))?.nama || '?';
+  const namaMapel = (APP_DATA.mapel||[]).find(m=>String(m.id)===String(mapelId))?.nama || '?';
+
+  if (data.length === 0) {
+    // Belum ada jurnal sama sekali untuk kelas+mapel ini → pertemuan 1
+    if (inp) inp.value = 1;
+    if (badge) { badge.style.display = ''; badge.textContent = '✨ Otomatis'; badge.style.background = '#dcfce7'; badge.style.color = '#16a34a'; }
+    if (hint)  hint.style.display = '';
+    if (hintTxt) hintTxt.textContent = `Pertemuan pertama ${namaKelas} – ${namaMapel}`;
+  } else {
+    // Ada jurnal sebelumnya → lanjutkan +1
+    const last = data[0];
+    const nextNo = (parseInt(last.pertemuan) || 0) + 1;
+    if (inp) inp.value = nextNo;
+    if (badge) { badge.style.display = ''; badge.textContent = '✨ Otomatis'; badge.style.background = '#dcfce7'; badge.style.color = '#16a34a'; }
+    if (hint)  hint.style.display = '';
+    const tglLast = last.tanggal ? new Date(last.tanggal+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}) : '—';
+    if (hintTxt) hintTxt.textContent = `Lanjut dari pertemuan ${last.pertemuan} (${tglLast}: ${(last.materi||'').substring(0,24)}${(last.materi||'').length>24?'…':''})`;
+  }
+  _jurnalPertemuanIsAuto = true;
+}
+
+// Dipanggil saat guru mengetik manual di field pertemuan
+function jurnalPertemuanManual() {
+  _jurnalPertemuanIsAuto = false;
+  const badge   = document.getElementById('jurnalPertemuanBadge');
+  const hint    = document.getElementById('jurnalPertemuanHint');
+  const hintTxt = document.getElementById('jurnalPertemuanHintText');
+  if (badge) { badge.style.display = ''; badge.textContent = '✏️ Manual'; badge.style.background = '#fef9c3'; badge.style.color = '#854d0e'; }
+  if (hint) hint.style.display = 'none';
+  if (hintTxt) hintTxt.textContent = '';
+}
+
+function _jurnalPertemuanHintReset() {
+  const badge   = document.getElementById('jurnalPertemuanBadge');
+  const hint    = document.getElementById('jurnalPertemuanHint');
+  const hintTxt = document.getElementById('jurnalPertemuanHintText');
+  if (badge) badge.style.display = 'none';
+  if (hint)  hint.style.display  = 'none';
+  if (hintTxt) hintTxt.textContent = '';
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function editJurnal(id) {
-  const { data } = await db.from('jurnal').select('*').eq('id',id).single();
+  const { data } = await db.from('jurnal').select('*').eq('id', id).single();
   if (!data) return;
   editingId = id;
-  document.getElementById('editJurnalId').value = id;
-  document.getElementById('jurnalMateri').value   = data.materi||'';
-  document.getElementById('jurnalPertemuan').value = data.pertemuan||'🔗';
-  document.getElementById('jurnalDesc').value     = data.deskripsi||'';
-  document.getElementById('jurnalCatatan').value  = data.catatan||'';
-  document.getElementById('jurnalLogoBase64').value = data.logo||'';
-  const prev = document.getElementById('jurnalLogoPreview');
-  if (data.logo) { prev.src = data.logo; prev.style.display = 'block'; }
-  else           { prev.style.display = 'none'; }
-  document.getElementById('modalJurnalTitle').textContent = 'Edit Link Absensi';
+  _jurnalPertemuanIsAuto = false; // Edit mode: jangan auto-override
+  _jurnalPopulateDropdowns();
+  document.getElementById('editJurnalId').value    = id;
+  document.getElementById('jurnalTanggal').value   = data.tanggal || '';
+  document.getElementById('jurnalPertemuan').value = data.pertemuan || '';
+  document.getElementById('jurnalMateri').value    = data.materi || '';
+  document.getElementById('jurnalDesc').value      = data.deskripsi || '';
+  document.getElementById('jurnalJamMulai').value  = (data.jam_mulai||'').slice(0,5);
+  document.getElementById('jurnalJamSelesai').value= (data.jam_selesai||'').slice(0,5);
+  document.getElementById('jurnalCatatan').value   = data.catatan || '';
+
+  // Reset badge ke status manual saat edit
+  const badge = document.getElementById('jurnalPertemuanBadge');
+  if (badge) { badge.style.display = data.pertemuan ? '' : 'none'; badge.textContent = '✏️ Manual'; badge.style.background = '#fef9c3'; badge.style.color = '#854d0e'; }
+  _jurnalPertemuanHintReset();
+
+  setTimeout(() => {
+    const sk = document.getElementById('jurnalKelas');
+    const sm = document.getElementById('jurnalMapel');
+    if (sk) sk.value = String(data.kelas_id||'');
+    if (sm) sm.value = String(data.mapel_id||'');
+  }, 50);
+  document.getElementById('modalJurnalTitle').textContent = 'Edit Jurnal Mengajar';
   openModal('modalJurnal');
 }
 
 async function saveJurnal() {
-  const nama = document.getElementById('jurnalMateri').value.trim();
-  const url  = document.getElementById('jurnalDesc').value.trim();
-  if (!nama) { toast('Nama layanan wajib diisi','error'); return; }
-  if (!url)  { toast('URL / Link wajib diisi','error'); return; }
-  const logo = document.getElementById('jurnalLogoBase64').value || null;
+  const materi  = document.getElementById('jurnalMateri').value.trim();
+  const kelasId = document.getElementById('jurnalKelas').value;
+  const mapelId = document.getElementById('jurnalMapel').value;
+  const tanggal = document.getElementById('jurnalTanggal').value;
+  if (!materi)  { toast('Materi / topik wajib diisi', 'error'); return; }
+  if (!kelasId) { toast('Pilih kelas terlebih dahulu', 'error'); return; }
+  if (!mapelId) { toast('Pilih mata pelajaran terlebih dahulu', 'error'); return; }
+  if (!tanggal) { toast('Tanggal wajib diisi', 'error'); return; }
+
   const row = {
-    materi    : nama,
-    pertemuan : document.getElementById('jurnalPertemuan').value.trim() || '🔗',
-    deskripsi : url,
-    catatan   : document.getElementById('jurnalCatatan').value.trim(),
-    logo      : logo,
-    user_id   : currentUser.id
+    tanggal     : tanggal,
+    pertemuan   : parseInt(document.getElementById('jurnalPertemuan').value) || null,
+    kelas_id    : parseInt(kelasId),
+    mapel_id    : parseInt(mapelId),
+    materi      : materi,
+    deskripsi   : document.getElementById('jurnalDesc').value.trim(),
+    jam_mulai   : document.getElementById('jurnalJamMulai').value || null,
+    jam_selesai : document.getElementById('jurnalJamSelesai').value || null,
+    catatan     : document.getElementById('jurnalCatatan').value.trim(),
+    user_id     : currentUser.id
   };
+
   let err;
-  if (editingId) {
-    const res = await db.from('jurnal').update(row).eq('id',editingId); err=res.error;
+  const eid = document.getElementById('editJurnalId').value;
+  if (eid) {
+    const res = await db.from('jurnal').update(row).eq('id', eid); err = res.error;
   } else {
-    const res = await db.from('jurnal').insert(row); err=res.error;
+    const res = await db.from('jurnal').insert(row); err = res.error;
   }
-  if (err) { toast(err.message,'error'); return; }
-  toast(editingId ? 'Link diperbarui! ✓' : 'Link ditambahkan! ✓', 'success');
-  closeModal('modalJurnal'); loadJurnal();
+  if (err) { toast(err.message, 'error'); return; }
+  toast(eid ? 'Jurnal diperbarui! ✓' : 'Jurnal disimpan! ✓', 'success');
+  closeModal('modalJurnal');
+  loadJurnal();
 }
 
 async function deleteJurnal(id) {
-  if (!confirm('Hapus link ini?')) return;
-  await db.from('jurnal').delete().eq('id',id);
-  toast('Link dihapus'); loadJurnal();
+  if (!confirm('Hapus jurnal ini?')) return;
+  await db.from('jurnal').delete().eq('id', id);
+  toast('Jurnal dihapus', 'success');
+  loadJurnal();
+}
+
+async function cetakJurnal() {
+  const kelasFilter = document.getElementById('filterJurnalKelas')?.value;
+  const mapelFilter = document.getElementById('filterJurnalMapel')?.value;
+  let q = db.from('jurnal').select('*').order('tanggal',{ascending:true});
+  if (kelasFilter) q = q.eq('kelas_id', kelasFilter);
+  if (mapelFilter) q = q.eq('mapel_id', mapelFilter);
+  const { data } = await q;
+  const rows = data||[];
+  const getNK = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama||'—';
+  const getNM = id => (APP_DATA.mapel||[]).find(m=>String(m.id)===String(id))?.nama||'—';
+  const tgl = d => d ? new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>Jurnal Mengajar</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}
+    h2{text-align:center;margin-bottom:4px}p{text-align:center;color:#666;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+    th{background:#f0f4ff;font-weight:700}tr:nth-child(even){background:#fafafa}
+    @media print{body{padding:0}}</style></head><body>
+    <h2>📔 Jurnal Mengajar</h2>
+    <p>${CONFIG.namaSekolah||'Sekolah'}</p>
+    <table><thead><tr>
+      <th>#</th><th>Tanggal</th><th>Kelas</th><th>Mapel</th><th>Ke-</th><th>Materi</th><th>Kegiatan</th><th>Jam</th><th>Catatan</th>
+    </tr></thead><tbody>
+    ${rows.map((j,i)=>`<tr>
+      <td>${i+1}</td><td>${tgl(j.tanggal)}</td>
+      <td>${getNK(j.kelas_id)}</td><td>${getNM(j.mapel_id)}</td>
+      <td>${j.pertemuan||'—'}</td><td>${j.materi||'—'}</td>
+      <td>${(j.deskripsi||'—').replace(/\n/g,'<br>')}</td>
+      <td>${j.jam_mulai?j.jam_mulai.slice(0,5)+' – '+(j.jam_selesai||'...').slice(0,5):'—'}</td>
+      <td>${j.catatan||'—'}</td>
+    </tr>`).join('')}
+    </tbody></table></body></html>`);
+  w.document.close(); w.print();
 }
 
 // ── AbsensiKu: buka URL eksternal ──────────────────────────
@@ -4715,18 +4999,6 @@ function cetakJadwal() {
   savePdf(doc,'jadwal-mengajar.pdf');
 }
 
-async function cetakJurnal() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const kop = getKopData();
-  addKopToPdf(doc, kop);
-  doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text('DAFTAR LINK ABSENSI KU', 105, 40, {align:'center'});
-  const { data } = await db.from('jurnal').select('*').order('created_at',{ascending:false});
-  const rows = (data||[]).map((j,i)=>[i+1, j.pertemuan||'🔗', j.materi||'-', j.deskripsi||'-', j.catatan||'-']);
-  doc.autoTable({ startY:44, head:[['No','Ikon','Nama Layanan','URL / Link','Deskripsi']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[88,28,135]}, columnStyles:{3:{cellWidth:60}} });
-  savePdf(doc,'absensi-ku.pdf');
-}
 
 async function cetakBimbingan() {
   const { jsPDF } = window.jspdf;
