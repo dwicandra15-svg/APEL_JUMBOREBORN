@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js" defer></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3838,22 +3838,58 @@ async function afterLogin() {
   lastPage = lastPage.replace(/^(page=)+/, '').split('&')[0].trim();
   if (lastPage) localStorage.setItem('apel_last_page', lastPage);
 
+  // Halaman yang butuh re-init data setelah refresh
+  const PAGE_REINIT = {
+    'absensi'   : () => { try { loadAbsensi(); } catch(e){} },
+    'absenRekap': () => { try { loadRekapAbsen(); } catch(e){} },
+    'nilai'     : () => { try { loadNilai(); } catch(e){} },
+    'nilaiRekap': () => { try { loadRekapNilai(); } catch(e){} },
+    'jurnal'    : () => { try { loadJurnal(); } catch(e){} },
+    'bimbingan' : () => { try { loadBimbingan(); } catch(e){} },
+    'dashboard' : () => { try { loadDashboard(); } catch(e){} },
+  };
+
   if (lastPage && lastPage !== 'home') {
     setTimeout(() => {
       try {
+        // Handle format "lab=inventaris&mid=1&mname=IPA"
+        if (lastPage.startsWith('lab=')) {
+          const params = Object.fromEntries(
+            lastPage.split('&').map(p => p.split('=')).map(([k,v]) => [k, decodeURIComponent(v||'')])
+          );
+          if (params.mid) {
+            MP_SELECTED_ID   = parseInt(params.mid);
+            MP_SELECTED_NAME = params.mname || '';
+            mpGoSubLab(params.lab);
+          } else { goHome(); }
+          return;
+        }
+        // Handle format "mapel=1&mid=1&mname=IPA"
+        if (lastPage.startsWith('mapel=')) {
+          const params = Object.fromEntries(
+            lastPage.split('&').map(p => p.split('=')).map(([k,v]) => [k, decodeURIComponent(v||'')])
+          );
+          if (params.mid) mpOpenDetail(parseInt(params.mid), params.mname||'',(params.kode||'')); 
+          else goHome();
+          return;
+        }
+        // Halaman biasa
         const pgEl = document.getElementById('page-' + lastPage);
         if (pgEl) {
           showPage(lastPage);
+          if (PAGE_REINIT[lastPage]) setTimeout(PAGE_REINIT[lastPage], 300);
         } else {
           goHome();
         }
       } catch(e) {
         goHome();
       }
-    }, 400);
+    }, 1800);
   } else {
     goHome();
   }
+  // Refresh stats di home setelah semua data siap
+  setTimeout(() => { try { mhRefreshInfo(); } catch(e){} }, 600);
   // Fire event untuk modul lain
   document.dispatchEvent(new CustomEvent('apel-after-login'));
 }
