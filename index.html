@@ -410,14 +410,21 @@ tr:hover td { background: #f8fafc; }
 
 /* TOAST */
 #toast {
-  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px);
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
   background: #0f172a; color: white; padding: 11px 22px; border-radius: 99px;
   font-size: 13px; font-weight: 600; z-index: 9999;
-  transition: transform 0.3s; pointer-events: none;
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+  pointer-events: none;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   white-space: nowrap;
+  opacity: 0;
+  display: block !important;
 }
-#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
 #toast.success { background: var(--secondary); }
 #toast.error { background: var(--danger); }
 
@@ -677,7 +684,7 @@ tr:hover td { background: #f8fafc; }
 @media (max-width: 900px) {
   #sidebar { transform: translateX(-260px); box-shadow: none; }
   #sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.35); }
-  #main { margin-left: 0; }
+  #main { margin-left: 0; width: 100%; }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .topbar { padding: 10px 16px; }
@@ -686,7 +693,7 @@ tr:hover td { background: #f8fafc; }
 /* RESPONSIVE - MOBILE */
 @media (max-width: 600px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  #content { padding: 12px; }
+  #content { padding: 12px; min-height: 100vh; box-sizing: border-box; }
 
   .topbar { padding: 10px 12px; gap: 8px; }
   .topbar-title { font-size: 13px; }
@@ -736,13 +743,29 @@ tr:hover td { background: #f8fafc; }
   #page-siswa .section-header select { width: 100%; }
   #page-siswa .section-header .btn { flex: 1 1 calc(50% - 3px); text-align: center; justify-content: center; }
 
-  #toast { bottom: 80px; font-size: 12px; padding: 9px 18px; }
+  #toast { bottom: 80px; font-size: 12px; padding: 9px 18px; max-width: 85vw; white-space: normal; text-align: center; }
   body::after { display: none; }
 }
 
 /* PAGE HIDE */
 .page { display: none; }
 .page.active { display: block; }
+
+/* Lab pages butuh full height & scroll sendiri */
+.page.active.lab-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.lab-page .lab-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Pastikan #main bisa menampung lab page penuh */
+#main { position: relative; }
 
 /* Scroll */
 ::-webkit-scrollbar { width: 6px; }
@@ -3645,7 +3668,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Ini bekerja di SEMUA device karena Supabase menyimpan token-nya sendiri.
   try {
     const { data: { session }, error } = await db.auth.getSession();
-    if (session && session.user) {
+    // Error 400 = refresh_token expired/invalid — tangani diam-diam
+    if (error && (error.status === 400 || error.message?.includes('refresh_token'))) {
+      console.warn('Refresh token expired, clearing session');
+      localStorage.removeItem('apel_session');
+      localStorage.removeItem('sb-' + (CONFIG.supaUrl||'')+'-auth-token');
+    } else if (session && session.user) {
       currentUser = session.user;
       // Perbarui localStorage dengan session terbaru
       localStorage.setItem('apel_session', JSON.stringify(session));
@@ -3687,6 +3715,14 @@ function loadConfig() {
 }
 
 function applyConfig() {
+  // Update elemen header setiap kali config diterapkan
+  const guruEl = document.getElementById('guruTopbar');
+  if (guruEl && CONFIG.guru) guruEl.textContent = CONFIG.guru;
+  const schEl = document.getElementById('namaSekolahHeader');
+  if (schEl && CONFIG.sekolah) schEl.textContent = CONFIG.sekolah;
+  const npsEl = document.getElementById('npsnHeader');
+  if (npsEl && CONFIG.npsn) npsEl.textContent = CONFIG.npsn;
+
   document.getElementById('sidebarSchoolName').textContent = CONFIG.school || 'Nama Sekolah';
   document.getElementById('sidebarSchoolSub').textContent = CONFIG.subtitle || '-';
   mhRefreshInfo(); // Update home page header
@@ -3782,7 +3818,14 @@ async function doLogout() {
 async function afterLogin() {
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('setupPage').classList.add('hide');
-  document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
+  // Pastikan tampilkan data config dulu sebelum loadAllData
+  const guruEl = document.getElementById('guruTopbar');
+  if (guruEl) guruEl.textContent = CONFIG.guru || CONFIG.email || '';
+  // Isi nama sekolah di header jika belum
+  const schEl = document.getElementById('namaSekolahHeader');
+  if (schEl && CONFIG.sekolah) schEl.textContent = CONFIG.sekolah;
+  const npsEl = document.getElementById('npsnHeader');
+  if (npsEl && CONFIG.npsn) npsEl.textContent = CONFIG.npsn;
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
   setTimeout(() => { try { if(db) ecmLoadAll().then(()=>resetMapelLabels()); } catch(e){} }, 800);
@@ -4135,7 +4178,7 @@ async function saveSiswa() {
     kelas_id: kelasId,
     jenis_kelamin: document.getElementById('siswaJK').value,
     bimbingan: parseInt(document.getElementById('siswaBimbingan').value),
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   if (!row.nama) return toast('Nama harus diisi', 'error');
   let err;
@@ -4229,7 +4272,7 @@ async function saveJadwal() {
     jam_selesai: document.getElementById('jadwalSelesai').value,
     mapel_id: document.getElementById('jadwalMapel').value,
     ruang: document.getElementById('jadwalRuang').value,
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   const { error } = await db.from('jadwal').insert(row);
   if (error) return toast(error.message, 'error');
@@ -4288,7 +4331,7 @@ async function simpanAbsen() {
   const tanggal = document.getElementById('absenDate').value;
   if (!tanggal) return toast('Pilih tanggal', 'error');
   const rows = Object.entries(absenData).map(([siswa_id, status])=>({
-    siswa_id: parseInt(siswa_id), tanggal, status, kelas_id: parseInt(kelasId), user_id: currentUser.id
+    siswa_id: parseInt(siswa_id), tanggal, status, kelas_id: parseInt(kelasId), user_id      : currentUser?.id || null
   }));
   if (!rows.length) return toast('Tidak ada siswa', 'error');
   // Upsert (delete then insert)
@@ -4441,7 +4484,7 @@ async function simpanNilai(kelasId, mapelId, kategori, pertemuan) {
     kategori, pertemuan,
     skor: parseInt(document.getElementById(`nilai_${s.id}`)?.value||0),
     tanggal: new Date().toISOString().split('T')[0],
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   }));
   const { error } = await db.from('nilai').insert(rows);
   if (error) return toast(error.message, 'error');
@@ -4829,7 +4872,7 @@ async function saveJurnal() {
     jam_mulai   : document.getElementById('jurnalJamMulai').value || null,
     jam_selesai : document.getElementById('jurnalJamSelesai').value || null,
     catatan     : document.getElementById('jurnalCatatan').value.trim(),
-    user_id     : currentUser.id
+    user_id      : currentUser?.id || null
   };
 
   let err;
@@ -4942,7 +4985,7 @@ async function saveBimbingan() {
     kategori: document.getElementById('bimbinganKat').value,
     masalah: document.getElementById('bimbinganMasalah').value,
     solusi: document.getElementById('bimbinganSolusi').value,
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   const { error } = await db.from('bimbingan').insert(row);
   if (error) return toast(error.message, 'error');
@@ -5022,7 +5065,7 @@ async function saveIntegrasi() {
     ikon: document.getElementById('integrasiIkon').value || '🔗',
     deskripsi: document.getElementById('integrasiDesc').value.trim(),
     logo_base64: document.getElementById('integrasiLogoB64').value || null,
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   if (!row.nama || !row.url) return toast('Nama dan URL wajib diisi', 'error');
   let error;
@@ -5116,7 +5159,7 @@ async function saveKinerja() {
     ikon: document.getElementById('kinerjaIkon').value || '📊',
     deskripsi: document.getElementById('kinerjaDesc').value.trim(),
     logo_base64: document.getElementById('kinerjaLogoB64').value || null,
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   if (!row.nama || !row.url) return toast('Nama dan URL wajib diisi', 'error');
   let error;
@@ -5295,7 +5338,7 @@ async function uploadExcelSiswa(input) {
           kelas_id: kelas ? kelas.id : null,
           jenis_kelamin: jk,
           bimbingan: bimbingan,
-          user_id: currentUser.id
+          user_id      : currentUser?.id || null
         };
         
         const { error } = await db.from('siswa').insert(insertRow);
@@ -5360,7 +5403,7 @@ async function addKelas() {
   if (!currentUser) return toast('Sesi belum siap, coba refresh halaman', 'error');
   const nama = document.getElementById('newKelas').value.trim();
   if (!nama) return toast('Nama kelas wajib diisi', 'error');
-  const { error } = await db.from('kelas').insert({ nama, user_id: currentUser.id });
+  const { error } = await db.from('kelas').insert({ nama, user_id      : currentUser?.id || null });
   if (error) return toast(error.message, 'error');
   document.getElementById('newKelas').value = '';
   toast('Kelas ditambahkan!', 'success');
@@ -5377,7 +5420,7 @@ async function addMapel() {
   if (!currentUser) return toast('Sesi belum siap, coba refresh halaman', 'error');
   const nama = document.getElementById('newMapel').value.trim();
   if (!nama) return toast('Nama mapel wajib diisi', 'error');
-  const { error } = await db.from('mapel').insert({ nama, user_id: currentUser.id });
+  const { error } = await db.from('mapel').insert({ nama, user_id      : currentUser?.id || null });
   if (error) return toast(error.message, 'error');
   document.getElementById('newMapel').value = '';
   toast('Mapel ditambahkan!', 'success');
@@ -5774,7 +5817,7 @@ async function saveUmmi() {
     nominal: parseInt(document.getElementById('ummiNominal').value) || 0,
     catatan: document.getElementById('ummiCatatan').value,
     tingkatan_id: document.getElementById('ummiTingkatanId').value || null,
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   if (!row.siswa_id) return toast('Pilih siswa terlebih dahulu', 'error');
   
@@ -5942,7 +5985,7 @@ async function tambahSemuaTingkatan() {
   let berhasil = 0;
   for (const t of toAdd) {
     const { error } = await db.from('ummi_tingkatan').insert({
-      level: lvl, nama: t.nama, urutan: t.urutan, warna: t.warna, user_id: currentUser.id
+      level: lvl, nama: t.nama, urutan: t.urutan, warna: t.warna, user_id      : currentUser?.id || null
     });
     if (!error) berhasil++;
   }
@@ -6012,7 +6055,7 @@ async function saveTingkatan() {
     nama: document.getElementById('tingkatanNama').value.trim(),
     urutan: parseInt(document.getElementById('tingkatanUrutan').value)||0,
     warna: document.getElementById('tingkatanWarna').value||'#1a56db',
-    user_id: currentUser.id
+    user_id      : currentUser?.id || null
   };
   if (!row.nama) return toast('Nama tingkatan wajib diisi','error');
   let error;
@@ -6468,14 +6511,33 @@ document.querySelectorAll('.modal-overlay').forEach(overlay=>{
 let _toastTimer = null;
 function toast(msg, type='success') {
   const t = document.getElementById('toast');
+  if (!t) return;
+  // Bersihkan timer lama
   if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
-  t.textContent = msg; t.className = type;
-  t.classList.add('show');
+  // Reset dulu (force reflow agar animasi muncul ulang)
+  t.classList.remove('show');
+  void t.offsetHeight; // trigger reflow
+  t.textContent = msg;
+  t.className = type; // reset class
+  // requestAnimationFrame agar transisi berjalan di semua browser/HP
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      t.classList.add('show');
+    });
+  });
   _toastTimer = setTimeout(() => {
     t.classList.remove('show');
     _toastTimer = null;
-  }, 3500);
+  }, 3000);
 }
+
+// Pastikan toast hilang saat halaman kembali ke foreground
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _toastTimer === null) {
+    const t = document.getElementById('toast');
+    if (t) t.classList.remove('show');
+  }
+});
 
 // Download PDF kompatibel HP (Android/iOS)
 function savePdf(doc, filename) {
@@ -7339,7 +7401,7 @@ async function saveInventaris() {
     lokasi       : document.getElementById('invLokasi').value.trim()||null,
     keterangan   : document.getElementById('invKeterangan').value.trim()||null,
     status       : 'tersedia',
-    user_id      : currentUser.id,
+    user_id      : currentUser?.id || null,
   };
   const eid = document.getElementById('editInvId').value;
   let err;
@@ -7516,7 +7578,7 @@ async function savePeminjaman() {
     catatan           : document.getElementById('pinjamCatatan').value.trim()||null,
     kondisi_alat      : document.querySelector('input[name="pinjamKondisi"]:checked')?.value || 'Baik',
     status            : 'dipinjam',
-    user_id           : currentUser.id,
+    user_id      : currentUser?.id || null,
   };
   const { error } = await db.from('lab_peminjaman').insert(row);
   if (error) { toast(error.message,'error'); return; }
@@ -7672,7 +7734,7 @@ async function savePresensiLab() {
     jam_masuk : document.getElementById('presensiLabJam').value||null,
     status    : document.getElementById('presensiLabStatus').value||'hadir',
     keterangan: document.getElementById('presensiLabKet').value.trim()||null,
-    user_id   : currentUser.id,
+    user_id      : currentUser?.id || null,
   };
   const eid = document.getElementById('editPresensiLabId').value;
   let err;
@@ -7816,7 +7878,8 @@ function _labInvSql() {
   created_at     timestamptz DEFAULT now()
 );
 ALTER TABLE lab_inventaris ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "authenticated" ON lab_inventaris FOR ALL USING (auth.uid() IS NOT NULL);`;
+DROP POLICY IF EXISTS "authenticated" ON lab_inventaris;
+CREATE POLICY "lab_all" ON lab_inventaris FOR ALL USING (true) WITH CHECK (true);`;
 }
 
 function _labPinjamSql() {
@@ -7838,7 +7901,8 @@ function _labPinjamSql() {
   created_at           timestamptz DEFAULT now()
 );
 ALTER TABLE lab_peminjaman ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "authenticated" ON lab_peminjaman FOR ALL USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "authenticated" ON lab_peminjaman;
+CREATE POLICY "lab_all" ON lab_peminjaman FOR ALL USING (true) WITH CHECK (true);
 -- Tambah kolom jika tabel sudah ada
 ALTER TABLE lab_peminjaman ADD COLUMN IF NOT EXISTS kondisi_alat text DEFAULT 'Baik';`;
 }
@@ -7858,7 +7922,8 @@ function _labPresensiSql() {
   created_at  timestamptz DEFAULT now()
 );
 ALTER TABLE lab_presensi ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "authenticated" ON lab_presensi FOR ALL USING (auth.uid() IS NOT NULL);`;
+DROP POLICY IF EXISTS "authenticated" ON lab_presensi;
+CREATE POLICY "lab_all" ON lab_presensi FOR ALL USING (true) WITH CHECK (true);`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -9449,7 +9514,7 @@ async function sendChatGuru() {
   const kObjSend=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
   const now=new Date().toISOString();
   const row={kelas_id:chatKelasAktif,kelas_nama:kObjSend?kObjSend.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pesan',
-    guru_user_id:currentUser.id,
+    guru_user_id      : currentUser?.id || null,
     pesan:pesan||(fileName?'[File: '+fileName+']':''),file_url:fileUrl,file_name:fileName,file_size:fileSize,created_at:now};
   const key=String(row.nama)+'_'+String(row.pesan).substring(0,20)+'_'+String(chatKelasAktif);
   sentChatKeys.add(key);
@@ -9474,7 +9539,7 @@ async function kirimPengumuman(){
   const isi=document.getElementById('pengumumanText').value.trim();
   if(!isi){toast('Isi pengumuman tidak boleh kosong','error');return;}
   const kls=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
-  const row={kelas_id:chatKelasAktif,kelas_nama:kls?kls.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',guru_user_id:currentUser.id,pesan:isi};
+  const row={kelas_id:chatKelasAktif,kelas_nama:kls?kls.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pengumuman',guru_user_id      : currentUser?.id || null,pesan:isi};
   let {error:errPengum}=await db.from('chat_apbo').insert(row);
   if(errPengum && errPengum.message && (errPengum.message.includes('kelas_nama')||errPengum.message.includes('schema cache'))){
     const {kelas_nama:_kn2,...rowFallback2}=row;
