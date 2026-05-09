@@ -3792,7 +3792,21 @@ async function afterLogin() {
   // Restore halaman terakhir dari localStorage
   const lastPage = localStorage.getItem('apel_last_page');
   if (lastPage && lastPage !== 'home') {
-    setTimeout(() => { try { showPage(lastPage); } catch(e) { goHome(); } }, 400);
+    setTimeout(() => {
+      try {
+        // Cek apakah halaman tersebut benar-benar ada di DOM
+        const pgEl = document.getElementById('page-' + lastPage);
+        if (pgEl) {
+          showPage(lastPage);
+        } else {
+          // Halaman tidak ditemukan (misal format lama lab=/mapel=) — coba _restoreFromHash
+          const restored = _restoreFromHash();
+          if (!restored) goHome();
+        }
+      } catch(e) {
+        goHome();
+      }
+    }, 400);
   } else {
     goHome();
   }
@@ -7878,7 +7892,7 @@ function _restoreFromHash() {
   const saved = localStorage.getItem('apel_last_page') || '';
   if (!saved || saved === 'home') return false;
 
-  // Format lama: "lab=inventaris&mid=1&mname=IPA"
+  // Format: "lab=inventaris&mid=1&mname=IPA"
   if (saved.includes('lab=') && saved.includes('mid=')) {
     const params = Object.fromEntries(saved.split('&').map(p=>p.split('=')).map(([k,v])=>[k,decodeURIComponent(v||'')]));
     MP_SELECTED_ID   = parseInt(params.mid);
