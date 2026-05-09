@@ -3790,18 +3790,19 @@ async function afterLogin() {
   // Mulai listener global chat untuk SEMUA kelas (bell + badge)
   setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 1200);
   // Restore halaman terakhir dari localStorage
-  const lastPage = localStorage.getItem('apel_last_page');
+  // Bersihkan nilai localStorage yang mungkin rusak (page=page=page=...)
+  let lastPage = localStorage.getItem('apel_last_page') || '';
+  lastPage = lastPage.replace(/^(page=)+/, '').split('&')[0].trim();
+  if (lastPage) localStorage.setItem('apel_last_page', lastPage);
+
   if (lastPage && lastPage !== 'home') {
     setTimeout(() => {
       try {
-        // Cek apakah halaman tersebut benar-benar ada di DOM
         const pgEl = document.getElementById('page-' + lastPage);
         if (pgEl) {
           showPage(lastPage);
         } else {
-          // Halaman tidak ditemukan (misal format lama lab=/mapel=) — coba _restoreFromHash
-          const restored = _restoreFromHash();
-          if (!restored) goHome();
+          goHome();
         }
       } catch(e) {
         goHome();
@@ -6374,7 +6375,9 @@ function populateBulan() {
 }
 
 function showPage(name) {
-  localStorage.setItem('apel_last_page', name);
+  // Simpan hanya nama halaman murni (tanpa prefix 'page=')
+  const _cleanName = String(name).replace(/^(page=)+/,'').split('&')[0] || name;
+  localStorage.setItem('apel_last_page', _cleanName);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${name}`);
@@ -7889,8 +7892,11 @@ window.mpGoSubLab = function(sub) {
 
 // Restore halaman terakhir dari localStorage setelah login / refresh
 function _restoreFromHash() {
-  const saved = localStorage.getItem('apel_last_page') || '';
+  let saved = localStorage.getItem('apel_last_page') || '';
+  // Bersihkan nilai rusak seperti "page=page=page=absensi"
+  saved = saved.replace(/^(page=)+/, '').split('&')[0].trim();
   if (!saved || saved === 'home') return false;
+  localStorage.setItem('apel_last_page', saved); // simpan kembali yang sudah bersih
 
   // Format: "lab=inventaris&mid=1&mname=IPA"
   if (saved.includes('lab=') && saved.includes('mid=')) {
