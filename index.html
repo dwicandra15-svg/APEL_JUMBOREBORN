@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <!-- ══ PWA Manifest ══ -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a56db">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="APEL JUMBO">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1711,8 +1718,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 /* ═══════════════════════════════════════════
    LAB IPA — Shared Styles (APEL JUMBO v22)
    ═══════════════════════════════════════════ */
-.lab-page { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
-.lab-page.active { display:flex !important; }
+.lab-page { display:flex; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
 .lab-header {
   display:flex; align-items:center; gap:12px;
   padding:14px 20px; background:var(--card);
@@ -1730,80 +1736,40 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .lab-header-info { flex:1; min-width:0; }
 .lab-header-info h2 { font-size:16px;font-weight:800;color:var(--text);line-height:1.2; }
 .lab-header-info p  { font-size:11px;color:var(--text-light);margin-top:2px; }
-.lab-content { flex:1; overflow-y:auto; padding:20px; padding-bottom:92px; }
+.lab-content { flex:1; overflow-y:auto; padding:20px; padding-bottom:82px; }
 
 /* ── Lab Bottom Navigation Bar ── */
 .lab-bottom-bar {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 72px;
-  background: #fff;
-  border-top: 1px solid var(--border);
-  display: none;
-  align-items: center;
-  justify-content: space-around;
-  z-index: 300;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  position:fixed;
+  bottom:0; left:0; right:0;
+  height:64px;
+  background:#fff;
+  border-top:1px solid var(--border);
+  display:none;
+  align-items:center;
+  justify-content:space-around;
+  z-index:300;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+  padding:0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-
-/* ── Each nav item ── */
+.lab-bottom-bar.visible { display:flex; }
 .lab-nav-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 6px 2px;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  border-radius: 14px;
-  transition: all .18s;
-  color: #94a3b8;          /* muted grey — inactive */
-  font-family: var(--font);
-  min-width: 0;
-  position: relative;
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; padding:8px 4px; cursor:pointer; border:none; background:transparent;
+  border-radius:12px; transition:all .18s; color:var(--text-light);
+  font-family:var(--font); min-height:52px;
 }
-.lab-nav-btn:active { opacity: .7; }
-
-/* ── Big emoji container ── */
+.lab-nav-btn:hover { background:var(--primary-light); }
+.lab-nav-btn.active { color:var(--primary); }
+.lab-nav-btn.active .lab-nav-ico { transform:scale(1.15); }
 .lab-nav-ico {
-  font-size: 26px;
-  line-height: 1;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  transition: background .18s, transform .18s;
+  font-size:22px; transition:transform .18s;
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
 }
-
-/* ── Label ── */
-.lab-nav-lbl {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
-  line-height: 1;
-  color: inherit;
-  white-space: nowrap;
-}
-
-/* ── ACTIVE state — matches screenshot: green tint bg + green bold label ── */
-.lab-nav-btn.active {
-  color: #0e9f6e;           /* green — matches screenshot active item */
-}
-.lab-nav-btn.active .lab-nav-ico {
-  background: #d1fae5;      /* soft green pill background */
-  transform: scale(1.05);
-}
-.lab-nav-btn.active .lab-nav-lbl {
-  font-weight: 700;
-  color: #0e9f6e;
-}
+.lab-nav-btn.active .lab-nav-ico { background:var(--primary-light); }
+.lab-nav-lbl { font-size:10px; font-weight:700; letter-spacing:0.2px; line-height:1; }
 
 .lab-tabs { display:flex; gap:6px; margin-bottom:18px; background:var(--card); border-radius:12px; padding:5px; border:1px solid var(--border); }
 .lab-tab  { flex:1;padding:8px 4px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--text-light);transition:.2s; }
@@ -1887,7 +1853,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .lab-empty p  { font-size:12px;margin-top:6px; }
 
 /* ── Floating add btn ── */
-.lab-fab { position:fixed;bottom:84px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:24px;box-shadow:0 4px 18px rgba(26,86,219,.4);cursor:pointer;z-index:200;transition:.2s;display:flex;align-items:center;justify-content:center; }
+.lab-fab { position:fixed;bottom:76px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:24px;box-shadow:0 4px 18px rgba(26,86,219,.4);cursor:pointer;z-index:200;transition:.2s;display:flex;align-items:center;justify-content:center; }
 .lab-fab:hover { transform:scale(1.08); }
 
 /* ── Lab modal ── */
@@ -1930,37 +1896,6 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .pres-riwayat-sub   { font-size:11px;color:var(--text-light);margin-top:2px; }
 
 </style>
-
-  <!-- ══ PWA Manifest ══ -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1a56db">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="APEL JUMBO">
-
-  <!-- ══ Service Worker Registration ══ -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' })
-          .then(reg => {
-            console.log('[SW] Terdaftar:', reg.scope);
-            // Cek update SW setiap 60 menit
-            setInterval(() => reg.update(), 60 * 60 * 1000);
-            // Aktifkan SW baru saat tersedia
-            reg.addEventListener('updatefound', () => {
-              const sw = reg.installing;
-              sw.addEventListener('statechange', () => {
-                if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-                  sw.postMessage({ type: 'SKIP_WAITING' });
-                }
-              });
-            });
-          })
-          .catch(err => console.warn('[SW] Gagal daftar:', err));
-      });
-    }
-  </script>
 </head>
 <body>
 
@@ -3432,30 +3367,68 @@ window.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Cara paling reliable: langsung tanya Supabase apakah ada session aktif.
-  // Ini bekerja di SEMUA device karena Supabase menyimpan token-nya sendiri.
+  // ── OFFLINE-FIRST SESSION CHECK ────────────────────────────────
+  // Prioritas 1: Jika offline → langsung pakai kredensial tersimpan
+  const isOnlineNow = navigator.onLine;
+  const savedSession  = localStorage.getItem('apel_session');
+  const offlineCreds  = localStorage.getItem('apel_offline_creds');
+
+  if (!isOnlineNow && offlineCreds) {
+    // OFFLINE MODE: verifikasi PIN lokal, bypass Supabase
+    try {
+      const creds = JSON.parse(offlineCreds);
+      // Buat user object tiruan dari data tersimpan
+      currentUser = { id: creds.uid, email: creds.email, offline_mode: true };
+      console.log('[Auth] 📴 Mode offline — login lokal berhasil');
+      await afterLoginOffline();
+      return;
+    } catch(e) {
+      console.warn('[Auth] Gagal login offline:', e);
+    }
+  }
+
+  // Prioritas 2: Online → cek session Supabase seperti biasa
   try {
     const { data: { session }, error } = await db.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
-      // Perbarui localStorage dengan session terbaru
       localStorage.setItem('apel_session', JSON.stringify(session));
+      // Simpan kredensial untuk akses offline
+      saveOfflineCreds(session.user.id, session.user.email);
       await afterLogin();
       return;
     }
   } catch(e) {
     console.warn('getSession error:', e);
+    // Jika error karena network → coba offline fallback
+    if (offlineCreds) {
+      try {
+        const creds = JSON.parse(offlineCreds);
+        currentUser = { id: creds.uid, email: creds.email, offline_mode: true };
+        console.log('[Auth] 📴 Network error — fallback ke login offline');
+        await afterLoginOffline();
+        return;
+      } catch(e2) {}
+    }
   }
 
-  // Fallback: coba pulihkan dari localStorage (untuk browser yang cache token)
-  const saved = localStorage.getItem('apel_session');
-  if (saved) {
+  // Prioritas 3: Restore session dari localStorage
+  if (savedSession) {
     try {
-      const s = JSON.parse(saved);
-      const { data, error } = await db.auth.setSession(s);
-      if (!error && data && data.user) {
-        currentUser = data.user;
-        await afterLogin();
+      const s = JSON.parse(savedSession);
+      if (isOnlineNow) {
+        const { data, error } = await db.auth.setSession(s);
+        if (!error && data && data.user) {
+          currentUser = data.user;
+          saveOfflineCreds(data.user.id, data.user.email);
+          await afterLogin();
+          return;
+        }
+      } else if (offlineCreds) {
+        // Offline + ada session tersimpan → masuk offline mode
+        const creds = JSON.parse(offlineCreds);
+        currentUser = { id: creds.uid, email: creds.email, offline_mode: true };
+        await afterLoginOffline();
         return;
       }
     } catch(e) {
@@ -3543,9 +3516,42 @@ async function doLogin() {
     if (error) throw error;
     currentUser = data.user;
     localStorage.setItem('apel_session', JSON.stringify(data.session));
+    // Simpan hash kredensial untuk akses offline
+    saveOfflineCreds(data.user.id, email, pass);
     await afterLogin();
   } catch(e) {
-    toast(e.message || 'Login gagal', 'error');
+    // Jika gagal karena network error (bukan salah password)
+    const isNetworkErr = !navigator.onLine || 
+      e.message?.includes('fetch') || 
+      e.message?.includes('network') ||
+      e.message?.includes('Failed to fetch') ||
+      e.message?.includes('Load failed');
+
+    if (isNetworkErr) {
+      // Coba login offline dengan kredensial tersimpan
+      const offlineCreds = localStorage.getItem('apel_offline_creds');
+      if (offlineCreds) {
+        try {
+          const creds = JSON.parse(offlineCreds);
+          const passHash = await hashString(pass);
+          if (creds.email === email && creds.passHash === passHash) {
+            currentUser = { id: creds.uid, email: creds.email, offline_mode: true };
+            toast('Login offline berhasil (mode tanpa internet)', 'info');
+            await afterLoginOffline();
+            document.getElementById('loginBtnText').textContent = 'Masuk';
+            return;
+          } else {
+            toast('Email/password tidak cocok dengan data tersimpan', 'error');
+          }
+        } catch(e2) {
+          toast('Login offline gagal: data tersimpan rusak', 'error');
+        }
+      } else {
+        toast('Tidak ada internet & belum pernah login sebelumnya', 'error');
+      }
+    } else {
+      toast(e.message || 'Login gagal', 'error');
+    }
   }
   document.getElementById('loginBtnText').textContent = 'Masuk';
 }
@@ -9271,8 +9277,8 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
     <div class="lab-nav-ico">🪪</div>
     <span class="lab-nav-lbl">Presensi</span>
   </button>
-  <button class="lab-nav-btn" id="labNavHome" onclick="labNavHome()">
-    <div class="lab-nav-ico">🏠</div>
+  <button class="lab-nav-btn" id="labNavHome" onclick="labNavHome()" style="max-width:54px">
+    <div class="lab-nav-ico" style="font-size:18px">🏠</div>
     <span class="lab-nav-lbl">Beranda</span>
   </button>
 </nav>
@@ -10253,9 +10259,27 @@ function stopCameraQR(stream, interval) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PATCH goPage — lab pages (placeholder, overridden below)
+//  PATCH goPage — tambahkan lab pages
 // ═══════════════════════════════════════════════════════════════
-// (unified patch applied at bottom of file)
+const _origGoPage = window.goPage;
+window.goPage = function(name) {
+  if (name === 'labInventaris') {
+    showPage(name);
+    initLabInventaris();
+    return;
+  }
+  if (name === 'labPeminjaman') {
+    showPage(name);
+    initLabPeminjaman();
+    return;
+  }
+  if (name === 'labPresensi') {
+    showPage(name);
+    initLabPresensi();
+    return;
+  }
+  _origGoPage(name);
+};
 
 // ═══════════════════════════════════════════════════════════════
 //  PATCH showPage navMap — tambahkan label lab pages
@@ -10363,549 +10387,321 @@ CREATE INDEX IF NOT EXISTS idx_lab_inv_kode ON lab_inventaris(kode);
 };
 
 
-
 // ════════════════════════════════════════════════════════════════
-//  LAB IPA — BOTTOM BAR CONTROLLER (Final Clean v22)
+//  LAB BOTTOM BAR — Navigation Controller
+//  APEL JUMBO Reborn v22 — Created by D.D Candra
 // ════════════════════════════════════════════════════════════════
 
-const _LAB_PAGES = ['labInventaris', 'labPeminjaman', 'labPresensi'];
+const LAB_PAGES = ['labInventaris', 'labPeminjaman', 'labPresensi'];
 
-// ── Show/hide bottom bar & set active tab ────────────────────────
-function labBottomBarShow(activePage) {
+function labBottomBarUpdate(pageName) {
   const bar = document.getElementById('labBottomBar');
   if (!bar) return;
-  bar.style.display = 'flex';
-  document.querySelectorAll('.lab-nav-btn').forEach(b => b.classList.remove('active'));
-  const map = {
-    labInventaris : 'labNavInventaris',
-    labPeminjaman : 'labNavPeminjaman',
-    labPresensi   : 'labNavPresensi'
-  };
-  if (map[activePage]) {
-    const btn = document.getElementById(map[activePage]);
-    if (btn) btn.classList.add('active');
+  
+  if (LAB_PAGES.includes(pageName)) {
+    bar.classList.add('visible');
+    // Update active button
+    ['Inventaris','Peminjaman','Presensi'].forEach(key => {
+      const btn = document.getElementById('labNav'+key);
+      if (btn) btn.classList.remove('active');
+    });
+    const activeMap = {
+      'labInventaris': 'labNavInventaris',
+      'labPeminjaman': 'labNavPeminjaman',
+      'labPresensi':   'labNavPresensi'
+    };
+    const activeBtn = document.getElementById(activeMap[pageName]);
+    if (activeBtn) activeBtn.classList.add('active');
+  } else {
+    bar.classList.remove('visible');
   }
 }
 
-function labBottomBarHide() {
-  const bar = document.getElementById('labBottomBar');
-  if (bar) bar.style.display = 'none';
-}
-
-// ── Navigasi dari tombol bottom bar ─────────────────────────────
 function labNavGo(pageName) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pg = document.getElementById('page-' + pageName);
-  if (pg) pg.classList.add('active');
-  if (pageName === 'labInventaris') initLabInventaris();
-  if (pageName === 'labPeminjaman') initLabPeminjaman();
-  if (pageName === 'labPresensi')   initLabPresensi();
-  labBottomBarShow(pageName);
-  localStorage.setItem('apel_last_page', pageName);
-  const tb = document.getElementById('mainTopbar');
-  if (tb) tb.style.display = 'none';
-}
-
-// ── Tombol Beranda di bottom bar ─────────────────────────────────
-function labNavHome() {
-  labBottomBarHide();
-  localStorage.removeItem('apel_last_page');
-  goHome();
-}
-
-// ── Patch goPage: lab pages → labNavGo, yang lain → normal ──────
-const _origGoPageLab = window.goPage;
-window.goPage = function(name) {
-  if (_LAB_PAGES.includes(name)) {
-    labNavGo(name);
-    return;
+  // Use the existing goPage flow which handles init and page restore
+  if (typeof window.goPage === 'function') {
+    window.goPage(pageName);
   }
-  labBottomBarHide();
-  _origGoPageLab(name);
-};
+  labBottomBarUpdate(pageName);
+}
 
-// ── Patch goHome: selalu sembunyikan bottom bar ──────────────────
-const _origGoHomeLab = window.goHome;
-window.goHome = function() {
-  labBottomBarHide();
-  _origGoHomeLab();
-};
+function labNavHome() {
+  if (typeof window.goHome === 'function') {
+    window.goHome();
+  }
+  const bar = document.getElementById('labBottomBar');
+  if (bar) bar.classList.remove('visible');
+}
 
-// ── Default: sembunyikan bottom bar saat load ────────────────────
+// ── Patch goPage to update bottom bar ──────────────────────────
+(function() {
+  const _origGoPage2 = window.goPage;
+  window.goPage = function(name) {
+    _origGoPage2(name);
+    labBottomBarUpdate(name);
+    // Ensure last page is saved correctly for refresh restore
+    localStorage.setItem('apel_last_page', name);
+  };
+})();
+
+// ── Patch goHome to hide bottom bar ────────────────────────────
+(function() {
+  const _origGoHome2 = window.goHome;
+  window.goHome = function() {
+    _origGoHome2();
+    const bar = document.getElementById('labBottomBar');
+    if (bar) bar.classList.remove('visible');
+  };
+})();
+
+// ── Update bar on page load (for refresh restore) ────────────── 
 document.addEventListener('DOMContentLoaded', () => {
-  labBottomBarHide();
+  // Wait for afterLogin to run, then check current page
+  const checkPage = () => {
+    const lastPage = localStorage.getItem('apel_last_page');
+    if (lastPage && LAB_PAGES.includes(lastPage)) {
+      setTimeout(() => labBottomBarUpdate(lastPage), 800);
+    }
+  };
+  setTimeout(checkPage, 1500);
 });
 
-// ── Safety restore setelah refresh/re-login ──────────────────────
-setTimeout(() => {
+// ── On page restore after login ──────────────────────────────
+const _origAfterLoginLab = window.afterLogin;
+if (typeof window.afterLogin === 'function') {
+  window.afterLogin = async function() {
+    await _origAfterLoginLab.apply(this, arguments);
+    const lastPage = localStorage.getItem('apel_last_page');
+    if (lastPage && LAB_PAGES.includes(lastPage)) {
+      labBottomBarUpdate(lastPage);
+    }
+  };
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  APEL JUMBO — Offline Auth & Data Layer (v23)
+//  Mendukung login & akses data 100% tanpa internet
+// ════════════════════════════════════════════════════════════════
+
+// ── Hash sederhana untuk keamanan password lokal ─────────────────
+async function hashString(str) {
+  const buf = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(str + 'apeljumbo_salt_2025'));
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── Simpan kredensial terenkripsi ke localStorage ────────────────
+async function saveOfflineCreds(uid, email, password = null) {
+  try {
+    const creds = { uid, email, savedAt: Date.now() };
+    if (password) {
+      creds.passHash = await hashString(password);
+    } else {
+      // Pertahankan passHash yang sudah ada
+      const existing = localStorage.getItem('apel_offline_creds');
+      if (existing) {
+        const ex = JSON.parse(existing);
+        if (ex.passHash) creds.passHash = ex.passHash;
+      }
+    }
+    localStorage.setItem('apel_offline_creds', JSON.stringify(creds));
+    console.log('[Auth] ✅ Kredensial offline tersimpan untuk:', email);
+  } catch(e) {
+    console.warn('[Auth] Gagal simpan kredensial offline:', e);
+  }
+}
+
+// ── afterLogin versi offline (tanpa db calls) ────────────────────
+async function afterLoginOffline() {
+  // Sembunyikan halaman login
+  document.getElementById('loginPage').classList.add('hide');
+  document.getElementById('setupPage').classList.add('hide');
+
+  // Tampilkan info user
+  document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID',
+    { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Tampilkan banner offline
+  showOfflineBanner(true);
+
+  // Muat data dari IndexedDB (cache lokal)
+  await loadAllDataOffline();
+
+  // Restore halaman terakhir
   const lastPage = localStorage.getItem('apel_last_page');
-  if (lastPage && _LAB_PAGES.includes(lastPage)) {
-    const pg = document.getElementById('page-' + lastPage);
-    if (pg && pg.classList.contains('active')) {
-      labBottomBarShow(lastPage);
+  if (lastPage && document.getElementById('page-' + lastPage)) {
+    goPage(lastPage);
+  } else {
+    goHome();
+  }
+}
+
+// ── loadAllData versi offline ─────────────────────────────────────
+async function loadAllDataOffline() {
+  console.log('[Offline] 📦 Memuat semua data dari cache lokal...');
+
+  // Coba load dari IndexedDB dulu (diisi oleh apel-offline.js)
+  if (window.ApelOffline) {
+    try {
+      // Simulasikan loadAllData tapi dari IndexedDB
+      // Data akan diambil via offlineQuery() yang sudah dipatch
+      await loadAllData();
+      return;
+    } catch(e) {
+      console.warn('[Offline] loadAllData gagal, coba localStorage...');
     }
   }
-}, 2500);
 
-</script>
-
-<!-- ══ APEL JUMBO Offline Data Layer ══ -->
-<script>
-// ════════════════════════════════════════════════════════════════
-//  APEL JUMBO REBORN — Offline Data Layer
-//  Versi: 1.0  |  Created by D.D Candra
-//
-//  Cara kerja:
-//  • Saat ONLINE  : data disimpan ke Supabase + di-mirror ke IndexedDB
-//  • Saat OFFLINE : read dari IndexedDB, write ke antrian (sync queue)
-//  • Saat ONLINE kembali : antrian diproses otomatis ke Supabase
-// ════════════════════════════════════════════════════════════════
-
-(function() {
-'use strict';
-
-// ── Konstanta ────────────────────────────────────────────────────
-const DB_NAME    = 'apeljumbo_offline';
-const DB_VERSION = 1;
-
-// Semua tabel Supabase yang perlu di-mirror offline
-const TABLES = [
-  'kelas','mapel','siswa','jadwal','integrasi',
-  'jurnal','absensi','nilai','app_settings',
-  'piket_s5','piket_inval','bimbingan','kinerja',
-  'tamu','tamu_sekolah','chat_apbo',
-  'ummi','ummi_tingkatan',
-  'lab_inventaris','lab_peminjaman','lab_presensi',
-];
-
-// ── State ────────────────────────────────────────────────────────
-let _idb       = null;   // koneksi IndexedDB
-let _isOnline  = navigator.onLine;
-let _syncTimer = null;
-
-// ── Status online/offline ────────────────────────────────────────
-window.addEventListener('online',  () => { _isOnline = true;  onOnline();  });
-window.addEventListener('offline', () => { _isOnline = false; onOffline(); });
-
-function onOnline() {
-  console.log('[Offline] 🟢 Online kembali — sinkronisasi antrian...');
-  showOfflineBanner(false);
-  scheduleSyncQueue();
+  // Fallback: pakai data cache minimal dari localStorage
+  const cached = localStorage.getItem('apel_data_cache');
+  if (cached) {
+    try {
+      const d = JSON.parse(cached);
+      if (d.kelas)  kelasList  = d.kelas;
+      if (d.mapel)  mapelList  = d.mapel;
+      if (d.siswa)  siswaList  = d.siswa;
+      if (d.jadwal) jadwalList = d.jadwal;
+      renderHome();
+      console.log('[Offline] ✅ Data dimuat dari localStorage cache');
+    } catch(e) {
+      console.warn('[Offline] Cache localStorage rusak:', e);
+    }
+  }
 }
 
-function onOffline() {
-  console.log('[Offline] 🔴 Offline terdeteksi — mode offline aktif');
-  showOfflineBanner(true);
-}
-
-// ── Banner offline di UI ─────────────────────────────────────────
+// ── Tampilkan banner offline ─────────────────────────────────────
 function showOfflineBanner(show) {
   let banner = document.getElementById('apel-offline-banner');
-  if (!banner) {
+  if (!banner && show) {
     banner = document.createElement('div');
     banner.id = 'apel-offline-banner';
     banner.innerHTML = `
-      <span style="font-size:16px">📡</span>
-      <div>
-        <strong>Mode Offline Aktif</strong>
-        <span style="font-size:11px;opacity:.85;display:block;margin-top:1px">
-          Data akan disinkronkan otomatis saat online kembali
-        </span>
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        <span style="font-size:18px">📡</span>
+        <div>
+          <div style="font-weight:700;font-size:13px">Mode Offline Aktif</div>
+          <div style="font-size:11px;opacity:.9;margin-top:1px">
+            Data akan sync otomatis saat online kembali
+          </div>
+        </div>
       </div>
+      <button onclick="document.getElementById('apel-offline-banner').style.transform='translateY(-120%)'"
+        style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;
+               padding:4px 10px;font-size:12px;cursor:pointer">✕</button>
     `;
     Object.assign(banner.style, {
-      position       : 'fixed',
-      top            : '0',
-      left           : '0',
-      right          : '0',
-      background     : '#f59e0b',
-      color          : '#fff',
-      padding        : '10px 16px',
-      display        : 'flex',
-      alignItems     : 'center',
-      gap            : '10px',
-      zIndex         : '99999',
-      fontFamily     : 'var(--font, sans-serif)',
-      fontSize       : '13px',
-      fontWeight     : '600',
-      boxShadow      : '0 4px 16px rgba(0,0,0,.2)',
-      transition     : 'transform .3s',
+      position      : 'fixed',
+      top           : '0',
+      left          : '0',
+      right         : '0',
+      background    : 'linear-gradient(90deg,#f59e0b,#d97706)',
+      color         : '#fff',
+      padding       : '10px 14px',
+      display       : 'flex',
+      alignItems    : 'center',
+      zIndex        : '99999',
+      fontFamily    : 'var(--font,sans-serif)',
+      boxShadow     : '0 4px 20px rgba(0,0,0,.2)',
+      transform     : 'translateY(-120%)',
+      transition    : 'transform .4s cubic-bezier(.34,1.56,.64,1)',
     });
     document.body.appendChild(banner);
   }
-  banner.style.transform = show ? 'translateY(0)' : 'translateY(-110%)';
+  if (banner) {
+    setTimeout(() => {
+      banner.style.transform = show ? 'translateY(0)' : 'translateY(-120%)';
+    }, 100);
+  }
 }
 
-// ── Inisialisasi IndexedDB ───────────────────────────────────────
-async function initIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+// ── Otomatis simpan cache data penting setelah loadAllData ────────
+const _origLoadAllData = window.loadAllData;
+if (typeof _origLoadAllData === 'function') {
+  window.loadAllData = async function() {
+    await _origLoadAllData.apply(this, arguments);
+    // Simpan snapshot data ke localStorage untuk fallback offline
+    try {
+      const snap = {
+        kelas  : window.kelasList  || [],
+        mapel  : window.mapelList  || [],
+        siswa  : window.siswaList  || [],
+        jadwal : window.jadwalList || [],
+        ts     : Date.now(),
+      };
+      localStorage.setItem('apel_data_cache', JSON.stringify(snap));
+    } catch(e) {}
+  };
+}
 
-    req.onupgradeneeded = e => {
-      const idb = e.target.result;
+// ── Monitor koneksi: auto-sync saat online kembali ───────────────
+window.addEventListener('online', async () => {
+  showOfflineBanner(false);
+  console.log('[Auth] 🟢 Online kembali');
 
-      // Store untuk setiap tabel
-      TABLES.forEach(table => {
-        if (!idb.objectStoreNames.contains(table)) {
-          idb.createObjectStore(table, { keyPath: 'id' });
+  // Jika sedang di mode offline, coba refresh session Supabase
+  if (currentUser?.offline_mode && db) {
+    try {
+      const saved = localStorage.getItem('apel_session');
+      if (saved) {
+        const s = JSON.parse(saved);
+        const { data, error } = await db.auth.setSession(s);
+        if (!error && data?.user) {
+          currentUser = data.user;
+          console.log('[Auth] ✅ Session Supabase dipulihkan');
+          // Reload data terbaru dari server
+          await loadAllData();
         }
-      });
-
-      // Store untuk antrian sync
-      if (!idb.objectStoreNames.contains('_sync_queue')) {
-        const qs = idb.createObjectStore('_sync_queue', {
-          keyPath: '_qid', autoIncrement: true
-        });
-        qs.createIndex('by_table', 'table', { unique: false });
-        qs.createIndex('by_ts',    'ts',    { unique: false });
-      }
-
-      // Store untuk metadata (kapan terakhir sync per tabel)
-      if (!idb.objectStoreNames.contains('_meta')) {
-        idb.createObjectStore('_meta', { keyPath: 'key' });
-      }
-    };
-
-    req.onsuccess = e => {
-      _idb = e.target.result;
-      console.log('[Offline] IndexedDB siap');
-      resolve(_idb);
-    };
-    req.onerror = e => {
-      console.error('[Offline] IndexedDB gagal:', e.target.error);
-      reject(e.target.error);
-    };
-  });
-}
-
-// ── Helper IndexedDB ─────────────────────────────────────────────
-function idbTx(storeName, mode = 'readonly') {
-  return _idb.transaction(storeName, mode).objectStore(storeName);
-}
-
-function idbGet(store, key) {
-  return new Promise((res, rej) => {
-    const req = idbTx(store).get(key);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
-  });
-}
-
-function idbGetAll(store) {
-  return new Promise((res, rej) => {
-    const req = idbTx(store).getAll();
-    req.onsuccess = () => res(req.result || []);
-    req.onerror   = () => rej(req.error);
-  });
-}
-
-function idbPut(store, record) {
-  return new Promise((res, rej) => {
-    const req = idbTx(store, 'readwrite').put(record);
-    req.onsuccess = () => res(req.result);
-    req.onerror   = () => rej(req.error);
-  });
-}
-
-function idbPutBulk(store, records) {
-  return new Promise((res, rej) => {
-    const tx  = _idb.transaction(store, 'readwrite');
-    const obj = tx.objectStore(store);
-    records.forEach(r => obj.put(r));
-    tx.oncomplete = () => res();
-    tx.onerror    = () => rej(tx.error);
-  });
-}
-
-function idbDelete(store, key) {
-  return new Promise((res, rej) => {
-    const req = idbTx(store, 'readwrite').delete(key);
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
-}
-
-function idbClear(store) {
-  return new Promise((res, rej) => {
-    const req = idbTx(store, 'readwrite').clear();
-    req.onsuccess = () => res();
-    req.onerror   = () => rej(req.error);
-  });
-}
-
-// ── Antrian Sync ────────────────────────────────────────────────
-async function enqueueSync(operation) {
-  // operation = { table, method: 'insert'|'update'|'delete', data, filter }
-  const item = { ...operation, ts: Date.now(), retries: 0 };
-  return new Promise((res, rej) => {
-    const req = idbTx('_sync_queue', 'readwrite').add(item);
-    req.onsuccess = () => {
-      console.log(`[Offline] ➕ Antrian: ${operation.method} → ${operation.table}`);
-      res(req.result);
-    };
-    req.onerror = () => rej(req.error);
-  });
-}
-
-async function getQueue() {
-  return idbGetAll('_sync_queue');
-}
-
-async function removeFromQueue(qid) {
-  return idbDelete('_sync_queue', qid);
-}
-
-function scheduleSyncQueue(delayMs = 1000) {
-  clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => processSyncQueue(), delayMs);
-}
-
-async function processSyncQueue() {
-  if (!_isOnline || !window.db) return;
-
-  const queue = await getQueue();
-  if (queue.length === 0) return;
-
-  console.log(`[Offline] 🔄 Memproses ${queue.length} antrian...`);
-  let successCount = 0;
-  let failCount    = 0;
-
-  for (const item of queue) {
-    try {
-      let err = null;
-
-      if (item.method === 'insert') {
-        const { error } = await window.db.from(item.table).insert(item.data);
-        err = error;
-      } else if (item.method === 'update') {
-        let q = window.db.from(item.table).update(item.data);
-        if (item.filter?.id) q = q.eq('id', item.filter.id);
-        const { error } = await q;
-        err = error;
-      } else if (item.method === 'delete') {
-        let q = window.db.from(item.table).delete();
-        if (item.filter?.id) q = q.eq('id', item.filter.id);
-        else if (item.filter?.field) q = q.eq(item.filter.field, item.filter.value);
-        const { error } = await q;
-        err = error;
-      } else if (item.method === 'upsert') {
-        const { error } = await window.db.from(item.table).upsert(item.data);
-        err = error;
-      }
-
-      if (err) throw err;
-      await removeFromQueue(item._qid);
-      successCount++;
-    } catch (e) {
-      console.warn(`[Offline] ⚠️ Gagal sync item ${item._qid}:`, e.message);
-      // Coba lagi sampai 5 kali, lalu buang
-      if (item.retries >= 5) {
-        console.error(`[Offline] ❌ Item ${item._qid} dibuang setelah 5x gagal`);
-        await removeFromQueue(item._qid);
-      } else {
-        // Update retry count
-        await idbPut('_sync_queue', { ...item, retries: (item.retries || 0) + 1 });
-      }
-      failCount++;
-    }
-  }
-
-  if (successCount > 0) {
-    console.log(`[Offline] ✅ Sinkronisasi selesai: ${successCount} berhasil, ${failCount} gagal`);
-    // Refresh data setelah sync berhasil
-    if (typeof window.loadAllData === 'function') {
-      setTimeout(() => window.loadAllData(), 500);
-    }
-  }
-}
-
-// ── Mirror data dari Supabase ke IndexedDB ───────────────────────
-async function mirrorTableToIDB(table, data) {
-  if (!_idb || !Array.isArray(data) || data.length === 0) return;
-  try {
-    // Hanya cache tabel yang terdaftar
-    if (!TABLES.includes(table)) return;
-    await idbPutBulk(table, data);
-    // Update metadata waktu sync
-    await idbPut('_meta', { key: `last_sync_${table}`, value: Date.now() });
-  } catch (e) {
-    console.warn(`[Offline] Gagal mirror tabel ${table}:`, e.message);
-  }
-}
-
-async function mirrorRowToIDB(table, row) {
-  if (!_idb || !row || !TABLES.includes(table)) return;
-  try {
-    await idbPut(table, row);
-  } catch(e) {}
-}
-
-async function removeRowFromIDB(table, id) {
-  if (!_idb || !TABLES.includes(table)) return;
-  try {
-    await idbDelete(table, id);
-  } catch(e) {}
-}
-
-// ── Wrapper Supabase Query dengan fallback IndexedDB ─────────────
-//
-// Penggunaan: gantikan pola db.from('tabel').select('*') dengan
-//             offlineQuery('tabel', queryFn, fallbackFilter)
-//
-// queryFn     : async function yang menerima db dan return { data, error }
-// fallbackFilter : optional function(rows) untuk filter data offline
-//
-window.offlineQuery = async function(table, queryFn, fallbackFilter) {
-  if (_isOnline && window.db) {
-    try {
-      const result = await queryFn(window.db);
-      if (!result.error && result.data) {
-        // Mirror ke IndexedDB untuk akses offline nanti
-        mirrorTableToIDB(table, result.data);
-      }
-      return result;
-    } catch(e) {
-      // Jatuh ke offline fallback
-    }
-  }
-
-  // OFFLINE MODE: baca dari IndexedDB
-  console.log(`[Offline] 📦 Baca offline: ${table}`);
-  try {
-    let rows = await idbGetAll(table);
-    if (fallbackFilter) rows = fallbackFilter(rows);
-    return { data: rows, error: null };
-  } catch(e) {
-    return { data: [], error: e };
-  }
-};
-
-// ── Wrapper untuk operasi tulis (insert/update/delete) ───────────
-window.offlineWrite = async function(method, table, data, filter) {
-  // Mirror ke IndexedDB dulu
-  if (method === 'insert' || method === 'upsert') {
-    if (Array.isArray(data)) {
-      for (const row of data) await mirrorRowToIDB(table, row);
-    } else {
-      await mirrorRowToIDB(table, data);
-    }
-  } else if (method === 'update' && filter?.id) {
-    const existing = await idbGet(table, filter.id);
-    if (existing) await mirrorRowToIDB(table, { ...existing, ...data });
-  } else if (method === 'delete' && filter?.id) {
-    await removeRowFromIDB(table, filter.id);
-  }
-
-  if (_isOnline && window.db) {
-    // Online: langsung ke Supabase
-    try {
-      if (method === 'insert') {
-        return await window.db.from(table).insert(data);
-      } else if (method === 'upsert') {
-        return await window.db.from(table).upsert(data);
-      } else if (method === 'update') {
-        let q = window.db.from(table).update(data);
-        if (filter?.id) q = q.eq('id', filter.id);
-        return await q;
-      } else if (method === 'delete') {
-        let q = window.db.from(table).delete();
-        if (filter?.id) q = q.eq('id', filter.id);
-        else if (filter?.field) q = q.eq(filter.field, filter.value);
-        return await q;
       }
     } catch(e) {
-      // Jatuh ke antrian jika network error
+      console.warn('[Auth] Gagal pulihkan session:', e);
     }
   }
 
-  // OFFLINE: masukkan ke antrian
-  await enqueueSync({ method, table, data, filter });
-  return { data: data, error: null }; // pura-pura berhasil
-};
-
-// ── Pre-cache semua tabel saat pertama kali online ───────────────
-async function preCacheAllTables() {
-  if (!_isOnline || !window.db || !_idb) return;
-  console.log('[Offline] 📥 Pre-caching semua tabel...');
-
-  const BATCH = [
-    'kelas','mapel','siswa','jadwal','integrasi',
-    'jurnal','absensi','nilai','app_settings',
-    'piket_s5','piket_inval','bimbingan','kinerja',
-    'tamu','tamu_sekolah',
-    'ummi','ummi_tingkatan',
-    'lab_inventaris','lab_peminjaman','lab_presensi',
-  ];
-
-  for (const table of BATCH) {
-    try {
-      const { data } = await window.db.from(table).select('*').limit(500);
-      if (data && data.length > 0) {
-        await mirrorTableToIDB(table, data);
-        console.log(`[Offline]   ✅ ${table}: ${data.length} baris`);
-      }
-    } catch(e) {
-      console.warn(`[Offline]   ⚠️ ${table}: gagal`, e.message);
-    }
-    // Jeda kecil agar tidak flooding Supabase
-    await new Promise(r => setTimeout(r, 80));
+  // Proses antrian sync jika ada
+  if (window.ApelOffline) {
+    setTimeout(() => window.ApelOffline.syncNow(), 1000);
   }
-  console.log('[Offline] ✅ Pre-cache selesai!');
-}
-
-// ── Expose API publik ────────────────────────────────────────────
-window.ApelOffline = {
-  isOnline : () => _isOnline,
-  syncNow  : () => processSyncQueue(),
-  preCache : () => preCacheAllTables(),
-  getQueue : () => getQueue(),
-  clearIDB : () => TABLES.forEach(t => idbClear(t)),
-  status   : async () => {
-    const q = await getQueue();
-    return {
-      isOnline     : _isOnline,
-      queueLength  : q.length,
-      dbReady      : !!_idb,
-    };
-  },
-};
-
-// ── Dengarkan pesan dari Service Worker ─────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data?.type === 'PROCESS_SYNC_QUEUE') {
-      processSyncQueue();
-    }
-  });
-}
-
-// ── Init ─────────────────────────────────────────────────────────
-initIDB().then(() => {
-  // Tampilkan banner jika sudah offline saat load
-  if (!_isOnline) showOfflineBanner(true);
-
-  // Setelah login berhasil, pre-cache semua data
-  const _origAfterLogin = window.afterLogin;
-  if (typeof _origAfterLogin === 'function') {
-    window.afterLogin = async function() {
-      await _origAfterLogin.apply(this, arguments);
-      // Pre-cache setelah data awal sudah dimuat
-      setTimeout(() => preCacheAllTables(), 3000);
-    };
-  } else {
-    // Fallback: coba pre-cache setelah 5 detik
-    setTimeout(() => preCacheAllTables(), 5000);
-  }
-
-  // Proses antrian jika ada yang tertunda
-  if (_isOnline) {
-    setTimeout(() => processSyncQueue(), 2000);
-  }
-}).catch(e => {
-  console.error('[Offline] Gagal inisialisasi IndexedDB:', e);
 });
 
-})(); // end IIFE
+window.addEventListener('offline', () => {
+  console.log('[Auth] 🔴 Offline');
+  showOfflineBanner(true);
+});
+
+// ── Inisialisasi status banner saat load ─────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!navigator.onLine) showOfflineBanner(true);
+});
+
+// ── Registrasi Service Worker ─────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        console.log('[SW] ✅ Terdaftar:', reg.scope);
+        // Cek update tiap 1 jam
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              sw.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[SW] Gagal daftar:', err));
+
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'PROCESS_SYNC_QUEUE') {
+        if (window.ApelOffline) window.ApelOffline.syncNow();
+      }
+    });
+  });
+}
 
 </script>
 </body>
