@@ -6170,7 +6170,11 @@ function populateBulan() {
 
 function showPage(name) {
   localStorage.setItem('apel_last_page', name);
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  // Reset SEMUA page — termasuk inline style (fix lab-page tumpang tindih)
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = '';   // hapus inline style flex yang dipasang labNavGo
+  });
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${name}`);
   if (pg) pg.classList.add('active');
@@ -6323,8 +6327,11 @@ function mhRefreshStats() {
 }
 
 function goHome() {
-  // Hide all pages, show home
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Hide all pages + reset inline styles (fix lab-page overlap)
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = '';
+  });
   document.getElementById('page-home').classList.add('active');
   // Hide topbar
   const tb = document.getElementById('mainTopbar');
@@ -10416,10 +10423,11 @@ function labNavGo(pageName) {
   if (homePg) homePg.classList.remove('active');
 
   // 2. Tampilkan halaman lab yang dituju
+  // Biarkan CSS .lab-page.active { display:flex } yang handle — jangan set manual
   const pg = document.getElementById('page-' + pageName);
   if (pg) {
     pg.classList.add('active');
-    pg.style.display = 'flex';
+    // TIDAK set style.display manual — dihandle oleh CSS class
   }
 
   // 3. Init konten halaman
