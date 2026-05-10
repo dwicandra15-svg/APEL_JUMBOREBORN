@@ -4,8 +4,8 @@
 //            Cache-fallback (pakai cache saat offline)
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME    = 'apeljumbo-v3';   // naik versi → paksa hapus cache lama
-const RUNTIME_CACHE = 'apeljumbo-runtime-v3';
+const CACHE_NAME    = 'apeljumbo-v4'; // v4 → paksa hapus cache lama   // naik versi → paksa hapus cache lama
+const RUNTIME_CACHE = 'apeljumbo-runtime-v4';
 
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
 
