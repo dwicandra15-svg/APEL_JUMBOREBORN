@@ -10543,33 +10543,46 @@ async function afterLoginOffline() {
 async function loadAllDataOffline() {
   console.log('[Offline] 📦 Memuat semua data dari cache lokal...');
 
-  // Coba load dari IndexedDB dulu (diisi oleh apel-offline.js)
-  if (window.ApelOffline) {
-    try {
-      // Simulasikan loadAllData tapi dari IndexedDB
-      // Data akan diambil via offlineQuery() yang sudah dipatch
-      await loadAllData();
-      return;
-    } catch(e) {
-      console.warn('[Offline] loadAllData gagal, coba localStorage...');
-    }
-  }
-
-  // Fallback: pakai data cache minimal dari localStorage
   const cached = localStorage.getItem('apel_data_cache');
   if (cached) {
     try {
       const d = JSON.parse(cached);
-      if (d.kelas)  kelasList  = d.kelas;
-      if (d.mapel)  mapelList  = d.mapel;
-      if (d.siswa)  siswaList  = d.siswa;
-      if (d.jadwal) jadwalList = d.jadwal;
-      renderHome();
-      console.log('[Offline] ✅ Data dimuat dari localStorage cache');
+
+      // Restore seluruh APP_DATA dari cache
+      if (window.APP_DATA) {
+        if (d.kelas)     { window.APP_DATA.kelas     = d.kelas;     renderKelasTbody && renderKelasTbody(); }
+        if (d.mapel)     { window.APP_DATA.mapel     = d.mapel;     renderMapelTbody && renderMapelTbody(); }
+        if (d.siswa)     { window.APP_DATA.siswa     = d.siswa; }
+        if (d.jadwal)    { window.APP_DATA.jadwal    = d.jadwal; }
+        if (d.integrasi) { window.APP_DATA.integrasi = d.integrasi; }
+      }
+
+      // Isi semua select/dropdown dari data cache
+      if (typeof populateAllSelects === 'function') populateAllSelects();
+
+      // Render grid mapel di home (ini yang hilang saat offline!)
+      if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid();
+
+      // Render statistik dashboard
+      if (typeof mhRefreshStats === 'function') mhRefreshStats();
+      if (typeof loadDashboard  === 'function') loadDashboard();
+
+      const ts = d.ts ? new Date(d.ts).toLocaleString('id-ID') : '?';
+      console.log('[Offline] ✅ APP_DATA dimuat dari cache (terakhir sync:', ts, ')');
+      return;
     } catch(e) {
       console.warn('[Offline] Cache localStorage rusak:', e);
     }
   }
+
+  console.warn('[Offline] ⚠️ Tidak ada cache data — beberapa fitur mungkin kosong');
+  // Tampilkan pesan ke user
+  setTimeout(() => {
+    const el = document.getElementById('homeMapelGrid') || document.getElementById('mhMapelGrid');
+    if (el && el.children.length === 0) {
+      el.innerHTML = '<p style="color:#94a3b8;font-size:12px;padding:12px">Data belum tersedia offline. Buka saat ada internet untuk cache data.</p>';
+    }
+  }, 500);
 }
 
 // ── Tampilkan banner offline ─────────────────────────────────────
@@ -10579,22 +10592,22 @@ function showOfflineBanner(show) {
     banner = document.createElement('div');
     banner.id = 'apel-offline-banner';
     banner.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;flex:1">
-        <span style="font-size:18px">📡</span>
-        <div>
-          <div style="font-weight:700;font-size:13px">Mode Offline Aktif</div>
-          <div style="font-size:11px;opacity:.9;margin-top:1px">
-            Data akan sync otomatis saat online kembali
-          </div>
+      <span style="font-size:16px">📡</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:12px;line-height:1.2">Mode Offline Aktif</div>
+        <div style="font-size:10px;opacity:.9;margin-top:1px">
+          Data sync otomatis saat online kembali
         </div>
       </div>
-      <button onclick="document.getElementById('apel-offline-banner').style.transform='translateY(-120%)'"
-        style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;
-               padding:4px 10px;font-size:12px;cursor:pointer">✕</button>
+      <button onclick="
+        document.getElementById('apel-offline-banner').style.transform='translateY(120%)';
+        clearTimeout(window._offlineBannerTimer);"
+        style="background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:8px;
+               padding:3px 9px;font-size:13px;cursor:pointer;font-weight:700;flex-shrink:0">✕</button>
     `;
     Object.assign(banner.style, {
       position      : 'fixed',
-      top           : '0',
+      bottom        : '0',           /* ← BAWAH, bukan atas */
       left          : '0',
       right         : '0',
       background    : 'linear-gradient(90deg,#f59e0b,#d97706)',
@@ -10602,37 +10615,61 @@ function showOfflineBanner(show) {
       padding       : '10px 14px',
       display       : 'flex',
       alignItems    : 'center',
-      zIndex        : '99999',
+      gap           : '10px',
+      zIndex        : '99998',       /* di bawah lab bottom bar */
       fontFamily    : 'var(--font,sans-serif)',
-      boxShadow     : '0 4px 20px rgba(0,0,0,.2)',
-      transform     : 'translateY(-120%)',
+      boxShadow     : '0 -4px 20px rgba(0,0,0,.15)',
+      transform     : 'translateY(120%)',
       transition    : 'transform .4s cubic-bezier(.34,1.56,.64,1)',
     });
     document.body.appendChild(banner);
   }
   if (banner) {
+    clearTimeout(window._offlineBannerTimer);
     setTimeout(() => {
-      banner.style.transform = show ? 'translateY(0)' : 'translateY(-120%)';
+      banner.style.transform = show ? 'translateY(0)' : 'translateY(120%)';
     }, 100);
+    // Auto-hide setelah 6 detik — tidak menghalangi user
+    if (show) {
+      window._offlineBannerTimer = setTimeout(() => {
+        banner.style.transform = 'translateY(120%)';
+      }, 6000);
+    }
   }
 }
 
-// ── Otomatis simpan cache data penting setelah loadAllData ────────
+// ── Otomatis cache APP_DATA LENGKAP setelah loadAllData ─────────
 const _origLoadAllData = window.loadAllData;
 if (typeof _origLoadAllData === 'function') {
   window.loadAllData = async function() {
     await _origLoadAllData.apply(this, arguments);
-    // Simpan snapshot data ke localStorage untuk fallback offline
+    // Simpan seluruh APP_DATA ke localStorage untuk akses offline
     try {
       const snap = {
-        kelas  : window.kelasList  || [],
-        mapel  : window.mapelList  || [],
-        siswa  : window.siswaList  || [],
-        jadwal : window.jadwalList || [],
-        ts     : Date.now(),
+        ...window.APP_DATA,          // kelas, mapel, siswa, jadwal, integrasi, dll
+        ts : Date.now(),
       };
-      localStorage.setItem('apel_data_cache', JSON.stringify(snap));
-    } catch(e) {}
+      const json = JSON.stringify(snap);
+      // Batasi ukuran cache ~4MB agar tidak melebihi kuota localStorage
+      if (json.length < 4 * 1024 * 1024) {
+        localStorage.setItem('apel_data_cache', json);
+        console.log('[Cache] ✅ APP_DATA tersimpan:', Object.keys(snap).join(', '));
+      } else {
+        // Jika terlalu besar, simpan hanya data utama
+        const slim = {
+          kelas     : snap.kelas     || [],
+          mapel     : snap.mapel     || [],
+          siswa     : snap.siswa     || [],
+          jadwal    : snap.jadwal    || [],
+          integrasi : snap.integrasi || [],
+          ts        : snap.ts,
+        };
+        localStorage.setItem('apel_data_cache', JSON.stringify(slim));
+        console.log('[Cache] ✅ APP_DATA slim tersimpan (data terlalu besar)');
+      }
+    } catch(e) {
+      console.warn('[Cache] Gagal simpan cache:', e.message);
+    }
   };
 }
 
