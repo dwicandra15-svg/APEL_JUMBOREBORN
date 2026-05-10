@@ -1,71 +1,75 @@
 // ════════════════════════════════════════════════════════════════
-//  APEL JUMBO REBORN — Service Worker
-//  Versi: 1.0  |  Created by D.D Candra
-//  Mendukung mode offline penuh untuk app shell
+//  APEL JUMBO REBORN — Service Worker v2
+//  Strategi: Network-first (selalu ambil terbaru saat online)
+//            Cache-fallback (pakai cache saat offline)
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME    = 'apeljumbo-v1';
-const RUNTIME_CACHE = 'apeljumbo-runtime-v1';
+const CACHE_NAME    = 'apeljumbo-v3';   // naik versi → paksa hapus cache lama
+const RUNTIME_CACHE = 'apeljumbo-runtime-v3';
 
-// File-file yang wajib di-cache saat install (app shell)
-const SHELL_ASSETS = [
-  '/',
-  '/index.html',
-  // Font Google (akan di-cache saat pertama kali diakses online)
+const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
+
+const BYPASS_PATTERNS = [
+  /supabase\.co\/rest\//,
+  /supabase\.co\/auth\//,
+  /supabase\.co\/realtime/,
+  /supabase\.co\/storage/,
 ];
 
-// Domain eksternal yang boleh di-cache secara dinamis
 const CACHEABLE_ORIGINS = [
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'cdn.jsdelivr.net',       // supabase-js CDN
+  'cdn.jsdelivr.net',
 ];
 
-// URL yang TIDAK boleh di-cache (selalu fetch langsung ke server)
-const BYPASS_PATTERNS = [
-  /supabase\.co\/rest\//,   // Supabase REST API → harus live
-  /supabase\.co\/auth\//,   // Supabase Auth
-  /supabase\.co\/realtime/,  // Supabase Realtime
-  /supabase\.co\/storage/,   // Supabase Storage
-];
-
-// ── Install: cache app shell ─────────────────────────────────────
+// ── Install: cache app shell ──────────────────────────────────────
 self.addEventListener('install', event => {
+  console.log('[SW v3] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
-      .catch(err => console.warn('[SW] Install cache gagal:', err))
+      .then(() => {
+        console.log('[SW v3] Shell cached, skipping waiting');
+        return self.skipWaiting(); // langsung aktif tanpa tunggu tab lama
+      })
+      .catch(err => {
+        console.warn('[SW v3] Cache install gagal (normal jika offline):', err.message);
+        return self.skipWaiting();
+      })
   );
 });
 
-// ── Activate: hapus cache lama ───────────────────────────────────
+// ── Activate: hapus SEMUA cache lama ─────────────────────────────
 self.addEventListener('activate', event => {
+  console.log('[SW v3] Activating, clearing old caches...');
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
+    caches.keys()
+      .then(keys => Promise.all(
         keys
           .filter(k => k !== CACHE_NAME && k !== RUNTIME_CACHE)
           .map(k => {
-            console.log('[SW] Hapus cache lama:', k);
+            console.log('[SW v3] Deleting old cache:', k);
             return caches.delete(k);
           })
-      )
-    ).then(() => self.clients.claim())
+      ))
+      .then(() => {
+        console.log('[SW v3] Active & claiming clients');
+        return self.clients.claim(); // ambil kendali semua tab langsung
+      })
   );
 });
 
-// ── Fetch: strategi cache ────────────────────────────────────────
+// ── Fetch: Network-first untuk HTML, cache-first untuk aset ───────
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. Supabase API → selalu network-first, jangan cache
+  // 1. Supabase API → selalu ke network, tidak pernah cache
   if (BYPASS_PATTERNS.some(p => p.test(request.url))) {
     event.respondWith(
       fetch(request).catch(() =>
         new Response(
-          JSON.stringify({ error: 'offline', message: 'Tidak ada koneksi internet' }),
+          JSON.stringify({ error: 'offline', message: 'Tidak ada koneksi' }),
           { status: 503, headers: { 'Content-Type': 'application/json' } }
         )
       )
@@ -73,69 +77,67 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. App shell (same origin HTML) → Cache-first, fallback network
+  // 2. App shell (index.html, /) → NETWORK-FIRST
+  //    Online: ambil dari network, update cache
+  //    Offline: pakai dari cache
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(request).then(cached => {
-        if (cached) return cached;
-        return fetch(request).then(response => {
+      fetch(request)
+        .then(response => {
+          // Berhasil dari network → update cache dengan versi terbaru
           if (response && response.status === 200) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(request, clone));
           }
           return response;
-        }).catch(() => caches.match('/') || caches.match('/index.html'));
-      })
+        })
+        .catch(() => {
+          // Gagal (offline) → ambil dari cache
+          console.log('[SW v3] Offline fallback untuk:', url.pathname);
+          return caches.match(request)
+            .then(cached => cached || caches.match('/index.html') || caches.match('/'));
+        })
     );
     return;
   }
 
-  // 3. Aset eksternal (font, CDN) → Stale-while-revalidate
+  // 3. Font & CDN → Cache-first (jarang berubah)
   if (CACHEABLE_ORIGINS.some(o => url.hostname.includes(o))) {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(cache =>
         cache.match(request).then(cached => {
-          const fetchPromise = fetch(request).then(response => {
+          if (cached) return cached;
+          return fetch(request).then(response => {
             if (response && response.status === 200) {
               cache.put(request, response.clone());
             }
             return response;
-          }).catch(() => cached); // fallback ke cached jika offline
-          return cached || fetchPromise;
+          }).catch(() => cached);
         })
       )
     );
     return;
   }
 
-  // 4. Lainnya → network dengan fallback
+  // 4. Lainnya → network dengan fallback cache
   event.respondWith(
     fetch(request).catch(() => caches.match(request))
   );
 });
 
-// ── Background Sync: kirim antrian offline ke Supabase ──────────
+// ── Background Sync ───────────────────────────────────────────────
 self.addEventListener('sync', event => {
   if (event.tag === 'apeljumbo-sync') {
-    event.waitUntil(processOfflineQueue());
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then(clients =>
+        clients.forEach(c => c.postMessage({ type: 'PROCESS_SYNC_QUEUE' }))
+      )
+    );
   }
 });
 
-async function processOfflineQueue() {
-  // Kirim pesan ke semua client agar mereka proses antrian
-  const clients = await self.clients.matchAll({ type: 'window' });
-  clients.forEach(client =>
-    client.postMessage({ type: 'PROCESS_SYNC_QUEUE' })
-  );
-}
-
-// ── Pesan dari halaman utama ─────────────────────────────────────
+// ── Pesan dari halaman ────────────────────────────────────────────
 self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (event.data?.type === 'CACHE_VERSION') {
-    // Update cache name jika versi berubah
-    console.log('[SW] Versi cache:', event.data.version);
-  }
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
