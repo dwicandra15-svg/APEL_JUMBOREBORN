@@ -67,7 +67,7 @@ body {
 
 /* WATERMARK */
 body::after {
-  content: 'Created & Developed by D.D Candra © 2024';
+  content: 'Created & Developed by D.D Candra';
   position: fixed;
   bottom: 18px;
   right: 22px;
@@ -3521,11 +3521,17 @@ async function doLogin() {
     await afterLogin();
   } catch(e) {
     // Jika gagal karena network error (bukan salah password)
-    const isNetworkErr = !navigator.onLine || 
-      e.message?.includes('fetch') || 
-      e.message?.includes('network') ||
-      e.message?.includes('Failed to fetch') ||
-      e.message?.includes('Load failed');
+    const isNetworkErr = !navigator.onLine ||
+      e.message?.includes('fetch')          ||
+      e.message?.includes('network')        ||
+      e.message?.includes('Failed to fetch')||
+      e.message?.includes('Load failed')    ||
+      e.message?.includes('NetworkError')   ||
+      e.message?.includes('timeout')        ||
+      e.message?.includes('ERR_INTERNET')   ||
+      e.message?.includes('ERR_NAME')       ||
+      e.status === 0                        ||
+      e.code === 'NETWORK_ERROR';
 
     if (isNetworkErr) {
       // Coba login offline dengan kredensial tersimpan
@@ -10258,28 +10264,7 @@ function stopCameraQR(stream, interval) {
   if (stream) stream.getTracks().forEach(t=>t.stop());
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  PATCH goPage — tambahkan lab pages
-// ═══════════════════════════════════════════════════════════════
-const _origGoPage = window.goPage;
-window.goPage = function(name) {
-  if (name === 'labInventaris') {
-    showPage(name);
-    initLabInventaris();
-    return;
-  }
-  if (name === 'labPeminjaman') {
-    showPage(name);
-    initLabPeminjaman();
-    return;
-  }
-  if (name === 'labPresensi') {
-    showPage(name);
-    initLabPresensi();
-    return;
-  }
-  _origGoPage(name);
-};
+// [goPage lab patch — digabung ke unified block di bawah]
 
 // ═══════════════════════════════════════════════════════════════
 //  PATCH showPage navMap — tambahkan label lab pages
@@ -10515,74 +10500,114 @@ async function saveOfflineCreds(uid, email, password = null) {
 
 // ── afterLogin versi offline (tanpa db calls) ────────────────────
 async function afterLoginOffline() {
-  // Sembunyikan halaman login
-  document.getElementById('loginPage').classList.add('hide');
-  document.getElementById('setupPage').classList.add('hide');
+  try {
+    // Sembunyikan halaman login
+    const loginPg = document.getElementById('loginPage');
+    const setupPg = document.getElementById('setupPage');
+    if (loginPg) loginPg.classList.add('hide');
+    if (setupPg) setupPg.classList.add('hide');
 
-  // Tampilkan info user
-  document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
-  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID',
-    { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    // Tampilkan topbar dengan nama guru dari localStorage
+    const CONFIG = JSON.parse(localStorage.getItem('apel_config') || '{}');
+    const guruEl = document.getElementById('guruTopbar');
+    if (guruEl) guruEl.textContent = CONFIG.guru || currentUser?.email || '';
 
-  // Tampilkan banner offline
-  showOfflineBanner(true);
+    const dateEl = document.getElementById('dashDate');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('id-ID',
+      { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-  // Muat data dari IndexedDB (cache lokal)
-  await loadAllDataOffline();
+    // Tampilkan main app container
+    const mainEl = document.getElementById('main') ||
+                   document.getElementById('mainApp') ||
+                   document.getElementById('mainTopbar');
+    if (mainEl) mainEl.style.display = '';
 
-  // Restore halaman terakhir
-  const lastPage = localStorage.getItem('apel_last_page');
-  if (lastPage && document.getElementById('page-' + lastPage)) {
-    goPage(lastPage);
-  } else {
+    // Tampilkan topbar jika ada
+    const topbar = document.getElementById('mainTopbar');
+    if (topbar) topbar.style.display = 'flex';
+
+    // Load & render data dari cache
+    await loadAllDataOffline();
+
+    // Restore halaman terakhir
+    const lastPage = localStorage.getItem('apel_last_page');
+    if (lastPage && document.getElementById('page-' + lastPage)) {
+      goPage(lastPage);
+    } else {
+      goHome();
+    }
+
+    // Tampilkan banner offline setelah UI siap
+    setTimeout(() => showOfflineBanner(true), 500);
+
+    console.log('[Auth] ✅ afterLoginOffline selesai');
+  } catch(e) {
+    console.error('[Auth] afterLoginOffline error:', e);
+    // Fallback: tampilkan home saja
     goHome();
+    showOfflineBanner(true);
   }
 }
 
 // ── loadAllData versi offline ─────────────────────────────────────
 async function loadAllDataOffline() {
-  console.log('[Offline] 📦 Memuat semua data dari cache lokal...');
+  console.log('[Offline] 📦 Memuat data dari cache lokal...');
 
   const cached = localStorage.getItem('apel_data_cache');
   if (cached) {
     try {
       const d = JSON.parse(cached);
 
-      // Restore seluruh APP_DATA dari cache
-      if (window.APP_DATA) {
-        if (d.kelas)     { window.APP_DATA.kelas     = d.kelas;     renderKelasTbody && renderKelasTbody(); }
-        if (d.mapel)     { window.APP_DATA.mapel     = d.mapel;     renderMapelTbody && renderMapelTbody(); }
-        if (d.siswa)     { window.APP_DATA.siswa     = d.siswa; }
-        if (d.jadwal)    { window.APP_DATA.jadwal    = d.jadwal; }
-        if (d.integrasi) { window.APP_DATA.integrasi = d.integrasi; }
-      }
+      // ── Pastikan APP_DATA ada ──
+      if (!window.APP_DATA) window.APP_DATA = {};
 
-      // Isi semua select/dropdown dari data cache
-      if (typeof populateAllSelects === 'function') populateAllSelects();
-
-      // Render grid mapel di home (ini yang hilang saat offline!)
-      if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid();
-
-      // Render statistik dashboard
-      if (typeof mhRefreshStats === 'function') mhRefreshStats();
-      if (typeof loadDashboard  === 'function') loadDashboard();
+      // ── Restore semua data ke APP_DATA ──
+      if (d.kelas)     window.APP_DATA.kelas     = d.kelas;
+      if (d.mapel)     window.APP_DATA.mapel     = d.mapel;
+      if (d.siswa)     window.APP_DATA.siswa     = d.siswa;
+      if (d.jadwal)    window.APP_DATA.jadwal    = d.jadwal;
+      if (d.integrasi) window.APP_DATA.integrasi = d.integrasi;
+      if (d.kinerja)   window.APP_DATA.kinerja   = d.kinerja;
 
       const ts = d.ts ? new Date(d.ts).toLocaleString('id-ID') : '?';
-      console.log('[Offline] ✅ APP_DATA dimuat dari cache (terakhir sync:', ts, ')');
-      return;
+      console.log('[Offline] ✅ Data dimuat — mapel:', (d.mapel||[]).length,
+        '| kelas:', (d.kelas||[]).length, '| terakhir sync:', ts);
+
+      // ── Render semua komponen UI ──
+      // Penting: jalankan berurutan agar data sudah siap sebelum render
+      try { if (typeof populateAllSelects === 'function') populateAllSelects(); } catch(e){}
+      try { if (typeof renderKelasTbody   === 'function') renderKelasTbody();   } catch(e){}
+      try { if (typeof renderMapelTbody   === 'function') renderMapelTbody();   } catch(e){}
+      try { if (typeof mpRenderHomeGrid   === 'function') mpRenderHomeGrid();   } catch(e){}
+      try { if (typeof mhRefreshStats     === 'function') mhRefreshStats();     } catch(e){}
+      try { if (typeof loadDashboard      === 'function') loadDashboard();      } catch(e){}
+
+      // Render ulang setelah sedikit delay (pastikan DOM sudah siap)
+      setTimeout(() => {
+        try { if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid(); } catch(e){}
+        try { if (typeof mhRefreshStats   === 'function') mhRefreshStats();   } catch(e){}
+      }, 300);
+
+      return true;
     } catch(e) {
-      console.warn('[Offline] Cache localStorage rusak:', e);
+      console.warn('[Offline] ⚠️ Cache rusak:', e.message);
     }
   }
 
-  console.warn('[Offline] ⚠️ Tidak ada cache data — beberapa fitur mungkin kosong');
-  // Tampilkan pesan ke user
+  // Tidak ada cache sama sekali
+  console.warn('[Offline] ⚠️ Tidak ada cache — fitur terbatas');
   setTimeout(() => {
-    const el = document.getElementById('homeMapelGrid') || document.getElementById('mhMapelGrid');
-    if (el && el.children.length === 0) {
-      el.innerHTML = '<p style="color:#94a3b8;font-size:12px;padding:12px">Data belum tersedia offline. Buka saat ada internet untuk cache data.</p>';
-    }
-  }, 500);
+    try {
+      const el = document.getElementById('mapelGridHome');
+      if (el) el.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:24px 16px;color:#94a3b8">
+          <div style="font-size:32px;margin-bottom:8px">📡</div>
+          <div style="font-size:13px;font-weight:600;color:#64748b">Data belum tersedia offline</div>
+          <div style="font-size:11px;margin-top:4px">Login saat ada internet minimal 1x untuk menyimpan data</div>
+        </div>`;
+    } catch(e){}
+  }, 400);
+  return false;
 }
 
 // ── Tampilkan banner offline ─────────────────────────────────────
@@ -10643,32 +10668,36 @@ const _origLoadAllData = window.loadAllData;
 if (typeof _origLoadAllData === 'function') {
   window.loadAllData = async function() {
     await _origLoadAllData.apply(this, arguments);
-    // Simpan seluruh APP_DATA ke localStorage untuk akses offline
+    // Simpan APP_DATA ke localStorage untuk akses offline
     try {
       const snap = {
-        ...window.APP_DATA,          // kelas, mapel, siswa, jadwal, integrasi, dll
-        ts : Date.now(),
+        kelas     : (window.APP_DATA?.kelas     || []),
+        mapel     : (window.APP_DATA?.mapel     || []),
+        siswa     : (window.APP_DATA?.siswa     || []),
+        jadwal    : (window.APP_DATA?.jadwal    || []),
+        integrasi : (window.APP_DATA?.integrasi || []),
+        kinerja   : (window.APP_DATA?.kinerja   || []),
+        ts        : Date.now(),
       };
+
+      // Simpan mapel icons dari app_settings juga
+      const iconsRaw = localStorage.getItem('sb-mapel-icons') ||
+                       localStorage.getItem('apel_mapel_icons');
+      if (iconsRaw) snap.mapelIcons = iconsRaw;
+
       const json = JSON.stringify(snap);
-      // Batasi ukuran cache ~4MB agar tidak melebihi kuota localStorage
-      if (json.length < 4 * 1024 * 1024) {
+      if (json.length < 4.5 * 1024 * 1024) {
         localStorage.setItem('apel_data_cache', json);
-        console.log('[Cache] ✅ APP_DATA tersimpan:', Object.keys(snap).join(', '));
+        console.log('[Cache] ✅ Tersimpan — mapel:', snap.mapel.length,
+          'kelas:', snap.kelas.length, 'siswa:', snap.siswa.length);
       } else {
-        // Jika terlalu besar, simpan hanya data utama
-        const slim = {
-          kelas     : snap.kelas     || [],
-          mapel     : snap.mapel     || [],
-          siswa     : snap.siswa     || [],
-          jadwal    : snap.jadwal    || [],
-          integrasi : snap.integrasi || [],
-          ts        : snap.ts,
-        };
+        // Terlalu besar → simpan mapel + kelas saja (prioritas utama)
+        const slim = { kelas: snap.kelas, mapel: snap.mapel, ts: snap.ts };
         localStorage.setItem('apel_data_cache', JSON.stringify(slim));
-        console.log('[Cache] ✅ APP_DATA slim tersimpan (data terlalu besar)');
+        console.log('[Cache] ✅ Slim cache — mapel:', slim.mapel.length);
       }
     } catch(e) {
-      console.warn('[Cache] Gagal simpan cache:', e.message);
+      console.warn('[Cache] Gagal:', e.message);
     }
   };
 }
