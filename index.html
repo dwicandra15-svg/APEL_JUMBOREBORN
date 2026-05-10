@@ -1930,6 +1930,37 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .pres-riwayat-sub   { font-size:11px;color:var(--text-light);margin-top:2px; }
 
 </style>
+
+  <!-- ══ PWA Manifest ══ -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a56db">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="APEL JUMBO">
+
+  <!-- ══ Service Worker Registration ══ -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(reg => {
+            console.log('[SW] Terdaftar:', reg.scope);
+            // Cek update SW setiap 60 menit
+            setInterval(() => reg.update(), 60 * 60 * 1000);
+            // Aktifkan SW baru saat tersedia
+            reg.addEventListener('updatefound', () => {
+              const sw = reg.installing;
+              sw.addEventListener('statechange', () => {
+                if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                  sw.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          })
+          .catch(err => console.warn('[SW] Gagal daftar:', err));
+      });
+    }
+  </script>
 </head>
 <body>
 
@@ -10415,6 +10446,466 @@ setTimeout(() => {
     }
   }
 }, 2500);
+
+</script>
+
+<!-- ══ APEL JUMBO Offline Data Layer ══ -->
+<script>
+// ════════════════════════════════════════════════════════════════
+//  APEL JUMBO REBORN — Offline Data Layer
+//  Versi: 1.0  |  Created by D.D Candra
+//
+//  Cara kerja:
+//  • Saat ONLINE  : data disimpan ke Supabase + di-mirror ke IndexedDB
+//  • Saat OFFLINE : read dari IndexedDB, write ke antrian (sync queue)
+//  • Saat ONLINE kembali : antrian diproses otomatis ke Supabase
+// ════════════════════════════════════════════════════════════════
+
+(function() {
+'use strict';
+
+// ── Konstanta ────────────────────────────────────────────────────
+const DB_NAME    = 'apeljumbo_offline';
+const DB_VERSION = 1;
+
+// Semua tabel Supabase yang perlu di-mirror offline
+const TABLES = [
+  'kelas','mapel','siswa','jadwal','integrasi',
+  'jurnal','absensi','nilai','app_settings',
+  'piket_s5','piket_inval','bimbingan','kinerja',
+  'tamu','tamu_sekolah','chat_apbo',
+  'ummi','ummi_tingkatan',
+  'lab_inventaris','lab_peminjaman','lab_presensi',
+];
+
+// ── State ────────────────────────────────────────────────────────
+let _idb       = null;   // koneksi IndexedDB
+let _isOnline  = navigator.onLine;
+let _syncTimer = null;
+
+// ── Status online/offline ────────────────────────────────────────
+window.addEventListener('online',  () => { _isOnline = true;  onOnline();  });
+window.addEventListener('offline', () => { _isOnline = false; onOffline(); });
+
+function onOnline() {
+  console.log('[Offline] 🟢 Online kembali — sinkronisasi antrian...');
+  showOfflineBanner(false);
+  scheduleSyncQueue();
+}
+
+function onOffline() {
+  console.log('[Offline] 🔴 Offline terdeteksi — mode offline aktif');
+  showOfflineBanner(true);
+}
+
+// ── Banner offline di UI ─────────────────────────────────────────
+function showOfflineBanner(show) {
+  let banner = document.getElementById('apel-offline-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'apel-offline-banner';
+    banner.innerHTML = `
+      <span style="font-size:16px">📡</span>
+      <div>
+        <strong>Mode Offline Aktif</strong>
+        <span style="font-size:11px;opacity:.85;display:block;margin-top:1px">
+          Data akan disinkronkan otomatis saat online kembali
+        </span>
+      </div>
+    `;
+    Object.assign(banner.style, {
+      position       : 'fixed',
+      top            : '0',
+      left           : '0',
+      right          : '0',
+      background     : '#f59e0b',
+      color          : '#fff',
+      padding        : '10px 16px',
+      display        : 'flex',
+      alignItems     : 'center',
+      gap            : '10px',
+      zIndex         : '99999',
+      fontFamily     : 'var(--font, sans-serif)',
+      fontSize       : '13px',
+      fontWeight     : '600',
+      boxShadow      : '0 4px 16px rgba(0,0,0,.2)',
+      transition     : 'transform .3s',
+    });
+    document.body.appendChild(banner);
+  }
+  banner.style.transform = show ? 'translateY(0)' : 'translateY(-110%)';
+}
+
+// ── Inisialisasi IndexedDB ───────────────────────────────────────
+async function initIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+    req.onupgradeneeded = e => {
+      const idb = e.target.result;
+
+      // Store untuk setiap tabel
+      TABLES.forEach(table => {
+        if (!idb.objectStoreNames.contains(table)) {
+          idb.createObjectStore(table, { keyPath: 'id' });
+        }
+      });
+
+      // Store untuk antrian sync
+      if (!idb.objectStoreNames.contains('_sync_queue')) {
+        const qs = idb.createObjectStore('_sync_queue', {
+          keyPath: '_qid', autoIncrement: true
+        });
+        qs.createIndex('by_table', 'table', { unique: false });
+        qs.createIndex('by_ts',    'ts',    { unique: false });
+      }
+
+      // Store untuk metadata (kapan terakhir sync per tabel)
+      if (!idb.objectStoreNames.contains('_meta')) {
+        idb.createObjectStore('_meta', { keyPath: 'key' });
+      }
+    };
+
+    req.onsuccess = e => {
+      _idb = e.target.result;
+      console.log('[Offline] IndexedDB siap');
+      resolve(_idb);
+    };
+    req.onerror = e => {
+      console.error('[Offline] IndexedDB gagal:', e.target.error);
+      reject(e.target.error);
+    };
+  });
+}
+
+// ── Helper IndexedDB ─────────────────────────────────────────────
+function idbTx(storeName, mode = 'readonly') {
+  return _idb.transaction(storeName, mode).objectStore(storeName);
+}
+
+function idbGet(store, key) {
+  return new Promise((res, rej) => {
+    const req = idbTx(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbGetAll(store) {
+  return new Promise((res, rej) => {
+    const req = idbTx(store).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbPut(store, record) {
+  return new Promise((res, rej) => {
+    const req = idbTx(store, 'readwrite').put(record);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbPutBulk(store, records) {
+  return new Promise((res, rej) => {
+    const tx  = _idb.transaction(store, 'readwrite');
+    const obj = tx.objectStore(store);
+    records.forEach(r => obj.put(r));
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+
+function idbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const req = idbTx(store, 'readwrite').delete(key);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbClear(store) {
+  return new Promise((res, rej) => {
+    const req = idbTx(store, 'readwrite').clear();
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+// ── Antrian Sync ────────────────────────────────────────────────
+async function enqueueSync(operation) {
+  // operation = { table, method: 'insert'|'update'|'delete', data, filter }
+  const item = { ...operation, ts: Date.now(), retries: 0 };
+  return new Promise((res, rej) => {
+    const req = idbTx('_sync_queue', 'readwrite').add(item);
+    req.onsuccess = () => {
+      console.log(`[Offline] ➕ Antrian: ${operation.method} → ${operation.table}`);
+      res(req.result);
+    };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function getQueue() {
+  return idbGetAll('_sync_queue');
+}
+
+async function removeFromQueue(qid) {
+  return idbDelete('_sync_queue', qid);
+}
+
+function scheduleSyncQueue(delayMs = 1000) {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => processSyncQueue(), delayMs);
+}
+
+async function processSyncQueue() {
+  if (!_isOnline || !window.db) return;
+
+  const queue = await getQueue();
+  if (queue.length === 0) return;
+
+  console.log(`[Offline] 🔄 Memproses ${queue.length} antrian...`);
+  let successCount = 0;
+  let failCount    = 0;
+
+  for (const item of queue) {
+    try {
+      let err = null;
+
+      if (item.method === 'insert') {
+        const { error } = await window.db.from(item.table).insert(item.data);
+        err = error;
+      } else if (item.method === 'update') {
+        let q = window.db.from(item.table).update(item.data);
+        if (item.filter?.id) q = q.eq('id', item.filter.id);
+        const { error } = await q;
+        err = error;
+      } else if (item.method === 'delete') {
+        let q = window.db.from(item.table).delete();
+        if (item.filter?.id) q = q.eq('id', item.filter.id);
+        else if (item.filter?.field) q = q.eq(item.filter.field, item.filter.value);
+        const { error } = await q;
+        err = error;
+      } else if (item.method === 'upsert') {
+        const { error } = await window.db.from(item.table).upsert(item.data);
+        err = error;
+      }
+
+      if (err) throw err;
+      await removeFromQueue(item._qid);
+      successCount++;
+    } catch (e) {
+      console.warn(`[Offline] ⚠️ Gagal sync item ${item._qid}:`, e.message);
+      // Coba lagi sampai 5 kali, lalu buang
+      if (item.retries >= 5) {
+        console.error(`[Offline] ❌ Item ${item._qid} dibuang setelah 5x gagal`);
+        await removeFromQueue(item._qid);
+      } else {
+        // Update retry count
+        await idbPut('_sync_queue', { ...item, retries: (item.retries || 0) + 1 });
+      }
+      failCount++;
+    }
+  }
+
+  if (successCount > 0) {
+    console.log(`[Offline] ✅ Sinkronisasi selesai: ${successCount} berhasil, ${failCount} gagal`);
+    // Refresh data setelah sync berhasil
+    if (typeof window.loadAllData === 'function') {
+      setTimeout(() => window.loadAllData(), 500);
+    }
+  }
+}
+
+// ── Mirror data dari Supabase ke IndexedDB ───────────────────────
+async function mirrorTableToIDB(table, data) {
+  if (!_idb || !Array.isArray(data) || data.length === 0) return;
+  try {
+    // Hanya cache tabel yang terdaftar
+    if (!TABLES.includes(table)) return;
+    await idbPutBulk(table, data);
+    // Update metadata waktu sync
+    await idbPut('_meta', { key: `last_sync_${table}`, value: Date.now() });
+  } catch (e) {
+    console.warn(`[Offline] Gagal mirror tabel ${table}:`, e.message);
+  }
+}
+
+async function mirrorRowToIDB(table, row) {
+  if (!_idb || !row || !TABLES.includes(table)) return;
+  try {
+    await idbPut(table, row);
+  } catch(e) {}
+}
+
+async function removeRowFromIDB(table, id) {
+  if (!_idb || !TABLES.includes(table)) return;
+  try {
+    await idbDelete(table, id);
+  } catch(e) {}
+}
+
+// ── Wrapper Supabase Query dengan fallback IndexedDB ─────────────
+//
+// Penggunaan: gantikan pola db.from('tabel').select('*') dengan
+//             offlineQuery('tabel', queryFn, fallbackFilter)
+//
+// queryFn     : async function yang menerima db dan return { data, error }
+// fallbackFilter : optional function(rows) untuk filter data offline
+//
+window.offlineQuery = async function(table, queryFn, fallbackFilter) {
+  if (_isOnline && window.db) {
+    try {
+      const result = await queryFn(window.db);
+      if (!result.error && result.data) {
+        // Mirror ke IndexedDB untuk akses offline nanti
+        mirrorTableToIDB(table, result.data);
+      }
+      return result;
+    } catch(e) {
+      // Jatuh ke offline fallback
+    }
+  }
+
+  // OFFLINE MODE: baca dari IndexedDB
+  console.log(`[Offline] 📦 Baca offline: ${table}`);
+  try {
+    let rows = await idbGetAll(table);
+    if (fallbackFilter) rows = fallbackFilter(rows);
+    return { data: rows, error: null };
+  } catch(e) {
+    return { data: [], error: e };
+  }
+};
+
+// ── Wrapper untuk operasi tulis (insert/update/delete) ───────────
+window.offlineWrite = async function(method, table, data, filter) {
+  // Mirror ke IndexedDB dulu
+  if (method === 'insert' || method === 'upsert') {
+    if (Array.isArray(data)) {
+      for (const row of data) await mirrorRowToIDB(table, row);
+    } else {
+      await mirrorRowToIDB(table, data);
+    }
+  } else if (method === 'update' && filter?.id) {
+    const existing = await idbGet(table, filter.id);
+    if (existing) await mirrorRowToIDB(table, { ...existing, ...data });
+  } else if (method === 'delete' && filter?.id) {
+    await removeRowFromIDB(table, filter.id);
+  }
+
+  if (_isOnline && window.db) {
+    // Online: langsung ke Supabase
+    try {
+      if (method === 'insert') {
+        return await window.db.from(table).insert(data);
+      } else if (method === 'upsert') {
+        return await window.db.from(table).upsert(data);
+      } else if (method === 'update') {
+        let q = window.db.from(table).update(data);
+        if (filter?.id) q = q.eq('id', filter.id);
+        return await q;
+      } else if (method === 'delete') {
+        let q = window.db.from(table).delete();
+        if (filter?.id) q = q.eq('id', filter.id);
+        else if (filter?.field) q = q.eq(filter.field, filter.value);
+        return await q;
+      }
+    } catch(e) {
+      // Jatuh ke antrian jika network error
+    }
+  }
+
+  // OFFLINE: masukkan ke antrian
+  await enqueueSync({ method, table, data, filter });
+  return { data: data, error: null }; // pura-pura berhasil
+};
+
+// ── Pre-cache semua tabel saat pertama kali online ───────────────
+async function preCacheAllTables() {
+  if (!_isOnline || !window.db || !_idb) return;
+  console.log('[Offline] 📥 Pre-caching semua tabel...');
+
+  const BATCH = [
+    'kelas','mapel','siswa','jadwal','integrasi',
+    'jurnal','absensi','nilai','app_settings',
+    'piket_s5','piket_inval','bimbingan','kinerja',
+    'tamu','tamu_sekolah',
+    'ummi','ummi_tingkatan',
+    'lab_inventaris','lab_peminjaman','lab_presensi',
+  ];
+
+  for (const table of BATCH) {
+    try {
+      const { data } = await window.db.from(table).select('*').limit(500);
+      if (data && data.length > 0) {
+        await mirrorTableToIDB(table, data);
+        console.log(`[Offline]   ✅ ${table}: ${data.length} baris`);
+      }
+    } catch(e) {
+      console.warn(`[Offline]   ⚠️ ${table}: gagal`, e.message);
+    }
+    // Jeda kecil agar tidak flooding Supabase
+    await new Promise(r => setTimeout(r, 80));
+  }
+  console.log('[Offline] ✅ Pre-cache selesai!');
+}
+
+// ── Expose API publik ────────────────────────────────────────────
+window.ApelOffline = {
+  isOnline : () => _isOnline,
+  syncNow  : () => processSyncQueue(),
+  preCache : () => preCacheAllTables(),
+  getQueue : () => getQueue(),
+  clearIDB : () => TABLES.forEach(t => idbClear(t)),
+  status   : async () => {
+    const q = await getQueue();
+    return {
+      isOnline     : _isOnline,
+      queueLength  : q.length,
+      dbReady      : !!_idb,
+    };
+  },
+};
+
+// ── Dengarkan pesan dari Service Worker ─────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'PROCESS_SYNC_QUEUE') {
+      processSyncQueue();
+    }
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+initIDB().then(() => {
+  // Tampilkan banner jika sudah offline saat load
+  if (!_isOnline) showOfflineBanner(true);
+
+  // Setelah login berhasil, pre-cache semua data
+  const _origAfterLogin = window.afterLogin;
+  if (typeof _origAfterLogin === 'function') {
+    window.afterLogin = async function() {
+      await _origAfterLogin.apply(this, arguments);
+      // Pre-cache setelah data awal sudah dimuat
+      setTimeout(() => preCacheAllTables(), 3000);
+    };
+  } else {
+    // Fallback: coba pre-cache setelah 5 detik
+    setTimeout(() => preCacheAllTables(), 5000);
+  }
+
+  // Proses antrian jika ada yang tertunda
+  if (_isOnline) {
+    setTimeout(() => processSyncQueue(), 2000);
+  }
+}).catch(e => {
+  console.error('[Offline] Gagal inisialisasi IndexedDB:', e);
+});
+
+})(); // end IIFE
 
 </script>
 </body>
