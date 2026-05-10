@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <!-- ══ No-cache untuk HTML — paksa ambil terbaru ══ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <!-- ══ PWA Manifest ══ -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1a56db">
@@ -1718,7 +1723,8 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 /* ═══════════════════════════════════════════
    LAB IPA — Shared Styles (APEL JUMBO v22)
    ═══════════════════════════════════════════ */
-.lab-page { display:flex; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
+.lab-page { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
+.lab-page.active { display:flex !important; }
 .lab-header {
   display:flex; align-items:center; gap:12px;
   padding:14px 20px; background:var(--card);
@@ -10373,279 +10379,272 @@ CREATE INDEX IF NOT EXISTS idx_lab_inv_kode ON lab_inventaris(kode);
 
 
 // ════════════════════════════════════════════════════════════════
-//  LAB BOTTOM BAR — Navigation Controller
-//  APEL JUMBO Reborn v22 — Created by D.D Candra
+//  LAB IPA BOTTOM BAR — Controller Final (v23)
+//  Clean single-source-of-truth untuk navigasi lab
 // ════════════════════════════════════════════════════════════════
 
-const LAB_PAGES = ['labInventaris', 'labPeminjaman', 'labPresensi'];
+const _LAB_PAGES = ['labInventaris', 'labPeminjaman', 'labPresensi'];
 
-function labBottomBarUpdate(pageName) {
+// ── Show bottom bar & set tab aktif ──────────────────────────────
+function labBottomBarShow(activePage) {
   const bar = document.getElementById('labBottomBar');
   if (!bar) return;
-  
-  if (LAB_PAGES.includes(pageName)) {
-    bar.classList.add('visible');
-    // Update active button
-    ['Inventaris','Peminjaman','Presensi'].forEach(key => {
-      const btn = document.getElementById('labNav'+key);
-      if (btn) btn.classList.remove('active');
-    });
-    const activeMap = {
-      'labInventaris': 'labNavInventaris',
-      'labPeminjaman': 'labNavPeminjaman',
-      'labPresensi':   'labNavPresensi'
-    };
-    const activeBtn = document.getElementById(activeMap[pageName]);
-    if (activeBtn) activeBtn.classList.add('active');
-  } else {
-    bar.classList.remove('visible');
-  }
+  bar.style.display = 'flex';
+  // Reset semua tombol
+  document.querySelectorAll('.lab-nav-btn').forEach(b => b.classList.remove('active'));
+  // Set aktif
+  const map = {
+    labInventaris : 'labNavInventaris',
+    labPeminjaman : 'labNavPeminjaman',
+    labPresensi   : 'labNavPresensi'
+  };
+  const activeBtn = document.getElementById(map[activePage]);
+  if (activeBtn) activeBtn.classList.add('active');
 }
 
-function labNavGo(pageName) {
-  // Use the existing goPage flow which handles init and page restore
-  if (typeof window.goPage === 'function') {
-    window.goPage(pageName);
-  }
-  labBottomBarUpdate(pageName);
-}
-
-function labNavHome() {
-  if (typeof window.goHome === 'function') {
-    window.goHome();
-  }
+// ── Sembunyikan bottom bar ────────────────────────────────────────
+function labBottomBarHide() {
   const bar = document.getElementById('labBottomBar');
-  if (bar) bar.classList.remove('visible');
+  if (bar) bar.style.display = 'none';
 }
 
-// ── Patch goPage to update bottom bar ──────────────────────────
-(function() {
-  const _origGoPage2 = window.goPage;
-  window.goPage = function(name) {
-    _origGoPage2(name);
-    labBottomBarUpdate(name);
-    // Ensure last page is saved correctly for refresh restore
-    localStorage.setItem('apel_last_page', name);
-  };
-})();
+// ── Navigasi antar halaman lab ────────────────────────────────────
+function labNavGo(pageName) {
+  // 1. Sembunyikan semua halaman
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const homePg = document.getElementById('page-home');
+  if (homePg) homePg.classList.remove('active');
 
-// ── Patch goHome to hide bottom bar ────────────────────────────
-(function() {
-  const _origGoHome2 = window.goHome;
-  window.goHome = function() {
-    _origGoHome2();
-    const bar = document.getElementById('labBottomBar');
-    if (bar) bar.classList.remove('visible');
-  };
-})();
+  // 2. Tampilkan halaman lab yang dituju
+  const pg = document.getElementById('page-' + pageName);
+  if (pg) {
+    pg.classList.add('active');
+    pg.style.display = 'flex';
+  }
 
-// ── Update bar on page load (for refresh restore) ────────────── 
+  // 3. Init konten halaman
+  try { if (pageName === 'labInventaris') initLabInventaris(); } catch(e){}
+  try { if (pageName === 'labPeminjaman') initLabPeminjaman(); } catch(e){}
+  try { if (pageName === 'labPresensi')   initLabPresensi();   } catch(e){}
+
+  // 4. Update bottom bar
+  labBottomBarShow(pageName);
+
+  // 5. Simpan posisi & sembunyikan topbar utama
+  localStorage.setItem('apel_last_page', pageName);
+  const tb = document.getElementById('mainTopbar');
+  if (tb) tb.style.display = 'none';
+}
+
+// ── Tombol Beranda di bottom bar ──────────────────────────────────
+function labNavHome() {
+  labBottomBarHide();
+  localStorage.removeItem('apel_last_page');
+  goHome();
+}
+
+// ── Patch goPage: lab → labNavGo, lainnya → normal ───────────────
+const _origGoPageFinal = window.goPage;
+window.goPage = function(name) {
+  if (_LAB_PAGES.includes(name)) {
+    labNavGo(name);
+    return;
+  }
+  labBottomBarHide();
+  if (typeof _origGoPageFinal === 'function') _origGoPageFinal(name);
+  localStorage.setItem('apel_last_page', name);
+};
+
+// ── Patch goHome: selalu sembunyikan bottom bar ───────────────────
+const _origGoHomeFinal = window.goHome;
+window.goHome = function() {
+  labBottomBarHide();
+  if (typeof _origGoHomeFinal === 'function') _origGoHomeFinal();
+  localStorage.removeItem('apel_last_page');
+};
+
+// ── Init: sembunyikan bar, restore posisi setelah login ──────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Wait for afterLogin to run, then check current page
-  const checkPage = () => {
-    const lastPage = localStorage.getItem('apel_last_page');
-    if (lastPage && LAB_PAGES.includes(lastPage)) {
-      setTimeout(() => labBottomBarUpdate(lastPage), 800);
+  labBottomBarHide();
+  // Safety restore: cek setelah login selesai
+  setTimeout(() => {
+    const last = localStorage.getItem('apel_last_page');
+    if (last && _LAB_PAGES.includes(last)) {
+      const pg = document.getElementById('page-' + last);
+      if (pg && pg.classList.contains('active')) labBottomBarShow(last);
     }
-  };
-  setTimeout(checkPage, 1500);
+  }, 2500);
 });
 
-// ── On page restore after login ──────────────────────────────
-const _origAfterLoginLab = window.afterLogin;
-if (typeof window.afterLogin === 'function') {
-  window.afterLogin = async function() {
-    await _origAfterLoginLab.apply(this, arguments);
-    const lastPage = localStorage.getItem('apel_last_page');
-    if (lastPage && LAB_PAGES.includes(lastPage)) {
-      labBottomBarUpdate(lastPage);
-    }
-  };
-}
-
-
 // ════════════════════════════════════════════════════════════════
-//  APEL JUMBO — Offline Auth & Data Layer (v23)
-//  Mendukung login & akses data 100% tanpa internet
+//  APEL JUMBO — Offline Auth & Data Layer (v23 Final)
 // ════════════════════════════════════════════════════════════════
 
-// ── Hash sederhana untuk keamanan password lokal ─────────────────
+// ── Hash password untuk keamanan lokal ───────────────────────────
 async function hashString(str) {
   const buf = await crypto.subtle.digest('SHA-256',
     new TextEncoder().encode(str + 'apeljumbo_salt_2025'));
   return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
+    .map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// ── Simpan kredensial terenkripsi ke localStorage ────────────────
+// ── Simpan kredensial terenkripsi ────────────────────────────────
 async function saveOfflineCreds(uid, email, password = null) {
   try {
     const creds = { uid, email, savedAt: Date.now() };
     if (password) {
       creds.passHash = await hashString(password);
     } else {
-      // Pertahankan passHash yang sudah ada
-      const existing = localStorage.getItem('apel_offline_creds');
-      if (existing) {
-        const ex = JSON.parse(existing);
-        if (ex.passHash) creds.passHash = ex.passHash;
-      }
+      const ex = localStorage.getItem('apel_offline_creds');
+      if (ex) { const p = JSON.parse(ex); if (p.passHash) creds.passHash = p.passHash; }
     }
     localStorage.setItem('apel_offline_creds', JSON.stringify(creds));
-    console.log('[Auth] ✅ Kredensial offline tersimpan untuk:', email);
+    // Simpan CONFIG (nama guru) untuk offline
+    setTimeout(() => {
+      try {
+        const cfg = window.CONFIG || {};
+        if (Object.keys(cfg).length > 0)
+          localStorage.setItem('apel_config', JSON.stringify(cfg));
+      } catch(e){}
+    }, 2000);
+    console.log('[Auth] ✅ Kredensial offline tersimpan:', email);
+  } catch(e) { console.warn('[Auth] Gagal simpan kredensial:', e); }
+}
+
+// ── Cache APP_DATA ke localStorage ───────────────────────────────
+function cacheAppData() {
+  try {
+    if (!window.APP_DATA) return;
+    const snap = {
+      kelas     : window.APP_DATA.kelas     || [],
+      mapel     : window.APP_DATA.mapel     || [],
+      siswa     : window.APP_DATA.siswa     || [],
+      jadwal    : window.APP_DATA.jadwal    || [],
+      integrasi : window.APP_DATA.integrasi || [],
+      kinerja   : window.APP_DATA.kinerja   || [],
+      ts        : Date.now(),
+    };
+    const json = JSON.stringify(snap);
+    if (json.length < 4.5 * 1024 * 1024) {
+      localStorage.setItem('apel_data_cache', json);
+      console.log('[Cache] ✅ mapel:', snap.mapel.length,
+        '| kelas:', snap.kelas.length, '| siswa:', snap.siswa.length);
+    } else {
+      localStorage.setItem('apel_data_cache',
+        JSON.stringify({ kelas: snap.kelas, mapel: snap.mapel, ts: snap.ts }));
+      console.log('[Cache] ✅ Slim cache tersimpan');
+    }
+  } catch(e) { console.warn('[Cache] Gagal:', e.message); }
+}
+
+// ── Patch loadAllData: auto-cache setelah load ────────────────────
+const _origLoadAllData = window.loadAllData;
+if (typeof _origLoadAllData === 'function') {
+  window.loadAllData = async function() {
+    await _origLoadAllData.apply(this, arguments);
+    cacheAppData();
+  };
+}
+
+// ── Load data dari cache lokal (saat offline) ─────────────────────
+async function loadAllDataOffline() {
+  console.log('[Offline] Memuat data dari cache...');
+  const cached = localStorage.getItem('apel_data_cache');
+  if (!cached) {
+    console.warn('[Offline] Tidak ada cache');
+    setTimeout(() => {
+      try {
+        const el = document.getElementById('mapelGridHome');
+        if (el) el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:#94a3b8"><div style="font-size:32px">📡</div><div style="font-weight:600;margin-top:8px">Data belum tersedia offline</div><div style="font-size:11px;margin-top:4px">Login saat ada internet minimal 1x</div></div>';
+      } catch(e){}
+    }, 400);
+    return false;
+  }
+  try {
+    const d = JSON.parse(cached);
+    if (!window.APP_DATA) window.APP_DATA = {};
+    if (d.kelas)     window.APP_DATA.kelas     = d.kelas;
+    if (d.mapel)     window.APP_DATA.mapel     = d.mapel;
+    if (d.siswa)     window.APP_DATA.siswa     = d.siswa;
+    if (d.jadwal)    window.APP_DATA.jadwal    = d.jadwal;
+    if (d.integrasi) window.APP_DATA.integrasi = d.integrasi;
+    if (d.kinerja)   window.APP_DATA.kinerja   = d.kinerja;
+    console.log('[Offline] ✅ mapel:', (d.mapel||[]).length, '| kelas:', (d.kelas||[]).length);
+    // Render UI
+    try { if (typeof populateAllSelects === 'function') populateAllSelects(); } catch(e){}
+    try { if (typeof mpRenderHomeGrid   === 'function') mpRenderHomeGrid();   } catch(e){}
+    try { if (typeof mhRefreshStats     === 'function') mhRefreshStats();     } catch(e){}
+    try { if (typeof loadDashboard      === 'function') loadDashboard();      } catch(e){}
+    setTimeout(() => {
+      try { if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid(); } catch(e){}
+    }, 400);
+    return true;
   } catch(e) {
-    console.warn('[Auth] Gagal simpan kredensial offline:', e);
+    console.warn('[Offline] Cache rusak:', e.message);
+    return false;
   }
 }
 
-// ── afterLogin versi offline (tanpa db calls) ────────────────────
+// ── afterLogin versi offline ──────────────────────────────────────
 async function afterLoginOffline() {
   try {
-    // Sembunyikan halaman login
-    const loginPg = document.getElementById('loginPage');
-    const setupPg = document.getElementById('setupPage');
-    if (loginPg) loginPg.classList.add('hide');
-    if (setupPg) setupPg.classList.add('hide');
+    const lp = document.getElementById('loginPage');
+    const sp = document.getElementById('setupPage');
+    if (lp) lp.classList.add('hide');
+    if (sp) sp.classList.add('hide');
 
-    // Tampilkan topbar dengan nama guru dari localStorage
-    const CONFIG = JSON.parse(localStorage.getItem('apel_config') || '{}');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) { tb.style.display = 'flex'; }
+
+    const cfg = JSON.parse(localStorage.getItem('apel_config') || '{}');
     const guruEl = document.getElementById('guruTopbar');
-    if (guruEl) guruEl.textContent = CONFIG.guru || currentUser?.email || '';
+    if (guruEl) guruEl.textContent = cfg.guru || currentUser?.email || '';
 
     const dateEl = document.getElementById('dashDate');
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('id-ID',
       { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-    // Tampilkan main app container
-    const mainEl = document.getElementById('main') ||
-                   document.getElementById('mainApp') ||
-                   document.getElementById('mainTopbar');
-    if (mainEl) mainEl.style.display = '';
-
-    // Tampilkan topbar jika ada
-    const topbar = document.getElementById('mainTopbar');
-    if (topbar) topbar.style.display = 'flex';
-
-    // Load & render data dari cache
     await loadAllDataOffline();
 
-    // Restore halaman terakhir
     const lastPage = localStorage.getItem('apel_last_page');
     if (lastPage && document.getElementById('page-' + lastPage)) {
       goPage(lastPage);
     } else {
       goHome();
     }
-
-    // Tampilkan banner offline setelah UI siap
-    setTimeout(() => showOfflineBanner(true), 500);
-
-    console.log('[Auth] ✅ afterLoginOffline selesai');
+    setTimeout(() => showOfflineBanner(true), 600);
   } catch(e) {
     console.error('[Auth] afterLoginOffline error:', e);
-    // Fallback: tampilkan home saja
     goHome();
     showOfflineBanner(true);
   }
 }
 
-// ── loadAllData versi offline ─────────────────────────────────────
-async function loadAllDataOffline() {
-  console.log('[Offline] 📦 Memuat data dari cache lokal...');
-
-  const cached = localStorage.getItem('apel_data_cache');
-  if (cached) {
-    try {
-      const d = JSON.parse(cached);
-
-      // ── Pastikan APP_DATA ada ──
-      if (!window.APP_DATA) window.APP_DATA = {};
-
-      // ── Restore semua data ke APP_DATA ──
-      if (d.kelas)     window.APP_DATA.kelas     = d.kelas;
-      if (d.mapel)     window.APP_DATA.mapel     = d.mapel;
-      if (d.siswa)     window.APP_DATA.siswa     = d.siswa;
-      if (d.jadwal)    window.APP_DATA.jadwal    = d.jadwal;
-      if (d.integrasi) window.APP_DATA.integrasi = d.integrasi;
-      if (d.kinerja)   window.APP_DATA.kinerja   = d.kinerja;
-
-      const ts = d.ts ? new Date(d.ts).toLocaleString('id-ID') : '?';
-      console.log('[Offline] ✅ Data dimuat — mapel:', (d.mapel||[]).length,
-        '| kelas:', (d.kelas||[]).length, '| terakhir sync:', ts);
-
-      // ── Render semua komponen UI ──
-      // Penting: jalankan berurutan agar data sudah siap sebelum render
-      try { if (typeof populateAllSelects === 'function') populateAllSelects(); } catch(e){}
-      try { if (typeof renderKelasTbody   === 'function') renderKelasTbody();   } catch(e){}
-      try { if (typeof renderMapelTbody   === 'function') renderMapelTbody();   } catch(e){}
-      try { if (typeof mpRenderHomeGrid   === 'function') mpRenderHomeGrid();   } catch(e){}
-      try { if (typeof mhRefreshStats     === 'function') mhRefreshStats();     } catch(e){}
-      try { if (typeof loadDashboard      === 'function') loadDashboard();      } catch(e){}
-
-      // Render ulang setelah sedikit delay (pastikan DOM sudah siap)
-      setTimeout(() => {
-        try { if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid(); } catch(e){}
-        try { if (typeof mhRefreshStats   === 'function') mhRefreshStats();   } catch(e){}
-      }, 300);
-
-      return true;
-    } catch(e) {
-      console.warn('[Offline] ⚠️ Cache rusak:', e.message);
-    }
-  }
-
-  // Tidak ada cache sama sekali
-  console.warn('[Offline] ⚠️ Tidak ada cache — fitur terbatas');
-  setTimeout(() => {
-    try {
-      const el = document.getElementById('mapelGridHome');
-      if (el) el.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:24px 16px;color:#94a3b8">
-          <div style="font-size:32px;margin-bottom:8px">📡</div>
-          <div style="font-size:13px;font-weight:600;color:#64748b">Data belum tersedia offline</div>
-          <div style="font-size:11px;margin-top:4px">Login saat ada internet minimal 1x untuk menyimpan data</div>
-        </div>`;
-    } catch(e){}
-  }, 400);
-  return false;
-}
-
-// ── Tampilkan banner offline ─────────────────────────────────────
+// ── Banner offline (di bawah, auto-hide 6 detik) ─────────────────
 function showOfflineBanner(show) {
   let banner = document.getElementById('apel-offline-banner');
   if (!banner && show) {
     banner = document.createElement('div');
     banner.id = 'apel-offline-banner';
     banner.innerHTML = `
-      <span style="font-size:16px">📡</span>
+      <span style="font-size:18px">📡</span>
       <div style="flex:1">
-        <div style="font-weight:700;font-size:12px;line-height:1.2">Mode Offline Aktif</div>
-        <div style="font-size:10px;opacity:.9;margin-top:1px">
-          Data sync otomatis saat online kembali
-        </div>
+        <div style="font-weight:700;font-size:12px">Mode Offline Aktif</div>
+        <div style="font-size:10px;opacity:.9">Data sync otomatis saat online kembali</div>
       </div>
-      <button onclick="
-        document.getElementById('apel-offline-banner').style.transform='translateY(120%)';
-        clearTimeout(window._offlineBannerTimer);"
-        style="background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:8px;
-               padding:3px 9px;font-size:13px;cursor:pointer;font-weight:700;flex-shrink:0">✕</button>
-    `;
+      <button onclick="clearTimeout(window._offlineBannerTimer);
+        document.getElementById('apel-offline-banner').style.transform='translateY(120%)'"
+        style="background:rgba(255,255,255,.25);border:none;color:#fff;
+               border-radius:8px;padding:3px 9px;font-size:13px;cursor:pointer">✕</button>`;
     Object.assign(banner.style, {
-      position      : 'fixed',
-      bottom        : '0',           /* ← BAWAH, bukan atas */
-      left          : '0',
-      right         : '0',
-      background    : 'linear-gradient(90deg,#f59e0b,#d97706)',
-      color         : '#fff',
-      padding       : '10px 14px',
-      display       : 'flex',
-      alignItems    : 'center',
-      gap           : '10px',
-      zIndex        : '99998',       /* di bawah lab bottom bar */
-      fontFamily    : 'var(--font,sans-serif)',
-      boxShadow     : '0 -4px 20px rgba(0,0,0,.15)',
-      transform     : 'translateY(120%)',
-      transition    : 'transform .4s cubic-bezier(.34,1.56,.64,1)',
+      position:'fixed', bottom:'0', left:'0', right:'0',
+      background:'linear-gradient(90deg,#f59e0b,#d97706)',
+      color:'#fff', padding:'10px 14px', display:'flex',
+      alignItems:'center', gap:'10px', zIndex:'88888',
+      fontFamily:'var(--font,sans-serif)',
+      boxShadow:'0 -4px 16px rgba(0,0,0,.15)',
+      transform:'translateY(120%)',
+      transition:'transform .4s cubic-bezier(.34,1.56,.64,1)',
     });
     document.body.appendChild(banner);
   }
@@ -10654,7 +10653,6 @@ function showOfflineBanner(show) {
     setTimeout(() => {
       banner.style.transform = show ? 'translateY(0)' : 'translateY(120%)';
     }, 100);
-    // Auto-hide setelah 6 detik — tidak menghalangi user
     if (show) {
       window._offlineBannerTimer = setTimeout(() => {
         banner.style.transform = 'translateY(120%)';
@@ -10663,72 +10661,21 @@ function showOfflineBanner(show) {
   }
 }
 
-// ── Otomatis cache APP_DATA LENGKAP setelah loadAllData ─────────
-const _origLoadAllData = window.loadAllData;
-if (typeof _origLoadAllData === 'function') {
-  window.loadAllData = async function() {
-    await _origLoadAllData.apply(this, arguments);
-    // Simpan APP_DATA ke localStorage untuk akses offline
-    try {
-      const snap = {
-        kelas     : (window.APP_DATA?.kelas     || []),
-        mapel     : (window.APP_DATA?.mapel     || []),
-        siswa     : (window.APP_DATA?.siswa     || []),
-        jadwal    : (window.APP_DATA?.jadwal    || []),
-        integrasi : (window.APP_DATA?.integrasi || []),
-        kinerja   : (window.APP_DATA?.kinerja   || []),
-        ts        : Date.now(),
-      };
-
-      // Simpan mapel icons dari app_settings juga
-      const iconsRaw = localStorage.getItem('sb-mapel-icons') ||
-                       localStorage.getItem('apel_mapel_icons');
-      if (iconsRaw) snap.mapelIcons = iconsRaw;
-
-      const json = JSON.stringify(snap);
-      if (json.length < 4.5 * 1024 * 1024) {
-        localStorage.setItem('apel_data_cache', json);
-        console.log('[Cache] ✅ Tersimpan — mapel:', snap.mapel.length,
-          'kelas:', snap.kelas.length, 'siswa:', snap.siswa.length);
-      } else {
-        // Terlalu besar → simpan mapel + kelas saja (prioritas utama)
-        const slim = { kelas: snap.kelas, mapel: snap.mapel, ts: snap.ts };
-        localStorage.setItem('apel_data_cache', JSON.stringify(slim));
-        console.log('[Cache] ✅ Slim cache — mapel:', slim.mapel.length);
-      }
-    } catch(e) {
-      console.warn('[Cache] Gagal:', e.message);
-    }
-  };
-}
-
-// ── Monitor koneksi: auto-sync saat online kembali ───────────────
+// ── Monitor koneksi ───────────────────────────────────────────────
 window.addEventListener('online', async () => {
   showOfflineBanner(false);
   console.log('[Auth] 🟢 Online kembali');
-
-  // Jika sedang di mode offline, coba refresh session Supabase
-  if (currentUser?.offline_mode && db) {
+  if (currentUser?.offline_mode && window.db) {
     try {
       const saved = localStorage.getItem('apel_session');
       if (saved) {
-        const s = JSON.parse(saved);
-        const { data, error } = await db.auth.setSession(s);
+        const { data, error } = await window.db.auth.setSession(JSON.parse(saved));
         if (!error && data?.user) {
           currentUser = data.user;
-          console.log('[Auth] ✅ Session Supabase dipulihkan');
-          // Reload data terbaru dari server
           await loadAllData();
         }
       }
-    } catch(e) {
-      console.warn('[Auth] Gagal pulihkan session:', e);
-    }
-  }
-
-  // Proses antrian sync jika ada
-  if (window.ApelOffline) {
-    setTimeout(() => window.ApelOffline.syncNow(), 1000);
+    } catch(e) {}
   }
 });
 
@@ -10737,7 +10684,6 @@ window.addEventListener('offline', () => {
   showOfflineBanner(true);
 });
 
-// ── Inisialisasi status banner saat load ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   if (!navigator.onLine) showOfflineBanner(true);
 });
@@ -10747,27 +10693,24 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
-        console.log('[SW] ✅ Terdaftar:', reg.scope);
-        // Cek update tiap 1 jam
+        console.log('[SW] ✅ Terdaftar');
         setInterval(() => reg.update(), 60 * 60 * 1000);
         reg.addEventListener('updatefound', () => {
           const sw = reg.installing;
           sw.addEventListener('statechange', () => {
-            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller)
               sw.postMessage({ type: 'SKIP_WAITING' });
-            }
           });
         });
       })
-      .catch(err => console.warn('[SW] Gagal daftar:', err));
-
+      .catch(err => console.warn('[SW] Gagal:', err));
     navigator.serviceWorker.addEventListener('message', e => {
-      if (e.data?.type === 'PROCESS_SYNC_QUEUE') {
-        if (window.ApelOffline) window.ApelOffline.syncNow();
-      }
+      if (e.data?.type === 'PROCESS_SYNC_QUEUE' && window.ApelOffline)
+        window.ApelOffline.syncNow();
     });
   });
 }
+
 
 </script>
 </body>
