@@ -8292,8 +8292,8 @@ function renderBellList() {
       <div class="bell-avatar">${(n.nama||'?')[0].toUpperCase()}</div>
       <div class="bell-info">
         <div class="bell-nama">${n.nama} <span style="font-size:10px;color:var(--text-light);font-weight:400">${n.peran}</span></div>
-        <div class="bell-kelas">📚 ${n.kelas_nama}</div>
-        <div class="bell-pesan">${escChatHtml(n.pesan||'')}</div>
+        <div class="bell-kelas">📚 ${n.kelas_nama||'Kelas tidak diketahui'} ${n.kelas_nama?`<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px;margin-left:4px">${n.kelas_nama}</span>`:''}</div>
+        <div class="bell-pesan">${escChatHtml((n.pesan||'').replace(/^\[[^\]]+\]\s*/,''))}</div>
         <div class="bell-time">🕐 ${n.waktu}</div>
       </div>
       ${!n.dibaca?'<div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:4px"></div>':''}
@@ -8305,10 +8305,18 @@ function bellItemClick(notifId, kelasId, kelasNama) {
   if(n) n.dibaca = true;
   updateBellCount();
   closeBellPanel();
-  // Pindah ke kelas tersebut
-  if(kelasId) selectChatKelas(kelasId, kelasNama);
-  // Buka halaman diskusi jika belum
+  // Buka halaman diskusi DULU, lalu pilih kelas
+  // (harus urut: halaman dulu baru selectChatKelas)
   goPage('diskusi');
+  if(kelasId) {
+    // Delay agar halaman diskusi sudah ter-render dulu
+    setTimeout(() => {
+      selectChatKelas(kelasId, kelasNama);
+      // Scroll ke chip kelas agar terlihat
+      const chip = document.getElementById('kelas-chip-' + kelasId);
+      if (chip) chip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 350);
+  }
 }
 
 // ═══════ LOG RIWAYAT DISKUSI ═══════
