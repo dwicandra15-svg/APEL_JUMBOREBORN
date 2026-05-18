@@ -3595,13 +3595,16 @@ async function doLogout() {
 async function afterLogin() {
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('setupPage').classList.add('hide');
-  document.getElementById('guruTopbar').textContent = CONFIG.guru || '';
+  // Nama guru dari localStorage (langsung, tanpa tunggu query) 
+  const guruEl = document.getElementById('guruTopbar');
+  if (guruEl) guruEl.textContent = CONFIG.guru || currentUser?.email?.split('@')[0] || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   await loadAllData();
-  setTimeout(() => { try { if(db) ecmLoadAll(); } catch(e){} }, 800);
-  setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 1000);
-  // Mulai listener global chat untuk SEMUA kelas (bell + badge)
-  setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 1200);
+  // ecmLoadAll sudah dihandle di loadAppSettings (dalam loadAllData)
+  // Hanya perlu load hal-hal yang tidak ada di loadAllData
+  setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 300);
+  setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 500);
+  setTimeout(() => { try { if(db) mpLoadSavedIcons(); } catch(e){} }, 400);
   // Restore halaman terakhir sebelum refresh
   const lastPage = localStorage.getItem('apel_last_page');
   if (lastPage && lastPage !== 'home' && document.getElementById('page-'+lastPage)) {
@@ -3696,27 +3699,81 @@ function savePengaturan() {
 
 // ===================== LOAD DATA =====================
 async function loadAllData() {
-  // ── TAHAP 1: Data utama yang langsung terlihat di home ──
-  // Kelas + Mapel dulu agar grid mapel langsung muncul
-  await Promise.all([loadKelas(), loadMapel()]);
-  populateAllSelects();
-  mpRenderHomeGrid();   // Grid mapel langsung muncul!
-  mhRefreshStats();
+  // ── TAHAP 1: Semua data utama yang dibutuhkan UI ──────────
+  // Dijalankan paralel tapi ditunggu semuanya
+  // Urutan prioritas: kelas → mapel → siswa → app_settings
+  await Promise.all([
+    loadKelas(),
+    loadMapel(),
+    loadSiswaAll(),    // perlu untuk AbsensiKu & dropdown
+    loadAppSettings(), // perlu untuk nama guru & ikon mapel
+  ]);
 
-  // ── TAHAP 2: Data pendukung (load di background) ──
-  // Siswa, jadwal, dll diload belakangan agar tidak blokir UI
+  // Render UI setelah data inti siap
+  populateAllSelects();
+  mpRenderHomeGrid();
+  mhRefreshStats();
+  mhRefreshInfo();
+  loadDashboard();
+
+  // ── TAHAP 2: Data pendukung (background, tidak blokir UI) ─
   Promise.all([
-    loadSiswaAll(),
     loadJadwalAll(),
     loadIntegrasi(),
     loadTingkatanAll(),
     loadKinerja()
   ]).then(() => {
-    populateAllSelects(); // refresh dropdown setelah semua data siap
-    loadDashboard();
+    populateAllSelects();
     loadSiswaPerTingkatan();
-    mhRefreshStats();
-  }).catch(e => console.warn('[Load] Background load error:', e));
+    // Cache SEMUA data setelah Tahap 2 selesai
+    // Sehingga mode offline dapat data lengkap
+    cacheAppData();
+    console.log('[Cache] ✅ Cache lengkap setelah Tahap 2 selesai');
+  }).catch(e => console.warn('[Load] Background:', e));
+}
+
+// ── Load app_settings (ikon, nama guru, card config) ────────
+async function loadAppSettings() {
+  if (!db) return;
+  try {
+    // Ambil semua settings sekaligus dalam 1 query
+    const { data } = await db.from('app_settings')
+      .select('key, value')
+      .in('key', ['card_config', 'mapel_icons', 'guru_piket']);
+    if (!data) return;
+
+    data.forEach(row => {
+      const val = typeof row.value === 'string'
+        ? JSON.parse(row.value) : row.value;
+
+      if (row.key === 'card_config') {
+        // Apply card customization
+        Object.entries(val).forEach(([id, d]) => {
+          try { ecmApplyToDOM(id, d); } catch(e) {}
+        });
+      }
+      if (row.key === 'mapel_icons') {
+        // Apply mapel icons
+        Object.entries(val).forEach(([id, d]) => {
+          const icoEl = document.getElementById('ico-' + id);
+          const lblEl = document.getElementById('lbl-' + id);
+          if (icoEl) {
+            ECM_COLORS.forEach(c => icoEl.classList.remove(c.cls));
+            icoEl.classList.add(d.color || '');
+            if (d.img) icoEl.innerHTML = `<img src="${d.img}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+            else if (d.emoji) icoEl.textContent = d.emoji;
+          }
+          if (lblEl && d.name) lblEl.textContent = d.name;
+        });
+      }
+      if (row.key === 'guru_piket') {
+        // Cache guru piket data
+        window._guruPiketCache = val;
+      }
+    });
+  } catch(e) {
+    console.warn('[loadAppSettings] error:', e.message);
+  }
 }
 
 async function loadKelas() {
@@ -10584,12 +10641,16 @@ function cacheAppData() {
   } catch(e) { console.warn('[Cache] Gagal:', e.message); }
 }
 
-// ── Patch loadAllData: auto-cache setelah load ────────────────────
+// ── Patch loadAllData: cache dipanggil di akhir Tahap 2 ──────────
+// (loadAllData sudah punya cacheAppData di Tahap 2-nya sendiri)
+// Patch ini sebagai safety net jika loadAllData diganti versi lain
 const _origLoadAllData = window.loadAllData;
 if (typeof _origLoadAllData === 'function') {
   window.loadAllData = async function() {
     await _origLoadAllData.apply(this, arguments);
-    cacheAppData();
+    // cacheAppData sudah dipanggil di dalam loadAllData Tahap 2
+    // Panggil lagi sebagai safety net dengan delay
+    setTimeout(() => cacheAppData(), 2000);
   };
 }
 
@@ -10616,14 +10677,29 @@ async function loadAllDataOffline() {
     if (d.jadwal)    window.APP_DATA.jadwal    = d.jadwal;
     if (d.integrasi) window.APP_DATA.integrasi = d.integrasi;
     if (d.kinerja)   window.APP_DATA.kinerja   = d.kinerja;
-    console.log('[Offline] ✅ mapel:', (d.mapel||[]).length, '| kelas:', (d.kelas||[]).length);
-    // Render UI
+    console.log('[Offline] ✅ mapel:', (d.mapel||[]).length,
+      '| kelas:', (d.kelas||[]).length,
+      '| siswa:', (d.siswa||[]).length,
+      '| integrasi:', (d.integrasi||[]).length);
+
+    // Render UI dari cache
     try { if (typeof populateAllSelects === 'function') populateAllSelects(); } catch(e){}
     try { if (typeof mpRenderHomeGrid   === 'function') mpRenderHomeGrid();   } catch(e){}
     try { if (typeof mhRefreshStats     === 'function') mhRefreshStats();     } catch(e){}
+    try { if (typeof mhRefreshInfo      === 'function') mhRefreshInfo();      } catch(e){}
     try { if (typeof loadDashboard      === 'function') loadDashboard();      } catch(e){}
+
+    // Render ulang setelah delay (pastikan DOM siap)
     setTimeout(() => {
       try { if (typeof mpRenderHomeGrid === 'function') mpRenderHomeGrid(); } catch(e){}
+      try { if (typeof populateAllSelects === 'function') populateAllSelects(); } catch(e){}
+      // Render integrasi & kinerja dari cache
+      try {
+        if (typeof renderIntegrasiList === 'function') renderIntegrasiList();
+      } catch(e){}
+      try {
+        if (typeof renderKinerjaList === 'function') renderKinerjaList();
+      } catch(e){}
     }, 400);
     return true;
   } catch(e) {
