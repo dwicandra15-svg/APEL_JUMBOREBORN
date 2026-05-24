@@ -1272,6 +1272,10 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   background-size:200% 100%; animation:shimmer 1.5s infinite;
   border-radius:18px; height:130px;
 }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
 
@@ -8271,6 +8275,7 @@ function buildBubbleGuru(m) {
   const isMe     = m.peran==='Guru' && (m.nama||'') === (CONFIG.guru||'');
   const isGuru   = m.peran==='Guru';
   const isPengum = m.tipe==='pengumuman';
+  const isPrivat = m.tipe==='privat';
   const waktu    = m.created_at?new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'';
   const inisial  = (m.nama||'?')[0].toUpperCase();
   const extraCls = isPengum?'is-pengumuman':isGuru?'is-guru':'';
@@ -8280,12 +8285,27 @@ function buildBubbleGuru(m) {
     const ico=['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':['pdf'].includes(ext)?'📄':['doc','docx'].includes(ext)?'📝':['xls','xlsx'].includes(ext)?'📊':'📎';
     fileHtml=`<div class="cb-attach" onclick="downloadChatFile('${m.file_url}','${m.file_name||'file'}')"><div class="cb-attach-icon">${ico}</div><div style="flex:1;min-width:0"><div class="cb-attach-name">${m.file_name||'File'}</div><div class="cb-attach-size">${m.file_size||''}</div></div><span style="font-size:16px">⬇️</span></div>`;
   }
-  const pengumHtml = isPengum?`<div class="pengumuman-badge">📢 Pengumuman</div>`:'';
+  // Badge: pengumuman atau privat
+  const badgeHtml = isPengum
+    ? '<div class="pengumuman-badge">📢 Pengumuman</div>'
+    : isPrivat
+    ? (() => {
+        let namaTarget = '';
+        try {
+          const t = JSON.parse(m.target_siswa_ids||'{}');
+          if (t.ids && t.ids.length) {
+            const siswas = (APP_DATA.siswa||[]).filter(s => t.ids.includes(s.id));
+            namaTarget = siswas.map(s=>s.nama.split(' ')[0]).join(', ');
+          }
+        } catch(e){}
+        return `<div class="pengumuman-badge" style="background:#7c3aed;color:#fff">🔒 Privat${namaTarget?' → '+namaTarget:''}</div>`;
+      })()
+    : '';
   return `<div class="cbw ${isMe?'me':'other'} ${extraCls}">
     ${!isMe?`<div class="cbav ${isGuru?'guru':''}">${inisial}</div>`:''}
     <div class="cbinner">
       ${!isMe?`<div class="cbname">${m.nama||'—'} <span class="cb-role">${m.peran||''}</span></div>`:''}
-      <div class="cbb">${pengumHtml}${escChatHtml(m.pesan||'')}${fileHtml}</div>
+      <div class="cbb">${badgeHtml}${escChatHtml(m.pesan||'')}${fileHtml}</div>
       <div class="cbtime">${waktu}</div>
     </div>
   </div>`;
@@ -8557,7 +8577,155 @@ async function migrasiChatApbo() {
   try{ await db.rpc('exec_sql',{sql:"NOTIFY pgrst, 'reload schema';"}); }catch(e){}
 }
 
-async function sendChatGuru() {
+// ── State untuk target chat ──────────────────────────────────
+let _chatTargetIds   = null;  // null = semua, array = siswa tertentu
+let _chatTargetNisns = null;  // array NISN untuk filter di APBO Siswa
+
+// ── Tampilkan popup pilih target ────────────────────────────
+function showChatTargetPicker() {
+  if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
+  const input = document.getElementById('chatMsgInput');
+  if(!input.value.trim() && !chatFilesGuru.length) return;
+  // Reset picker
+  document.getElementById('siswaPicker').style.display = 'none';
+  document.getElementById('siswaPickerSearch').value = '';
+  const modal = document.getElementById('chatTargetModal');
+  modal.style.display = 'flex';
+}
+
+function closeChatTargetModal() {
+  document.getElementById('chatTargetModal').style.display = 'none';
+}
+
+// ── Tampilkan daftar siswa untuk dipilih ────────────────────
+function showSiswaPicker() {
+  document.getElementById('siswaPicker').style.display = 'block';
+  renderSiswaPicker(APP_DATA.siswa.filter(s => String(s.kelas_id) === String(chatKelasAktif)));
+}
+
+let _allSiswaPicker = [];
+let _selectedSiswaIds = new Set();
+
+function renderSiswaPicker(list) {
+  _allSiswaPicker = list;
+  _selectedSiswaIds.clear();
+  const container = document.getElementById('siswaPickerList');
+  if (!list.length) {
+    container.innerHTML = '<p style="text-align:center;color:#94a3b8;font-size:12px;padding:20px">Tidak ada siswa di kelas ini</p>';
+    return;
+  }
+  container.innerHTML = list.map(s => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;
+      transition:.15s;background:#fff" id="spick-${s.id}"
+      onclick="toggleSiswaPick(${s.id}, this)">
+      <div style="width:20px;height:20px;border:2px solid #cbd5e1;border-radius:5px;
+        flex-shrink:0;display:flex;align-items:center;justify-content:center;
+        font-size:12px;transition:.15s" id="spick-chk-${s.id}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#0f172a">${s.nama}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:1px">
+          ${getKelasName(s.kelas_id)} • NISN: ${s.nis||'-'}
+        </div>
+      </div>
+    </label>`).join('');
+}
+
+function filterSiswaPicker(q) {
+  const filtered = _allSiswaPicker.filter(s =>
+    s.nama.toLowerCase().includes(q.toLowerCase()) ||
+    (s.nis||'').includes(q)
+  );
+  renderSiswaPicker(filtered);
+}
+
+function toggleSiswaPick(id, el) {
+  if (_selectedSiswaIds.has(id)) {
+    _selectedSiswaIds.delete(id);
+    el.style.borderColor = '#e2e8f0';
+    el.style.background = '#fff';
+    const chk = document.getElementById('spick-chk-' + id);
+    if (chk) { chk.style.background=''; chk.style.borderColor='#cbd5e1'; chk.textContent=''; }
+  } else {
+    _selectedSiswaIds.add(id);
+    el.style.borderColor = '#1a56db';
+    el.style.background = '#eff6ff';
+    const chk = document.getElementById('spick-chk-' + id);
+    if (chk) { chk.style.background='#1a56db'; chk.style.borderColor='#1a56db'; chk.textContent='✓'; chk.style.color='#fff'; }
+  }
+}
+
+function toggleSelectAll() {
+  const allSelected = _selectedSiswaIds.size === _allSiswaPicker.length;
+  if (allSelected) {
+    _selectedSiswaIds.clear();
+    _allSiswaPicker.forEach(s => {
+      const el = document.getElementById('spick-' + s.id);
+      const chk = document.getElementById('spick-chk-' + s.id);
+      if (el) { el.style.borderColor='#e2e8f0'; el.style.background='#fff'; }
+      if (chk) { chk.style.background=''; chk.style.borderColor='#cbd5e1'; chk.textContent=''; }
+    });
+    document.getElementById('btnSelectAll').textContent = 'Pilih Semua';
+  } else {
+    _allSiswaPicker.forEach(s => {
+      _selectedSiswaIds.add(s.id);
+      const el = document.getElementById('spick-' + s.id);
+      const chk = document.getElementById('spick-chk-' + s.id);
+      if (el) { el.style.borderColor='#1a56db'; el.style.background='#eff6ff'; }
+      if (chk) { chk.style.background='#1a56db'; chk.style.borderColor='#1a56db'; chk.textContent='✓'; chk.style.color='#fff'; }
+    });
+    document.getElementById('btnSelectAll').textContent = 'Batal Pilih Semua';
+  }
+}
+
+// ── Kirim ke SEMUA siswa ─────────────────────────────────────
+async function sendChatToAll() {
+  closeChatTargetModal();
+  _chatTargetIds   = null;
+  _chatTargetNisns = null;
+  resetChatTargetBar();
+  await sendChatGuru(null, null);
+}
+
+// ── Kirim ke siswa TERTENTU yang dicentang ───────────────────
+async function sendChatToSelected() {
+  if (_selectedSiswaIds.size === 0) {
+    toast('Pilih minimal 1 siswa terlebih dahulu', 'error');
+    return;
+  }
+  const selectedSiswa = _allSiswaPicker.filter(s => _selectedSiswaIds.has(s.id));
+  const targetIds    = selectedSiswa.map(s => s.id);
+  const targetNisns  = selectedSiswa.map(s => s.nis).filter(Boolean);
+  const targetNames  = selectedSiswa.map(s => s.nama.split(' ')[0]).join(', ');
+
+  closeChatTargetModal();
+
+  // Tampilkan target bar
+  const bar = document.getElementById('chatTargetBar');
+  const namesEl = document.getElementById('chatTargetNames');
+  if (bar && namesEl) {
+    namesEl.textContent = targetNames;
+    bar.style.display = 'flex';
+  }
+  _chatTargetIds   = targetIds;
+  _chatTargetNisns = targetNisns;
+
+  await sendChatGuru(targetIds, targetNisns);
+}
+
+function resetChatTarget() {
+  _chatTargetIds   = null;
+  _chatTargetNisns = null;
+  resetChatTargetBar();
+}
+
+function resetChatTargetBar() {
+  const bar = document.getElementById('chatTargetBar');
+  if (bar) bar.style.display = 'none';
+}
+
+// ── sendChatGuru: sekarang terima parameter target ────────────
+async function sendChatGuru(targetIds = null, targetNisns = null) {
   if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   const input=document.getElementById('chatMsgInput');
   const pesan=input.value.trim();
@@ -8569,16 +8737,43 @@ async function sendChatGuru() {
     fileUrl=await chatFileToBase64(f);chatFilesGuru=[];updateChatFilePreview();
   }
   const kObjSend=APP_DATA.kelas.find(k=>k.id==chatKelasAktif);
+
+  // Simpan target sebagai JSON string di kolom target_siswa_ids
+  const targetJson = targetIds ? JSON.stringify({
+    ids  : targetIds,
+    nisns: targetNisns || []
+  }) : null;
+
   const now=new Date().toISOString();
-  const row={kelas_id:chatKelasAktif,kelas_nama:kObjSend?kObjSend.nama:'',siswa_id:0,nisn:'',nama:CONFIG.guru||'Guru',peran:'Guru',tipe:'pesan',
-    guru_user_id:currentUser.id,
-    pesan:pesan||(fileName?'[File: '+fileName+']':''),file_url:fileUrl,file_name:fileName,file_size:fileSize,created_at:now};
+  const row={
+    kelas_id        : chatKelasAktif,
+    kelas_nama      : kObjSend ? kObjSend.nama : '',
+    siswa_id        : 0,
+    nisn            : '',
+    nama            : CONFIG.guru || 'Guru',
+    peran           : 'Guru',
+    tipe            : targetIds ? 'privat' : 'pesan',
+    guru_user_id    : currentUser.id,
+    pesan           : pesan||(fileName?'[File: '+fileName+']':''),
+    file_url        : fileUrl,
+    file_name       : fileName,
+    file_size       : fileSize,
+    target_siswa_ids: targetJson,
+    created_at      : now
+  };
+
   const key=String(row.nama)+'_'+String(row.pesan).substring(0,20)+'_'+String(chatKelasAktif);
   sentChatKeys.add(key);
   appendChatBubble(row);
+
+  // Reset target setelah kirim
+  resetChatTargetBar();
+  _chatTargetIds   = null;
+  _chatTargetNisns = null;
+
   let {error:errSend}=await db.from('chat_apbo').insert({...row,created_at:undefined});
-  if(errSend && errSend.message && (errSend.message.includes('kelas_nama')||errSend.message.includes('schema cache'))){
-    const {kelas_nama:_kn,...rowFallback}=row;
+  if(errSend && errSend.message && (errSend.message.includes('kelas_nama')||errSend.message.includes('schema cache')||errSend.message.includes('target_siswa_ids'))){
+    const {kelas_nama:_kn,target_siswa_ids:_ti,...rowFallback}=row;
     const res2=await db.from('chat_apbo').insert({...rowFallback,created_at:undefined});
     errSend=res2.error;
   }
@@ -9161,15 +9356,84 @@ function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrol
 
       <!-- Input -->
       <div class="chat-input-area">
+        <!-- Target indicator -->
+        <div id="chatTargetBar" style="display:none;padding:6px 12px 0;font-size:11px;color:#1d4ed8;font-weight:700;display:flex;align-items:center;gap:6px">
+          <span>📨 Privat ke:</span>
+          <span id="chatTargetNames" style="color:#1d4ed8"></span>
+          <button onclick="resetChatTarget()" style="margin-left:auto;background:none;border:none;color:#e02424;font-size:12px;cursor:pointer;font-weight:700">✕ Batal</button>
+        </div>
         <div class="chat-input-row">
           <label class="chat-attach-lbl" title="Lampirkan file">
             📎<input type="file" id="chatFileInput" style="display:none" multiple onchange="onChatFileSelected(this)">
           </label>
           <textarea class="chat-tinput" id="chatMsgInput" placeholder="Tulis pesan kepada siswa/orang tua..." rows="1"
             onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>
-          <button class="chat-send" onclick="sendChatGuru()">➤</button>
+          <button class="chat-send" onclick="showChatTargetPicker()">➤</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHAT TARGET PICKER MODAL ══ -->
+<div id="chatTargetModal" style="
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(15,23,42,.55); backdrop-filter:blur(3px);
+  align-items:flex-end; justify-content:center;">
+  <div style="
+    background:#fff; border-radius:24px 24px 0 0;
+    width:100%; max-width:600px; max-height:80vh;
+    overflow-y:auto; padding:20px;
+    transform:translateY(0); animation:slideUp .25s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin:0">📨 Kirim Pesan ke Siapa?</h3>
+      <button onclick="closeChatTargetModal()" style="background:#f1f5f9;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- 2 pilihan utama -->
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button onclick="sendChatToAll()" style="
+        flex:1;padding:14px;border:2px solid #e2e8f0;border-radius:14px;
+        background:#f8fafc;cursor:pointer;font-family:inherit;
+        font-size:13px;font-weight:700;color:#334155;
+        display:flex;flex-direction:column;align-items:center;gap:6px;
+        transition:.15s;" onmouseover="this.style.borderColor='#1a56db';this.style.background='#eff6ff'"
+        onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+        <span style="font-size:24px">👥</span>
+        <span>Semua Siswa</span>
+        <span style="font-size:10px;color:#94a3b8;font-weight:500">Semua siswa di kelas ini</span>
+      </button>
+      <button onclick="showSiswaPicker()" id="btnSiswaTermtu" style="
+        flex:1;padding:14px;border:2px solid #e2e8f0;border-radius:14px;
+        background:#f8fafc;cursor:pointer;font-family:inherit;
+        font-size:13px;font-weight:700;color:#334155;
+        display:flex;flex-direction:column;align-items:center;gap:6px;
+        transition:.15s;" onmouseover="this.style.borderColor='#1a56db';this.style.background='#eff6ff'"
+        onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+        <span style="font-size:24px">👤</span>
+        <span>Siswa Tertentu</span>
+        <span style="font-size:10px;color:#94a3b8;font-weight:500">Pilih 1 atau lebih siswa</span>
+      </button>
+    </div>
+
+    <!-- Daftar siswa (muncul saat klik "Siswa Tertentu") -->
+    <div id="siswaPicker" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:#64748b">PILIH SISWA (klik untuk centang)</span>
+        <button onclick="toggleSelectAll()" id="btnSelectAll" style="font-size:11px;color:#1a56db;background:none;border:none;cursor:pointer;font-weight:700">Pilih Semua</button>
+      </div>
+      <!-- Search siswa -->
+      <input type="text" id="siswaPickerSearch" placeholder="🔍 Cari nama siswa..."
+        oninput="filterSiswaPicker(this.value)"
+        style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:10px;
+               font-size:12px;margin-bottom:10px;box-sizing:border-box;font-family:inherit">
+      <div id="siswaPickerList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+      <button onclick="sendChatToSelected()" style="
+        width:100%;margin-top:14px;padding:13px;
+        background:#1a56db;color:#fff;border:none;border-radius:12px;
+        font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+        📨 Kirim ke yang Dicentang
+      </button>
     </div>
   </div>
 </div>
