@@ -365,11 +365,11 @@ tr:hover td { background: #f8fafc; }
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px);
   background: #0f172a; color: white; padding: 11px 22px; border-radius: 99px;
   font-size: 13px; font-weight: 600; z-index: 9999;
-  transition: transform 0.3s; pointer-events: none;
+  transition: transform 0.3s, opacity 0.3s; pointer-events: none;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  white-space: nowrap;
+  white-space: nowrap; opacity: 0;
 }
-#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 #toast.success { background: var(--secondary); }
 #toast.error { background: var(--danger); }
 
@@ -6360,12 +6360,20 @@ let _toastTimer = null;
 function toast(msg, type='success') {
   const t = document.getElementById('toast');
   if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
-  t.textContent = msg; t.className = type;
-  t.classList.add('show');
-  _toastTimer = setTimeout(() => {
-    t.classList.remove('show');
-    _toastTimer = null;
-  }, 3500);
+  // Sembunyikan dulu (tanpa animasi) lalu tampilkan kembali
+  t.classList.remove('show');
+  t.textContent = msg;
+  t.className = type; // set warna background
+  // Gunakan requestAnimationFrame agar browser render state "hide" dulu
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      t.classList.add('show');
+      _toastTimer = setTimeout(() => {
+        t.classList.remove('show');
+        _toastTimer = null;
+      }, 3500);
+    });
+  });
 }
 
 // Download PDF kompatibel HP (Android/iOS)
