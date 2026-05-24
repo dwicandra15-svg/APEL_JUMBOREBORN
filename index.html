@@ -2149,7 +2149,25 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
           <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
           <div class="mh-card" data-id="jurnal" onclick="absensiKuBuka()" style="cursor:pointer"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">🔗</div><div class="mh-card-lbl" id="lbl-jurnal">AbsensiKu</div></div>
-          <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div></div>
+          <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')" style="position:relative"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div><span id="diskusiBadge" style="
+  display:none;
+  position:absolute;
+  top:8px; right:8px;
+  background:#e02424;
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  min-width:18px;
+  height:18px;
+  border-radius:99px;
+  padding:0 5px;
+  align-items:center;
+  justify-content:center;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 2px 6px rgba(224,36,36,.4);
+  z-index:10;
+"></span></div>
         </div>
 
         
@@ -8200,6 +8218,8 @@ function initChatPage() {
 }
 
 async function selectChatKelas(kelasId, kelasNama) {
+  // Reset badge kartu saat guru buka diskusi
+  // (dianggap sudah membaca semua)
   chatKelasAktif = kelasId;
   document.querySelectorAll('.chat-kelas-chip').forEach(c => {
     c.classList.toggle('active', c.id === 'kelas-chip-'+kelasId);
@@ -8344,13 +8364,34 @@ function addBellNotif(m) {
 
 function updateBellCount() {
   const unread = bellNotifs.filter(n=>!n.dibaca).length;
+
+  // ── Update badge di lonceng notifikasi ──
   const el = document.getElementById('bellCount');
-  if(!el) return;
+  if(el) {
+    if(unread > 0) {
+      el.textContent = unread > 9 ? '9+' : unread;
+      el.classList.add('show');
+    } else {
+      el.classList.remove('show');
+    }
+  }
+
+  // ── Update badge di kartu Diskusi Kelas di home ──
+  const badge = document.getElementById('diskusiBadge');
+  if(badge) {
+    if(unread > 0) {
+      badge.textContent = unread > 9 ? '9+' : String(unread);
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // ── Update title tab browser jika ada pesan baru ──
   if(unread > 0) {
-    el.textContent = unread > 9 ? '9+' : unread;
-    el.classList.add('show');
+    document.title = `(${unread}) APEL JUMBO Reborn`;
   } else {
-    el.classList.remove('show');
+    document.title = 'APEL JUMBO Reborn';
   }
 }
 
