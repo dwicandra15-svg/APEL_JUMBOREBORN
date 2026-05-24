@@ -8224,6 +8224,11 @@ function initChatPage() {
 async function selectChatKelas(kelasId, kelasNama) {
   // Reset badge kartu saat guru buka diskusi
   // (dianggap sudah membaca semua)
+  // Reset target modal saat ganti kelas agar modal muncul lagi
+  _chatTargetSet   = false;
+  _chatTargetIds   = null;
+  _chatTargetNisns = null;
+  resetChatTargetBar();
   chatKelasAktif = kelasId;
   document.querySelectorAll('.chat-kelas-chip').forEach(c => {
     c.classList.toggle('active', c.id === 'kelas-chip-'+kelasId);
@@ -8580,13 +8585,24 @@ async function migrasiChatApbo() {
 // ── State untuk target chat ──────────────────────────────────
 let _chatTargetIds   = null;  // null = semua, array = siswa tertentu
 let _chatTargetNisns = null;  // array NISN untuk filter di APBO Siswa
+let _chatTargetSet   = false; // true jika target sudah dipilih (modal sudah pernah muncul)
 
 // ── Tampilkan popup pilih target ────────────────────────────
+// Modal hanya muncul SEKALI per sesi/kelas. Setelah target dipilih,
+// tombol kirim langsung mengirim tanpa membuka modal lagi.
+// Target akan reset otomatis saat ganti kelas atau klik tombol "✕ Batal".
 function showChatTargetPicker() {
   if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   const input = document.getElementById('chatMsgInput');
   if(!input.value.trim() && !chatFilesGuru.length) return;
-  // Reset picker
+
+  // Jika target sudah pernah dipilih, langsung kirim tanpa buka modal lagi
+  if (_chatTargetSet) {
+    sendChatGuru(_chatTargetIds, _chatTargetNisns);
+    return;
+  }
+
+  // Pertama kali: tampilkan modal pilih target
   document.getElementById('siswaPicker').style.display = 'none';
   document.getElementById('siswaPickerSearch').value = '';
   const modal = document.getElementById('chatTargetModal');
@@ -8683,7 +8699,14 @@ async function sendChatToAll() {
   closeChatTargetModal();
   _chatTargetIds   = null;
   _chatTargetNisns = null;
-  resetChatTargetBar();
+  _chatTargetSet   = true; // target sudah dipilih, pesan berikutnya langsung kirim
+  // Tampilkan indikator "Semua Siswa" di target bar
+  const barAll = document.getElementById('chatTargetBar');
+  const namesElAll = document.getElementById('chatTargetNames');
+  if (barAll && namesElAll) {
+    namesElAll.textContent = 'Semua Siswa';
+    barAll.style.display = 'flex';
+  }
   await sendChatGuru(null, null);
 }
 
@@ -8709,6 +8732,7 @@ async function sendChatToSelected() {
   }
   _chatTargetIds   = targetIds;
   _chatTargetNisns = targetNisns;
+  _chatTargetSet   = true; // target sudah dipilih, pesan berikutnya langsung kirim
 
   await sendChatGuru(targetIds, targetNisns);
 }
@@ -8716,6 +8740,7 @@ async function sendChatToSelected() {
 function resetChatTarget() {
   _chatTargetIds   = null;
   _chatTargetNisns = null;
+  _chatTargetSet   = false; // reset agar modal muncul lagi di pesan berikutnya
   resetChatTargetBar();
 }
 
@@ -8766,10 +8791,8 @@ async function sendChatGuru(targetIds = null, targetNisns = null) {
   sentChatKeys.add(key);
   appendChatBubble(row);
 
-  // Reset target setelah kirim
-  resetChatTargetBar();
-  _chatTargetIds   = null;
-  _chatTargetNisns = null;
+  // Jangan reset target setelah kirim — agar pesan berikutnya tetap ke target sama
+  // (Target di-reset manual oleh user lewat tombol "✕ Batal" atau ganti kelas)
 
   let {error:errSend}=await db.from('chat_apbo').insert({...row,created_at:undefined});
   if(errSend && errSend.message && (errSend.message.includes('kelas_nama')||errSend.message.includes('schema cache')||errSend.message.includes('target_siswa_ids'))){
