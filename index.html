@@ -762,14 +762,14 @@ tr:hover td { background: #f8fafc; }
   height: 62px;
   background: #fff;
   border-top: 1.5px solid #e8edf5;
-  display: none; /* tampil hanya saat page-home aktif — dikontrol JS */
+  display: none; /* tampil hanya saat page-home aktif */
   align-items: center;
   justify-content: space-around;
   z-index: 1200;
   box-shadow: 0 -4px 20px rgba(0,0,0,.08);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* Nav hanya tampil lewat class .visible — TIDAK auto-tampil dari CSS page-home */
+#page-home.active ~ #homeBottomNav { display: none; }
 #homeBottomNav.visible { display: flex; }
 
 .hbn-tab {
@@ -1477,9 +1477,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   background: var(--bg);
   display: none;
   position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 100%;
-  height: 100dvh;
+  top: 0; left: 0; right: 0; bottom: 0;
   z-index: 10;
   flex-direction: column;
   overflow: hidden;
@@ -1606,13 +1604,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   min-height: 0;
   overflow: hidden;
 }
-.chat-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
+.chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 .chat-msgs-wrap {
   flex: 1; overflow-y: auto; padding: 12px 14px 16px;
   background: #f0f4ff; -webkit-overflow-scrolling: touch; min-height: 0;
@@ -1669,7 +1661,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 /* Input area */
 .chat-input-area {
   background: #fff; border-top: 1px solid var(--border);
-  padding: 10px 12px 10px; flex-shrink: 0;
+  padding: 10px 12px; flex-shrink: 0;
   position: relative; z-index: 2;
 }
 .chat-file-preview { display: none; padding: 6px 0; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
@@ -6570,7 +6562,13 @@ function mhRefreshStats() {
 let _hbnActive = 'beranda';
 
 function hbnSwitch(tab) {
-  if (_hbnActive === tab) return;
+  // Tutup diskusi overlay jika sedang terbuka
+  const pgDiskusi = document.getElementById('page-diskusi');
+  if (pgDiskusi && pgDiskusi.classList.contains('active')) {
+    pgDiskusi.classList.remove('active');
+    if (window._chatDetachVP) window._chatDetachVP();
+  }
+
   _hbnActive = tab;
 
   // Update tab active state
@@ -6582,6 +6580,11 @@ function hbnSwitch(tab) {
   document.querySelectorAll('.hbn-section').forEach(s => s.classList.remove('active'));
   const activeSection = document.getElementById('hbn-' + tab);
   if (activeSection) activeSection.classList.add('active');
+
+  // Pastikan page-home aktif
+  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = ''; });
+  const ph = document.getElementById('page-home');
+  if (ph) ph.classList.add('active');
 
   // Scroll ke atas konten
   const body = document.querySelector('#page-home .mh-body');
@@ -6596,23 +6599,18 @@ function hbnSwitch(tab) {
 
 function hbnShow() {
   const nav = document.getElementById('homeBottomNav');
-  if (nav) {
-    nav.classList.add('visible');
-    nav.style.display = 'flex'; // paksa tampil, override CSS inline
-  }
+  if (nav) { nav.classList.add('visible'); nav.style.display = 'flex'; }
 }
 
 function hbnHide() {
   const nav = document.getElementById('homeBottomNav');
-  if (nav) {
-    nav.classList.remove('visible');
-    nav.style.display = 'none'; // paksa sembunyikan, override CSS sibling selector
-  }
+  if (nav) { nav.classList.remove('visible'); nav.style.display = 'none'; }
 }
 // ═══════════════════════════════════════════════════════════
 function goHome() {
+  // Detach visualViewport handler jika dari diskusi
+  if(window._chatDetachVP) window._chatDetachVP();
   // Close diskusi overlay if open
-  if (window._chatDetachVP) window._chatDetachVP();
   const pgDiskusi = document.getElementById('page-diskusi');
   if (pgDiskusi) pgDiskusi.classList.remove('active');
   // Hide all pages + reset inline styles (fix lab-page overlap)
@@ -6643,10 +6641,10 @@ function goPage(name) {
     const pg = document.getElementById('page-diskusi');
     if(pg) pg.classList.add('active');
     initChatPage();
-    if (window._chatAttachVP) window._chatAttachVP();
+    if(window._chatAttachVP) window._chatAttachVP();
     return;
   }
-  if (window._chatDetachVP) window._chatDetachVP();
+  if(window._chatDetachVP) window._chatDetachVP();
   // Navigate using original showPage
   showPage(name);
   // Show topbar with back button
@@ -9039,35 +9037,32 @@ function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024
 function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru();}}
 function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
 
-// ── FIX KEYBOARD MOBILE: paksa #page-diskusi ikuti visualViewport ──────────
-(function() {
-  var _vpRaf = null;
-  function _applyVP() {
-    var pg = document.getElementById('page-diskusi');
-    if (!pg || !pg.classList.contains('active')) return;
-    var vp = window.visualViewport;
-    if (!vp) return;
-    pg.style.height = Math.round(vp.height) + 'px';
-    pg.style.top    = Math.round(vp.offsetTop) + 'px';
-    var wrap = document.getElementById('chatMsgsWrap');
-    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+/* ── visualViewport handler: agar input chat tidak tertutup keyboard mobile ── */
+(function(){
+  var _raf=null;
+  function _apply(){
+    var pg=document.getElementById('page-diskusi');
+    if(!pg||!pg.classList.contains('active'))return;
+    var vp=window.visualViewport;
+    if(!vp)return;
+    pg.style.height=Math.round(vp.height)+'px';
+    pg.style.top=Math.round(vp.offsetTop)+'px';
+    var w=document.getElementById('chatMsgsWrap');
+    if(w) setTimeout(function(){w.scrollTop=w.scrollHeight;},60);
   }
-  function _vpHandler() {
-    if (_vpRaf) cancelAnimationFrame(_vpRaf);
-    _vpRaf = requestAnimationFrame(_applyVP);
-  }
-  window._chatAttachVP = function() {
-    if (!window.visualViewport) return;
-    window.visualViewport.addEventListener('resize', _vpHandler);
-    window.visualViewport.addEventListener('scroll', _vpHandler);
-    _applyVP();
+  function _h(){if(_raf)cancelAnimationFrame(_raf);_raf=requestAnimationFrame(_apply);}
+  window._chatAttachVP=function(){
+    if(!window.visualViewport)return;
+    window.visualViewport.addEventListener('resize',_h);
+    window.visualViewport.addEventListener('scroll',_h);
+    _apply();
   };
-  window._chatDetachVP = function() {
-    if (!window.visualViewport) return;
-    window.visualViewport.removeEventListener('resize', _vpHandler);
-    window.visualViewport.removeEventListener('scroll', _vpHandler);
-    var pg = document.getElementById('page-diskusi');
-    if (pg) { pg.style.height = ''; pg.style.top = ''; }
+  window._chatDetachVP=function(){
+    if(!window.visualViewport)return;
+    window.visualViewport.removeEventListener('resize',_h);
+    window.visualViewport.removeEventListener('scroll',_h);
+    var pg=document.getElementById('page-diskusi');
+    if(pg){pg.style.height='';pg.style.top='';}
   };
 })();
 </script>
