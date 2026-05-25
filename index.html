@@ -753,6 +753,85 @@ tr:hover td { background: #f8fafc; }
 
 /* HOME PAGE */
 #page-home { background: var(--bg); min-height: 100vh; display: none; }
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAV BAR — APEL JUMBO
+   ═══════════════════════════════════════════════════════ */
+#homeBottomNav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 62px;
+  background: #fff;
+  border-top: 1.5px solid #e8edf5;
+  display: none; /* tampil hanya saat page-home aktif */
+  align-items: center;
+  justify-content: space-around;
+  z-index: 1200;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+#page-home.active ~ #homeBottomNav,
+#homeBottomNav.visible { display: flex; }
+
+.hbn-tab {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex: 1; height: 100%;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 10px; font-weight: 600;
+  gap: 2px;
+  transition: color .2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  position: relative;
+  padding-top: 6px;
+}
+.hbn-tab.active { color: var(--primary, #1a56db); }
+.hbn-tab .hbn-icon {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+}
+.hbn-tab .hbn-icon svg {
+  width: 26px; height: 26px;
+  filter: grayscale(1) opacity(.45);
+  transition: filter .25s, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.hbn-tab.active .hbn-icon svg {
+  filter: grayscale(0) opacity(1);
+  transform: scale(1.18) translateY(-2px);
+}
+.hbn-tab .hbn-label {
+  font-size: 10px; font-weight: 700;
+  transition: color .2s;
+}
+.hbn-tab.active .hbn-label { color: var(--primary, #1a56db); }
+
+/* Pill background saat aktif */
+.hbn-tab .hbn-pill {
+  position: absolute;
+  top: 4px;
+  width: 44px; height: 30px;
+  border-radius: 16px;
+  background: transparent;
+  transition: background .25s;
+  z-index: 0;
+}
+.hbn-tab.active .hbn-pill {
+  background: rgba(26,86,219,.10);
+}
+.hbn-tab .hbn-icon { z-index: 1; }
+/* tab::after dihapus — pakai hbn-pill */
+
+/* Tab content sections */
+.hbn-section { display: none; }
+.hbn-section.active { display: block; }
+
+/* Padding bawah konten agar tidak tertutup nav */
+#page-home .mh-body { padding-bottom: 80px !important; }
+/* ═══════════════════════════════════════════════════════ */
+
 #page-home.active { display: block; }
 
 /* Hero header */
@@ -2147,13 +2226,16 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       </div>
 
       <div class="mh-body">
-        <div class="mh-sec-title">Utama</div>
-        <div class="mh-grid">
-          <div class="mh-card" data-id="dashboard" onclick="goPage('dashboard')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'dashboard')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-dashboard">📊</div><div class="mh-card-lbl" id="lbl-dashboard">Dashboard</div></div>
-          <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
-          <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
-          <div class="mh-card" data-id="jurnal" onclick="absensiKuBuka()" style="cursor:pointer"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">🔗</div><div class="mh-card-lbl" id="lbl-jurnal">AbsensiKu</div></div>
-          <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')" style="position:relative"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div><span id="diskusiBadge" style="
+
+        <!-- ══ TAB: BERANDA ══════════════════════════════════ -->
+        <div class="hbn-section active" id="hbn-beranda">
+          <div class="mh-sec-title">Utama</div>
+          <div class="mh-grid">
+            <div class="mh-card" data-id="dashboard" onclick="goPage('dashboard')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'dashboard')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-dashboard">📊</div><div class="mh-card-lbl" id="lbl-dashboard">Dashboard</div></div>
+            <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
+            <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
+            <div class="mh-card" data-id="jurnal" onclick="absensiKuBuka()" style="cursor:pointer"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">🔗</div><div class="mh-card-lbl" id="lbl-jurnal">AbsensiKu</div></div>
+            <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')" style="position:relative"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div><span id="diskusiBadge" style="
   display:none;
   position:absolute;
   top:8px; right:8px;
@@ -2172,57 +2254,122 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   box-shadow:0 2px 6px rgba(224,36,36,.4);
   z-index:10;
 "></span></div>
-        </div>
+          </div>
 
-        
-<div class="mh-sec-title">Mata Pelajaran</div>
-        <div id="mapelGridHome" class="mapel-grid">
-          <div class="mapel-skeleton"></div>
-          <div class="mapel-skeleton"></div>
-          <div class="mapel-skeleton"></div>
-          <div class="mapel-skeleton"></div>
-        </div>
+          <div class="mh-sec-title">Administrasi</div>
+          <div class="mh-grid">
+            <div class="mh-card" data-id="absensi" onclick="goPage('absensi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-absensi">✅</div><div class="mh-card-lbl" id="lbl-absensi">Input Absensi</div></div>
+            <div class="mh-card" data-id="absenRekap" onclick="goPage('absenRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absenRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-sky" id="ico-absenRekap">📋</div><div class="mh-card-lbl" id="lbl-absenRekap">Rekap Absensi</div></div>
+            <div class="mh-card" data-id="nilai" onclick="goPage('nilai')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilai')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-yellow" id="ico-nilai">📝</div><div class="mh-card-lbl" id="lbl-nilai">Input Nilai</div></div>
+            <div class="mh-card" data-id="nilaiRekap" onclick="goPage('nilaiRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilaiRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-nilaiRekap">📈</div><div class="mh-card-lbl" id="lbl-nilaiRekap">Rekap Nilai</div></div>
+            <div class="mh-card" data-id="bimbingan" onclick="goPage('bimbingan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'bimbingan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-pink" id="ico-bimbingan">💙</div><div class="mh-card-lbl" id="lbl-bimbingan">Bimbingan Wali</div></div>
+          </div>
+        </div><!-- /hbn-beranda -->
 
-        
-<div class="mh-sec-title">Lab IPA</div>
-        <div class="mh-grid">
-          <div class="mh-card" data-id="labInventaris" onclick="goPage('labInventaris')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labInventaris')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-labInventaris">🔬</div><div class="mh-card-lbl" id="lbl-labInventaris">Inventaris Lab</div></div>
-          <div class="mh-card" data-id="labPeminjaman" onclick="goPage('labPeminjaman')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labPeminjaman')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-labPeminjaman">📤</div><div class="mh-card-lbl" id="lbl-labPeminjaman">Peminjaman Alat</div></div>
-          <div class="mh-card" data-id="labPresensi" onclick="goPage('labPresensi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labPresensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-labPresensi">🪪</div><div class="mh-card-lbl" id="lbl-labPresensi">Presensi Lab</div></div>
-        </div>
+        <!-- ══ TAB: MAPEL ═════════════════════════════════════ -->
+        <div class="hbn-section" id="hbn-mapel">
+          <div class="mh-sec-title">Mata Pelajaran</div>
+          <div id="mapelGridHome" class="mapel-grid">
+            <div class="mapel-skeleton"></div>
+            <div class="mapel-skeleton"></div>
+            <div class="mapel-skeleton"></div>
+            <div class="mapel-skeleton"></div>
+          </div>
+        </div><!-- /hbn-mapel -->
 
-        <div class="mh-sec-title">Administrasi</div>
-        <div class="mh-grid">
-          <div class="mh-card" data-id="absensi" onclick="goPage('absensi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-absensi">✅</div><div class="mh-card-lbl" id="lbl-absensi">Input Absensi</div></div>
-          <div class="mh-card" data-id="absenRekap" onclick="goPage('absenRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'absenRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-sky" id="ico-absenRekap">📋</div><div class="mh-card-lbl" id="lbl-absenRekap">Rekap Absensi</div></div>
-          <div class="mh-card" data-id="nilai" onclick="goPage('nilai')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilai')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-yellow" id="ico-nilai">📝</div><div class="mh-card-lbl" id="lbl-nilai">Input Nilai</div></div>
-          <div class="mh-card" data-id="nilaiRekap" onclick="goPage('nilaiRekap')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'nilaiRekap')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-nilaiRekap">📈</div><div class="mh-card-lbl" id="lbl-nilaiRekap">Rekap Nilai</div></div>
-          <div class="mh-card" data-id="bimbingan" onclick="goPage('bimbingan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'bimbingan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-pink" id="ico-bimbingan">💙</div><div class="mh-card-lbl" id="lbl-bimbingan">Bimbingan Wali</div></div>
-        </div>
+        <!-- ══ TAB: LAB IPA ══════════════════════════════════ -->
+        <div class="hbn-section" id="hbn-labipa">
+          <div class="mh-sec-title">Lab IPA</div>
+          <div class="mh-grid">
+            <div class="mh-card" data-id="labInventaris" onclick="goPage('labInventaris')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labInventaris')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-labInventaris">🔬</div><div class="mh-card-lbl" id="lbl-labInventaris">Inventaris Lab</div></div>
+            <div class="mh-card" data-id="labPeminjaman" onclick="goPage('labPeminjaman')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labPeminjaman')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-labPeminjaman">📤</div><div class="mh-card-lbl" id="lbl-labPeminjaman">Peminjaman Alat</div></div>
+            <div class="mh-card" data-id="labPresensi" onclick="goPage('labPresensi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'labPresensi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-labPresensi">🪪</div><div class="mh-card-lbl" id="lbl-labPresensi">Presensi Lab</div></div>
+          </div>
+        </div><!-- /hbn-labipa -->
 
-        
-<div class="mh-sec-title">UMMI</div>
-        <div class="mh-grid">
-          <div class="mh-card" data-id="ummiTingkatan" onclick="goPage('ummiTingkatan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummiTingkatan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-ummiTingkatan">📚</div><div class="mh-card-lbl" id="lbl-ummiTingkatan">Tingkatan UMMI</div></div>
-          <div class="mh-card" data-id="ummi7" onclick="goPage('ummi7')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi7')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-ummi7">📗</div><div class="mh-card-lbl" id="lbl-ummi7">UMMI Kelas 7</div></div>
-          <div class="mh-card" data-id="ummi8" onclick="goPage('ummi8')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi8')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-ummi8">📘</div><div class="mh-card-lbl" id="lbl-ummi8">UMMI Kelas 8</div></div>
-          <div class="mh-card" data-id="ummi9" onclick="goPage('ummi9')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi9')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-ummi9">📙</div><div class="mh-card-lbl" id="lbl-ummi9">UMMI Kelas 9</div></div>
-        </div>
+        <!-- ══ TAB: UMMI ══════════════════════════════════════ -->
+        <div class="hbn-section" id="hbn-ummi">
+          <div class="mh-sec-title">UMMI</div>
+          <div class="mh-grid">
+            <div class="mh-card" data-id="ummiTingkatan" onclick="goPage('ummiTingkatan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummiTingkatan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-ummiTingkatan">📚</div><div class="mh-card-lbl" id="lbl-ummiTingkatan">Tingkatan UMMI</div></div>
+            <div class="mh-card" data-id="ummi7" onclick="goPage('ummi7')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi7')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-ummi7">📗</div><div class="mh-card-lbl" id="lbl-ummi7">UMMI Kelas 7</div></div>
+            <div class="mh-card" data-id="ummi8" onclick="goPage('ummi8')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi8')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-ummi8">📘</div><div class="mh-card-lbl" id="lbl-ummi8">UMMI Kelas 8</div></div>
+            <div class="mh-card" data-id="ummi9" onclick="goPage('ummi9')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi9')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-ummi9">📙</div><div class="mh-card-lbl" id="lbl-ummi9">UMMI Kelas 9</div></div>
+          </div>
+        </div><!-- /hbn-ummi -->
 
-        
-<div class="mh-sec-title">Lainnya</div>
-        <div class="mh-grid">
-          <div class="mh-card" data-id="guruPiket" onclick="gpOpen()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'guruPiket')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-guruPiket">👮</div><div class="mh-card-lbl" id="lbl-guruPiket">Guru Piket</div></div>
-          <div class="mh-card" data-id="integrasi" onclick="goPage('integrasi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-integrasi">🔗</div><div class="mh-card-lbl" id="lbl-integrasi">Integrasi ASN</div></div>
-          <div class="mh-card" data-id="integrasiKinerja" onclick="goPage('integrasiKinerja')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasiKinerja')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-integrasiKinerja">🔀</div><div class="mh-card-lbl" id="lbl-integrasiKinerja">Shortcut App</div></div>
-          <div class="mh-card" data-id="pengaturan" onclick="goPage('pengaturan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'pengaturan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-pengaturan">⚙️</div><div class="mh-card-lbl" id="lbl-pengaturan">Pengaturan</div></div>
-          <div class="mh-card" data-id="logout" onclick="doLogout()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'logout')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-red" id="ico-logout">🚪</div><div class="mh-card-lbl" id="lbl-logout">Keluar</div></div>
-        </div>
+        <!-- ══ TAB: LAINNYA ═══════════════════════════════════ -->
+        <div class="hbn-section" id="hbn-lainnya">
+          <div class="mh-sec-title">Lainnya</div>
+          <div class="mh-grid">
+            <div class="mh-card" data-id="guruPiket" onclick="gpOpen()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'guruPiket')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-guruPiket">👮</div><div class="mh-card-lbl" id="lbl-guruPiket">Guru Piket</div></div>
+            <div class="mh-card" data-id="integrasi" onclick="goPage('integrasi')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-integrasi">🔗</div><div class="mh-card-lbl" id="lbl-integrasi">Integrasi ASN</div></div>
+            <div class="mh-card" data-id="integrasiKinerja" onclick="goPage('integrasiKinerja')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'integrasiKinerja')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-integrasiKinerja">🔀</div><div class="mh-card-lbl" id="lbl-integrasiKinerja">Shortcut App</div></div>
+            <div class="mh-card" data-id="pengaturan" onclick="goPage('pengaturan')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'pengaturan')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-pengaturan">⚙️</div><div class="mh-card-lbl" id="lbl-pengaturan">Pengaturan</div></div>
+            <div class="mh-card" data-id="logout" onclick="doLogout()"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'logout')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-red" id="ico-logout">🚪</div><div class="mh-card-lbl" id="lbl-logout">Keluar</div></div>
+          </div>
+        </div><!-- /hbn-lainnya -->
 
         <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
       </div>
     </div>
 
+
+    <!-- ===== BOTTOM NAV BAR ===== -->
+    <nav id="homeBottomNav" role="navigation" aria-label="Navigasi Utama">
+      <div class="hbn-tab active" id="hbn-tab-beranda" onclick="hbnSwitch('beranda')" aria-label="Beranda">
+        <div class="hbn-pill"></div>
+        <div class="hbn-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" fill="#1a56db" rx="1"/>
+  <path d="M9 21V15H15V21" fill="#93c5fd"/>
+  <path d="M3 12L12 3L21 12" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="9" y="15" width="6" height="6" rx="1" fill="#bfdbfe"/>
+</svg></div>
+        <span class="hbn-label">Beranda</span>
+      </div>
+      <div class="hbn-tab" id="hbn-tab-mapel" onclick="hbnSwitch('mapel')" aria-label="Mapel">
+        <div class="hbn-pill"></div>
+        <div class="hbn-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="3" y="3" width="8" height="8" rx="2" fill="#10b981"/>
+  <rect x="13" y="3" width="8" height="8" rx="2" fill="#f59e0b"/>
+  <rect x="3" y="13" width="8" height="8" rx="2" fill="#3b82f6"/>
+  <rect x="13" y="13" width="8" height="8" rx="2" fill="#ef4444"/>
+</svg></div>
+        <span class="hbn-label">Mapel</span>
+      </div>
+      <div class="hbn-tab" id="hbn-tab-labipa" onclick="hbnSwitch('labipa')" aria-label="Lab IPA">
+        <div class="hbn-pill"></div>
+        <div class="hbn-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M9 3H15V13L19.5 20C19.8 20.5 19.4 21 18.8 21H5.2C4.6 21 4.2 20.5 4.5 20L9 13V3Z" fill="#10b981" opacity=".25"/>
+  <path d="M9 3H15V13L19.5 20C19.8 20.5 19.4 21 18.8 21H5.2C4.6 21 4.2 20.5 4.5 20L9 13V3Z" stroke="#10b981" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+  <line x1="7" y1="7" x2="17" y2="7" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="9" cy="17" r="1.5" fill="#10b981"/>
+  <circle cx="13" cy="15" r="1" fill="#34d399"/>
+  <circle cx="15" cy="18" r="1.2" fill="#6ee7b7"/>
+</svg></div>
+        <span class="hbn-label">Lab IPA</span>
+      </div>
+      <div class="hbn-tab" id="hbn-tab-ummi" onclick="hbnSwitch('ummi')" aria-label="UMMI">
+        <div class="hbn-pill"></div>
+        <div class="hbn-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 19V5C4 4.4 4.4 4 5 4H14L20 10V19C20 19.6 19.6 20 19 20H5C4.4 20 4 19.6 4 19Z" fill="#8b5cf6" opacity=".2"/>
+  <path d="M4 19V5C4 4.4 4.4 4 5 4H14L20 10V19C20 19.6 19.6 20 19 20H5C4.4 20 4 19.6 4 19Z" stroke="#8b5cf6" stroke-width="1.8" fill="none"/>
+  <path d="M14 4V10H20" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+  <line x1="8" y1="13" x2="16" y2="13" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="8" y1="16" x2="13" y2="16" stroke="#c4b5fd" stroke-width="1.5" stroke-linecap="round"/>
+</svg></div>
+        <span class="hbn-label">UMMI</span>
+      </div>
+      <div class="hbn-tab" id="hbn-tab-lainnya" onclick="hbnSwitch('lainnya')" aria-label="Lainnya">
+        <div class="hbn-pill"></div>
+        <div class="hbn-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="5" cy="12" r="2" fill="#64748b"/>
+  <circle cx="12" cy="12" r="2" fill="#64748b"/>
+  <circle cx="19" cy="12" r="2" fill="#64748b"/>
+</svg></div>
+        <span class="hbn-label">Lainnya</span>
+      </div>
+    </nav>
 
     <!-- ===== MAPEL SECTION on Home ===== -->
     <!-- (rendered dynamically by JS inside mh-body) -->
@@ -3633,6 +3780,7 @@ async function afterLogin() {
     goPage(lastPage);
   } else {
     goHome();
+    hbnShow();
   }
 }
 
@@ -4780,6 +4928,7 @@ async function cetakJurnal() {
 
 // ── AbsensiKu: buka URL eksternal ──────────────────────────
 function absensiKuBuka() {
+  hbnHide(); // sembunyikan bottom nav
   const url = CONFIG.absensiKuUrl || '';
   if (!url) {
     toast('URL AbsensiKu belum diatur. Buka Pengaturan untuk mengisinya.', 'error');
@@ -6431,29 +6580,74 @@ function mhRefreshStats() {
   } catch(e) {}
 }
 
+
+// ═══════════════════════════════════════════════════════════
+//  BOTTOM NAV BAR — APEL JUMBO
+// ═══════════════════════════════════════════════════════════
+let _hbnActive = 'beranda';
+
+function hbnSwitch(tab) {
+  if (_hbnActive === tab) return;
+  _hbnActive = tab;
+
+  // Update tab active state
+  document.querySelectorAll('.hbn-tab').forEach(t => t.classList.remove('active'));
+  const activeTab = document.getElementById('hbn-tab-' + tab);
+  if (activeTab) activeTab.classList.add('active');
+
+  // Show/hide sections
+  document.querySelectorAll('.hbn-section').forEach(s => s.classList.remove('active'));
+  const activeSection = document.getElementById('hbn-' + tab);
+  if (activeSection) activeSection.classList.add('active');
+
+  // Scroll ke atas konten
+  const body = document.querySelector('#page-home .mh-body');
+  if (body) body.scrollTop = 0;
+  window.scrollTo(0, 0);
+
+  // Jika tab Mapel dipilih, pastikan grid dirender
+  if (tab === 'mapel') {
+    try { mpRenderHomeGrid(); } catch(e) {}
+  }
+}
+
+function hbnShow() {
+  const nav = document.getElementById('homeBottomNav');
+  if (nav) nav.classList.add('visible');
+}
+
+function hbnHide() {
+  const nav = document.getElementById('homeBottomNav');
+  if (nav) nav.classList.remove('visible');
+}
+// ═══════════════════════════════════════════════════════════
 function goHome() {
+  // Close diskusi overlay if open
+  const pgDiskusi = document.getElementById('page-diskusi');
+  if (pgDiskusi) pgDiskusi.classList.remove('active');
   // Hide all pages + reset inline styles (fix lab-page overlap)
   document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
     p.style.display = '';
   });
   document.getElementById('page-home').classList.add('active');
-  // Hide topbar
+  // Hide topbar & restore back button
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = 'none';
-  // Restore back button default behavior
   const bb = document.getElementById('backBtn');
-  if (bb) bb.onclick = goHome;
-  // Refresh home info & stats
-  mhRefreshInfo();
-  mhRefreshStats();
-  // Render mapel grid
-  mpRenderHomeGrid();
-  // Load saved customizations from Supabase
-  setTimeout(() => { ecmLoadAll(); mpLoadSavedIcons(); }, 300);
+  if (bb) { bb.classList.remove('visible'); bb.onclick = goHome; }
+  // Refresh home info, stats, mapel grid
+  try { mhRefreshInfo(); } catch(e) {}
+  try { mhRefreshStats(); } catch(e) {}
+  try { mpRenderHomeGrid(); } catch(e) {}
+  // Load saved customizations
+  setTimeout(() => { try { ecmLoadAll(); mpLoadSavedIcons(); } catch(e){} }, 300);
+  // Tampilkan bottom nav
+  hbnShow();
 }
 
 function goPage(name) {
+  hbnHide(); // sembunyikan bottom nav saat masuk halaman sub
   if (name === 'diskusi') {
     // Diskusi as full-screen fixed overlay
     const pg = document.getElementById('page-diskusi');
@@ -6468,20 +6662,6 @@ function goPage(name) {
   if (tb) tb.style.display = '';
   const bb = document.getElementById('backBtn');
   if (bb) bb.classList.add('visible');
-}
-
-function goHome() {
-  // Close diskusi overlay if open
-  const pg = document.getElementById('page-diskusi');
-  if(pg) pg.classList.remove('active');
-  // Original back logic
-  const tb = document.getElementById('mainTopbar');
-  if (tb) tb.style.display = 'none';
-  const bb = document.getElementById('backBtn');
-  if (bb) bb.classList.remove('visible');
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const home = document.getElementById('page-home');
-  if(home) home.classList.add('active');
 }
 
 // afterLogin and loadAllData are patched directly above (in their original declarations)
@@ -7832,6 +8012,7 @@ async function mpSaveCardEdit(mapelId) {
 // =========================================================
 
 function gpOpen() {
+  hbnHide(); // sembunyikan bottom nav saat buka Guru Piket
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-guruPiket').classList.add('active');
   const tb = document.getElementById('mainTopbar');
@@ -8229,6 +8410,11 @@ function initChatPage() {
   }
 }
 
+// ── State untuk target chat (deklarasi di sini agar tersedia sebelum selectChatKelas) ──
+let _chatTargetIds   = null;  // null = semua, array = siswa tertentu
+let _chatTargetNisns = null;  // array NISN untuk filter di APBO Siswa
+let _chatTargetSet   = false; // true jika target sudah dipilih (modal sudah pernah muncul)
+
 async function selectChatKelas(kelasId, kelasNama) {
   // Reset badge kartu saat guru buka diskusi
   // (dianggap sudah membaca semua)
@@ -8590,10 +8776,7 @@ async function migrasiChatApbo() {
   try{ await db.rpc('exec_sql',{sql:"NOTIFY pgrst, 'reload schema';"}); }catch(e){}
 }
 
-// ── State untuk target chat ──────────────────────────────────
-let _chatTargetIds   = null;  // null = semua, array = siswa tertentu
-let _chatTargetNisns = null;  // array NISN untuk filter di APBO Siswa
-let _chatTargetSet   = false; // true jika target sudah dipilih (modal sudah pernah muncul)
+// [_chatTargetSet deklarasi dipindah ke atas — sebelum selectChatKelas]
 
 // ── Tampilkan popup pilih target ────────────────────────────
 // Modal hanya muncul SEKALI per sesi/kelas. Setelah target dipilih,
