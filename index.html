@@ -1672,7 +1672,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   border-radius: 8px; font-size: 11px; font-weight: 600;
 }
 .chat-file-rm { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 13px; padding: 0; }
-.chat-input-row { display: flex; align-items: flex-end; gap: 8px; }
+.chat-input-row { display: flex; align-items: flex-end; gap: 8px; contain: layout; }
 .chat-attach-lbl {
   width: 38px; height: 38px; border-radius: 10px; background: var(--bg);
   border: 1.5px solid var(--border); display: flex; align-items: center;
@@ -1686,7 +1686,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   transition: border-color .2s; background: var(--bg); font-family: inherit;
 }
 .chat-tinput:focus { border-color: var(--primary); background: #fff; }
-.chat-send { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); border: none; color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: all .18s; display: flex; align-items: center; justify-content: center; }
+.chat-send { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); border: none; color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; will-change: transform; transition: background .18s, transform .18s; }
 .chat-send:hover { background: var(--primary-dark, #1342b0); transform: scale(1.05); }
 
 /* ══ BELL NOTIFICATION PANEL ══ */
@@ -9035,7 +9035,12 @@ function downloadChatFile(url,name){if(url.startsWith('data:')){const a=document
 function chatFileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
 function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru();}}
-function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function chatAutoResize(el){
+  requestAnimationFrame(function(){
+    el.style.height='';
+    el.style.height=Math.min(el.scrollHeight,100)+'px';
+  });
+}
 
 /* ── visualViewport handler: agar input chat tidak tertutup keyboard mobile ── */
 (function(){
