@@ -792,20 +792,21 @@ tr:hover td { background: #f8fafc; }
   display: flex; align-items: center; justify-content: center;
   transition: transform .25s cubic-bezier(.34,1.56,.64,1);
   position: relative;
+  font-size: 24px;
+  line-height: 1;
 }
 .hbn-tab .hbn-icon svg {
   width: 26px; height: 26px;
   transition: filter .25s, transform .25s cubic-bezier(.34,1.56,.64,1);
 }
 .hbn-tab:not(.active) .hbn-icon {
-  filter: grayscale(0.2) opacity(0.7);
-}
-.hbn-tab.active .hbn-icon svg {
-  transform: scale(1.18) translateY(-2px);
+  opacity: 0.55;
+  filter: grayscale(0.3);
 }
 .hbn-tab.active .hbn-icon {
+  opacity: 1;
   filter: none;
-  transform: scale(1.18) translateY(-2px);
+  transform: scale(1.2) translateY(-2px);
 }
 .hbn-tab .hbn-label {
   font-size: 10px; font-weight: 700;
@@ -1481,9 +1482,15 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   background: var(--bg);
   display: none;
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Height diatur oleh JS via visualViewport agar input tidak tertutup keyboard */
+  height: 100%;
+  height: 100dvh;
   z-index: 10;
   flex-direction: column;
+  overflow: hidden;
 }
 #page-diskusi.active { display: flex; }
 
@@ -1606,13 +1613,23 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  height: 0; /* Force flex child to respect parent height */
 }
-.chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.chat-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .chat-msgs-wrap {
-  flex: 1; overflow-y: auto; padding: 12px 14px;
-  background: #f0f4ff; -webkit-overflow-scrolling: touch; min-height: 0;
-  scroll-behavior: smooth;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  background: #f0f4ff;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  /* Pastikan konten tidak tersembunyi di bawah */
+  padding-bottom: 16px;
 }
 .chat-day-sep {
   text-align: center; font-size: 10px; color: var(--text-light);
@@ -1665,11 +1682,14 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
 /* Input area */
 .chat-input-area {
-  background: #fff; border-top: 1px solid var(--border);
-  padding: 10px 12px; flex-shrink: 0;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  flex-shrink: 0;
+  /* Jangan gunakan env(safe-area) karena menyebabkan height salah hitung di mobile */
+  padding-bottom: 10px;
   position: relative;
-  z-index: 5;
+  z-index: 2;
 }
 .chat-file-preview { display: none; padding: 6px 0; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .chat-file-preview.show { display: flex; }
@@ -2328,27 +2348,27 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     <nav id="homeBottomNav" role="navigation" aria-label="Navigasi Utama">
       <div class="hbn-tab active" id="hbn-tab-beranda" onclick="hbnSwitch('beranda')" aria-label="Beranda">
         <div class="hbn-pill"></div>
-        <div class="hbn-icon" style="font-size:26px;line-height:1">🏠</div>
+        <div class="hbn-icon">🏠</div>
         <span class="hbn-label">Beranda</span>
       </div>
       <div class="hbn-tab" id="hbn-tab-mapel" onclick="hbnSwitch('mapel')" aria-label="Mapel">
         <div class="hbn-pill"></div>
-        <div class="hbn-icon" style="font-size:26px;line-height:1">📚</div>
+        <div class="hbn-icon">📚</div>
         <span class="hbn-label">Mapel</span>
       </div>
       <div class="hbn-tab" id="hbn-tab-labipa" onclick="hbnSwitch('labipa')" aria-label="Lab IPA">
         <div class="hbn-pill"></div>
-        <div class="hbn-icon" style="font-size:26px;line-height:1">🔬</div>
+        <div class="hbn-icon">🔬</div>
         <span class="hbn-label">Lab IPA</span>
       </div>
       <div class="hbn-tab" id="hbn-tab-ummi" onclick="hbnSwitch('ummi')" aria-label="UMMI">
         <div class="hbn-pill"></div>
-        <div class="hbn-icon" style="font-size:26px;line-height:1">📖</div>
+        <div class="hbn-icon">📖</div>
         <span class="hbn-label">UMMI</span>
       </div>
       <div class="hbn-tab" id="hbn-tab-lainnya" onclick="hbnSwitch('lainnya')" aria-label="Lainnya">
         <div class="hbn-pill"></div>
-        <div class="hbn-icon" style="font-size:26px;line-height:1">⚙️</div>
+        <div class="hbn-icon">⚙️</div>
         <span class="hbn-label">Lainnya</span>
       </div>
     </nav>
@@ -9028,6 +9048,69 @@ function chatFileToBase64(file){return new Promise((res,rej)=>{const r=new FileR
 function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
 function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru();}}
 function chatAutoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// ── FIX KEYBOARD MOBILE: paksa #page-diskusi ikuti visualViewport ─────────
+(function() {
+  var _vpHandler = null;
+
+  function applyViewport() {
+    var pg = document.getElementById('page-diskusi');
+    if (!pg || !pg.classList.contains('active')) return;
+    var vp = window.visualViewport;
+    if (!vp) return;
+    // Set tinggi dan offset top agar input selalu terlihat di atas keyboard
+    pg.style.height = vp.height + 'px';
+    pg.style.top    = vp.offsetTop + 'px';
+    // Scroll pesan ke bawah setelah keyboard muncul
+    var wrap = document.getElementById('chatMsgsWrap');
+    if (wrap) setTimeout(function(){ wrap.scrollTop = wrap.scrollHeight; }, 100);
+  }
+
+  function attachVP() {
+    if (!window.visualViewport) return;
+    if (_vpHandler) return; // sudah attach
+    _vpHandler = applyViewport;
+    window.visualViewport.addEventListener('resize', _vpHandler);
+    window.visualViewport.addEventListener('scroll', _vpHandler);
+  }
+
+  function detachVP() {
+    if (!window.visualViewport || !_vpHandler) return;
+    window.visualViewport.removeEventListener('resize', _vpHandler);
+    window.visualViewport.removeEventListener('scroll', _vpHandler);
+    _vpHandler = null;
+    // Reset tinggi ke default
+    var pg = document.getElementById('page-diskusi');
+    if (pg) { pg.style.height = ''; pg.style.top = ''; }
+  }
+
+  // Patch goPage agar attach saat buka diskusi
+  var _origGoPage = window.goPage;
+  window.goPage = function(name) {
+    if (name === 'diskusi') {
+      _origGoPage && _origGoPage.call(this, name);
+      attachVP();
+      applyViewport();
+      return;
+    }
+    detachVP();
+    _origGoPage && _origGoPage.call(this, name);
+  };
+
+  // Patch goHome agar detach saat kembali
+  var _origGoHome = window.goHome;
+  window.goHome = function() {
+    detachVP();
+    _origGoHome && _origGoHome.call(this);
+  };
+
+  // Patch chat back button juga
+  window.chatClose = function() {
+    detachVP();
+    goHome();
+  };
+})();
+
 </script>
 
 
