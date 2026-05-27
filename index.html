@@ -940,6 +940,44 @@ tr:hover td { background: #f8fafc; }
 .ic-green  { background:linear-gradient(135deg,#d1fae5,#a7f3d0); }
 .ic-orange { background:linear-gradient(135deg,#ffedd5,#fed7aa); }
 .ic-purple { background:linear-gradient(135deg,#ede9fe,#ddd6fe); }
+.ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
+
+/* ── KALENDER ── */
+.kal-day {
+  aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-start; padding:4px 2px;
+  cursor:pointer; transition:background .15s; position:relative; min-height:36px;
+}
+.kal-day:hover { background:var(--bg); }
+.kal-day.today { background:var(--primary); border-radius:8px; }
+.kal-day.today .kal-day-num { color:#fff; font-weight:800; }
+.kal-day.other-month .kal-day-num { color:#cbd5e1; }
+.kal-day-num { font-size:12px; font-weight:600; color:var(--text); line-height:1.4; }
+.kal-dot-wrap { display:flex; gap:2px; flex-wrap:wrap; justify-content:center; margin-top:2px; }
+.kal-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.kal-filter-btn {
+  background:#fff; border:1.5px solid var(--border); border-radius:20px;
+  padding:5px 12px; font-size:11px; font-weight:700; cursor:pointer;
+  color:var(--text-light); transition:all .15s;
+}
+.kal-filter-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+.kal-event-card {
+  background:#fff; border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06); display:flex; gap:12px; align-items:flex-start;
+  border-left:4px solid var(--primary);
+}
+.kal-event-badge {
+  display:inline-block; padding:2px 8px; border-radius:99px;
+  font-size:10px; font-weight:700; margin-bottom:4px;
+}
+.kal-warna-opt {
+  width:28px; height:28px; border-radius:50%; cursor:pointer;
+  border:3px solid transparent; transition:transform .15s, border-color .15s;
+}
+.kal-warna-opt.active { border-color:#fff; box-shadow:0 0 0 2px #1a56db; transform:scale(1.15); }
+.kal-empty { text-align:center; padding:40px 20px; color:var(--text-light); }
+.kal-empty-ico { font-size:40px; margin-bottom:10px; }
+.kal-day.has-event { background: rgba(26,86,219,.05); }
 .ic-pink   { background:linear-gradient(135deg,#fce7f3,#fbcfe8); }
 .ic-yellow { background:linear-gradient(135deg,#fef9c3,#fef08a); }
 .ic-teal   { background:linear-gradient(135deg,#ccfbf1,#99f6e4); }
@@ -2257,6 +2295,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   box-shadow:0 2px 6px rgba(224,36,36,.4);
   z-index:10;
 "></span></div>
+            <div class="mh-card" data-id="kalender" onclick="goPage('kalender')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'kalender')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-rose" id="ico-kalender">📆</div><div class="mh-card-lbl" id="lbl-kalender">Kalender</div></div>
           </div>
 
           <div class="mh-sec-title">Administrasi</div>
@@ -6408,6 +6447,7 @@ function showPage(name) {
     'integrasi':'Integrasi ASN','integrasiKinerja':'Integrasi Kinerja','pengaturan':'Pengaturan',
     'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9',
     'diskusi':'Diskusi Kelas',
+    'kalender':'Kalender Pendidikan',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
@@ -6608,6 +6648,238 @@ function hbnHide() {
   if (nav) { nav.classList.remove('visible'); nav.style.display = 'none'; }
 }
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// KALENDER PENDIDIKAN
+// ═══════════════════════════════════════════════════════
+const KAL = {
+  tahun: new Date().getFullYear(),
+  bulan: new Date().getMonth(), // 0-based
+  data: [],
+  filterKat: 'semua',
+  selectedWarna: '#1a56db',
+};
+
+const KAT_WARNA = {
+  'Ulangan':     '#1a56db',
+  'Ujian':       '#e02424',
+  'Class Meeting':'#10b981',
+  'Rapat':       '#f59e0b',
+  'Libur':       '#64748b',
+  'Kegiatan':    '#ec4899',
+  'Lainnya':     '#8b5cf6',
+};
+
+const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+async function loadKalender() {
+  if (!db) return;
+  const tgl1 = `${KAL.tahun}-${String(KAL.bulan+1).padStart(2,'0')}-01`;
+  const tglN = new Date(KAL.tahun, KAL.bulan+1, 0);
+  const tglEnd = `${KAL.tahun}-${String(KAL.bulan+1).padStart(2,'0')}-${String(tglN.getDate()).padStart(2,'0')}`;
+  const { data, error } = await db.from('agenda_sekolah')
+    .select('*')
+    .or(`tanggal_mulai.lte.${tglEnd},tanggal_selesai.gte.${tgl1}`)
+    .order('tanggal_mulai');
+  if (error) {
+    // Fallback: ambil semua jika query range gagal
+    const { data: all } = await db.from('agenda_sekolah').select('*').order('tanggal_mulai');
+    KAL.data = all || [];
+  } else {
+    KAL.data = data || [];
+  }
+  renderKalender();
+}
+
+function renderKalender() {
+  const today = new Date();
+  document.getElementById('kalenderBulanLabel').textContent = `${BULAN_ID[KAL.bulan]} ${KAL.tahun}`;
+  document.getElementById('kalenderHariIni').textContent = `Hari ini: ${today.getDate()} ${BULAN_ID[today.getMonth()]} ${today.getFullYear()}`;
+
+  // Build grid
+  const firstDay = new Date(KAL.tahun, KAL.bulan, 1).getDay();
+  const daysInMonth = new Date(KAL.tahun, KAL.bulan+1, 0).getDate();
+  const daysInPrev = new Date(KAL.tahun, KAL.bulan, 0).getDate();
+
+  let html = '';
+  // Prev month padding
+  for (let i = firstDay-1; i >= 0; i--) {
+    html += `<div class="kal-day other-month"><div class="kal-day-num">${daysInPrev-i}</div></div>`;
+  }
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${KAL.tahun}-${String(KAL.bulan+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===KAL.tahun && today.getMonth()===KAL.bulan && today.getDate()===d;
+    const events = KAL.data.filter(e => {
+      const mulai = e.tanggal_mulai;
+      const selesai = e.tanggal_selesai || e.tanggal_mulai;
+      return dateStr >= mulai && dateStr <= selesai;
+    });
+    const dots = events.slice(0,3).map(e => `<div class="kal-dot" style="background:${e.warna||'#1a56db'}"></div>`).join('');
+    html += `<div class="kal-day ${isToday?'today':''} ${events.length?'has-event':''}" onclick="kalenderClickDay('${dateStr}')">
+      <div class="kal-day-num">${d}</div>
+      <div class="kal-dot-wrap">${dots}</div>
+    </div>`;
+  }
+  // Next month padding
+  const total = firstDay + daysInMonth;
+  const nextPad = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= nextPad; i++) {
+    html += `<div class="kal-day other-month"><div class="kal-day-num">${i}</div></div>`;
+  }
+  document.getElementById('kalenderGrid').innerHTML = html;
+  renderKalenderList();
+}
+
+function renderKalenderList() {
+  const el = document.getElementById('kalenderEventList');
+  let filtered = KAL.data;
+  if (KAL.filterKat !== 'semua') filtered = filtered.filter(e => e.kategori === KAL.filterKat);
+  if (!filtered.length) {
+    el.innerHTML = `<div class="kal-empty"><div class="kal-empty-ico">📭</div><div style="font-weight:700;font-size:14px">Tidak ada event</div><div style="font-size:12px;margin-top:4px">Belum ada agenda untuk bulan ini</div></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(e => {
+    const warna = e.warna || KAT_WARNA[e.kategori] || '#1a56db';
+    const tgl = e.tanggal_selesai && e.tanggal_selesai !== e.tanggal_mulai
+      ? `${formatTglKal(e.tanggal_mulai)} — ${formatTglKal(e.tanggal_selesai)}`
+      : formatTglKal(e.tanggal_mulai);
+    const isOwn = currentUser && e.user_id === currentUser.id;
+    return `<div class="kal-event-card" style="border-left-color:${warna}">
+      <div style="flex:1;min-width:0">
+        <div><span class="kal-event-badge" style="background:${warna}22;color:${warna}">${e.kategori||'Lainnya'}</span></div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px">${e.judul}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-bottom:${e.deskripsi?'4px':'0'}">📅 ${tgl} · 👤 ${e.nama_guru||'Guru'}</div>
+        ${e.deskripsi?`<div style="font-size:12px;color:var(--text-light);margin-top:4px">${e.deskripsi}</div>`:''}
+      </div>
+      ${isOwn?`<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <button onclick="kalenderEdit('${e.id}')" style="background:#dbeafe;color:#1a56db;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700">✏️</button>
+        <button onclick="kalenderHapus('${e.id}')" style="background:#fee2e2;color:#e02424;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700">🗑️</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function formatTglKal(str) {
+  if (!str) return '-';
+  const d = new Date(str + 'T00:00:00');
+  return `${d.getDate()} ${BULAN_ID[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function kalenderClickDay(dateStr) {
+  // Filter event list ke tanggal yang diklik
+  const events = KAL.data.filter(e => {
+    const selesai = e.tanggal_selesai || e.tanggal_mulai;
+    return dateStr >= e.tanggal_mulai && dateStr <= selesai;
+  });
+  if (!events.length) {
+    // Buka form tambah dengan tanggal sudah terisi
+    kalenderOpenForm();
+    document.getElementById('kalenderTglMulai').value = dateStr;
+    document.getElementById('kalenderTglSelesai').value = dateStr;
+    return;
+  }
+  // Scroll ke event list dan highlight
+  document.getElementById('kalenderEventList').scrollIntoView({behavior:'smooth'});
+}
+
+function kalenderPrevMonth() {
+  if (KAL.bulan === 0) { KAL.bulan = 11; KAL.tahun--; }
+  else KAL.bulan--;
+  loadKalender();
+}
+
+function kalenderNextMonth() {
+  if (KAL.bulan === 11) { KAL.bulan = 0; KAL.tahun++; }
+  else KAL.bulan++;
+  loadKalender();
+}
+
+function kalenderFilter(kat, btn) {
+  KAL.filterKat = kat;
+  document.querySelectorAll('.kal-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKalenderList();
+}
+
+function kalenderOpenForm() {
+  document.getElementById('kalenderEditId').value = '';
+  document.getElementById('kalenderJudul').value = '';
+  document.getElementById('kalenderKategori').value = 'Ulangan';
+  document.getElementById('kalenderTglMulai').value = '';
+  document.getElementById('kalenderTglSelesai').value = '';
+  document.getElementById('kalenderDeskripsi').value = '';
+  kalenderPilihWarna('#1a56db', document.querySelector('.kal-warna-opt[data-warna="#1a56db"]'));
+  document.getElementById('kalenderModalTitle').textContent = '📆 Tambah Event';
+  document.getElementById('kalenderModal').style.display = 'flex';
+}
+
+function kalenderCloseForm() {
+  document.getElementById('kalenderModal').style.display = 'none';
+}
+
+function kalenderPilihWarna(warna, el) {
+  KAL.selectedWarna = warna;
+  document.getElementById('kalenderWarna').value = warna;
+  document.querySelectorAll('.kal-warna-opt').forEach(o => o.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function kalenderEdit(id) {
+  const e = KAL.data.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('kalenderEditId').value = id;
+  document.getElementById('kalenderJudul').value = e.judul||'';
+  document.getElementById('kalenderKategori').value = e.kategori||'Lainnya';
+  document.getElementById('kalenderTglMulai').value = e.tanggal_mulai||'';
+  document.getElementById('kalenderTglSelesai').value = e.tanggal_selesai||'';
+  document.getElementById('kalenderDeskripsi').value = e.deskripsi||'';
+  const warna = e.warna||'#1a56db';
+  const warnaEl = document.querySelector(`.kal-warna-opt[data-warna="${warna}"]`);
+  kalenderPilihWarna(warna, warnaEl);
+  document.getElementById('kalenderModalTitle').textContent = '✏️ Edit Event';
+  document.getElementById('kalenderModal').style.display = 'flex';
+}
+
+async function kalenderSimpan() {
+  const judul = document.getElementById('kalenderJudul').value.trim();
+  const kategori = document.getElementById('kalenderKategori').value;
+  const tanggal_mulai = document.getElementById('kalenderTglMulai').value;
+  const tanggal_selesai = document.getElementById('kalenderTglSelesai').value || tanggal_mulai;
+  const deskripsi = document.getElementById('kalenderDeskripsi').value.trim();
+  const warna = document.getElementById('kalenderWarna').value || KAT_WARNA[kategori] || '#1a56db';
+  const editId = document.getElementById('kalenderEditId').value;
+
+  if (!judul) { toast('Judul event wajib diisi','error'); return; }
+  if (!tanggal_mulai) { toast('Tanggal mulai wajib diisi','error'); return; }
+
+  const nama_guru = currentUser?.email?.split('@')[0] || 'Guru';
+  const payload = { judul, kategori, tanggal_mulai, tanggal_selesai, deskripsi, warna, nama_guru, user_id: currentUser?.id };
+
+  let error;
+  if (editId) {
+    ({ error } = await db.from('agenda_sekolah').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await db.from('agenda_sekolah').insert(payload));
+  }
+
+  if (error) { toast('Gagal menyimpan: ' + error.message, 'error'); return; }
+  toast(editId ? '✅ Event berhasil diupdate!' : '✅ Event berhasil ditambahkan!', 'success');
+  kalenderCloseForm();
+  loadKalender();
+}
+
+async function kalenderHapus(id) {
+  if (!confirm('Hapus event ini?')) return;
+  const { error } = await db.from('agenda_sekolah').delete().eq('id', id);
+  if (error) { toast('Gagal menghapus', 'error'); return; }
+  toast('🗑️ Event dihapus', 'success');
+  loadKalender();
+}
+
+function goPageKalender() {
+  loadKalender();
+}
+
 function goHome() {
   // Detach visualViewport handler jika dari diskusi
   if(window._chatDetachVP) window._chatDetachVP();
@@ -6636,9 +6908,8 @@ function goHome() {
 }
 
 function goPage(name) {
-  hbnHide(); // sembunyikan bottom nav saat masuk halaman sub
+  hbnHide();
   if (name === 'diskusi') {
-    // Diskusi as full-screen fixed overlay
     const pg = document.getElementById('page-diskusi');
     if(pg) pg.classList.add('active');
     initChatPage();
@@ -6646,9 +6917,16 @@ function goPage(name) {
     return;
   }
   if(window._chatDetachVP) window._chatDetachVP();
-  // Navigate using original showPage
+  if (name === 'kalender') {
+    showPage('kalender');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    loadKalender();
+    return;
+  }
   showPage(name);
-  // Show topbar with back button
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = '';
   const bb = document.getElementById('backBtn');
@@ -9713,6 +9991,123 @@ function chatAutoResize(el){
     <div class="log-list" id="logList">
       <div style="text-align:center;padding:30px;color:var(--text-light);font-size:13px">Memuat riwayat...</div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
+<div id="page-kalender" class="page">
+  <div class="page-inner">
+    <div class="page-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;color:var(--text)">📆 Kalender Pendidikan</h2>
+        <p style="font-size:12px;color:var(--text-light);margin-top:2px">Agenda & Kegiatan Sekolah Bersama</p>
+      </div>
+      <button onclick="kalenderOpenForm()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        ＋ Tambah Event
+      </button>
+    </div>
+
+    <!-- Navigasi Bulan -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06)">
+      <button onclick="kalenderPrevMonth()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px">‹</button>
+      <div style="text-align:center">
+        <div id="kalenderBulanLabel" style="font-size:16px;font-weight:800;color:var(--text)"></div>
+        <div id="kalenderHariIni" style="font-size:11px;color:var(--text-light);margin-top:2px"></div>
+      </div>
+      <button onclick="kalenderNextMonth()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px">›</button>
+    </div>
+
+    <!-- Grid Kalender -->
+    <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06)">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px">
+        <div style="text-align:center;font-size:11px;font-weight:700;color:#e02424;padding:4px">Min</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px">Sen</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px">Sel</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px">Rab</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px">Kam</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px">Jum</div>
+        <div style="text-align:center;font-size:11px;font-weight:700;color:#1a56db;padding:4px">Sab</div>
+      </div>
+      <div id="kalenderGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+    </div>
+
+    <!-- Filter Kategori -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="kalenderFilterWrap">
+      <button class="kal-filter-btn active" data-kat="semua" onclick="kalenderFilter('semua',this)">🔍 Semua</button>
+      <button class="kal-filter-btn" data-kat="Ulangan" onclick="kalenderFilter('Ulangan',this)">📝 Ulangan</button>
+      <button class="kal-filter-btn" data-kat="Ujian" onclick="kalenderFilter('Ujian',this)">🎓 Ujian</button>
+      <button class="kal-filter-btn" data-kat="Class Meeting" onclick="kalenderFilter('Class Meeting',this)">🏆 Class Meeting</button>
+      <button class="kal-filter-btn" data-kat="Rapat" onclick="kalenderFilter('Rapat',this)">👥 Rapat</button>
+      <button class="kal-filter-btn" data-kat="Libur" onclick="kalenderFilter('Libur',this)">🏖️ Libur</button>
+      <button class="kal-filter-btn" data-kat="Kegiatan" onclick="kalenderFilter('Kegiatan',this)">🎉 Kegiatan</button>
+      <button class="kal-filter-btn" data-kat="Lainnya" onclick="kalenderFilter('Lainnya',this)">📌 Lainnya</button>
+    </div>
+
+    <!-- Daftar Event Bulan Ini -->
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📋 Event Bulan Ini</div>
+      <div id="kalenderEventList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Form Tambah/Edit Event -->
+<div id="kalenderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:18px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-size:16px;font-weight:800" id="kalenderModalTitle">📆 Tambah Event</h3>
+      <button onclick="kalenderCloseForm()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <input type="hidden" id="kalenderEditId">
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Judul Event *</label>
+      <input type="text" id="kalenderJudul" placeholder="Contoh: Ulangan Harian Matematika 9A" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Kategori *</label>
+      <select id="kalenderKategori" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+        <option value="Ulangan">📝 Ulangan</option>
+        <option value="Ujian">🎓 Ujian</option>
+        <option value="Class Meeting">🏆 Class Meeting</option>
+        <option value="Rapat">👥 Rapat</option>
+        <option value="Libur">🏖️ Libur</option>
+        <option value="Kegiatan">🎉 Kegiatan</option>
+        <option value="Lainnya">📌 Lainnya</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Tanggal Mulai *</label>
+        <input type="date" id="kalenderTglMulai" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Tanggal Selesai</label>
+        <input type="date" id="kalenderTglSelesai" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box">
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:6px">Deskripsi</label>
+      <textarea id="kalenderDeskripsi" rows="3" placeholder="Keterangan tambahan (opsional)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;box-sizing:border-box;resize:none;font-family:inherit"></textarea>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:8px">Warna Label</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="kalenderWarnaWrap">
+        <div class="kal-warna-opt active" data-warna="#1a56db" style="background:#1a56db" onclick="kalenderPilihWarna('#1a56db',this)"></div>
+        <div class="kal-warna-opt" data-warna="#10b981" style="background:#10b981" onclick="kalenderPilihWarna('#10b981',this)"></div>
+        <div class="kal-warna-opt" data-warna="#f59e0b" style="background:#f59e0b" onclick="kalenderPilihWarna('#f59e0b',this)"></div>
+        <div class="kal-warna-opt" data-warna="#e02424" style="background:#e02424" onclick="kalenderPilihWarna('#e02424',this)"></div>
+        <div class="kal-warna-opt" data-warna="#8b5cf6" style="background:#8b5cf6" onclick="kalenderPilihWarna('#8b5cf6',this)"></div>
+        <div class="kal-warna-opt" data-warna="#ec4899" style="background:#ec4899" onclick="kalenderPilihWarna('#ec4899',this)"></div>
+        <div class="kal-warna-opt" data-warna="#64748b" style="background:#64748b" onclick="kalenderPilihWarna('#64748b',this)"></div>
+      </div>
+      <input type="hidden" id="kalenderWarna" value="#1a56db">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="kalenderCloseForm()" style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--text)">Batal</button>
+      <button onclick="kalenderSimpan()" style="flex:2;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">💾 Simpan Event</button>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
