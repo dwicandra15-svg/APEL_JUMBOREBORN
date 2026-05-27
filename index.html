@@ -942,7 +942,11 @@ tr:hover td { background: #f8fafc; }
 .ic-purple { background:linear-gradient(135deg,#ede9fe,#ddd6fe); }
 .ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
 
-/* ── KALENDER ── */
+/* Kalender — hapus padding atas dari #content */
+#page-kalender.active ~ * ,
+#content:has(#page-kalender.active) { padding-top: 0 !important; }
+#page-kalender { padding-top: 0 !important; }
+#page-kalender .page-inner { padding-top: 4px !important; padding-left: 12px !important; padding-right: 12px !important; }
 .kal-day {
   aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
   align-items:center; justify-content:flex-start; padding:4px 2px;
@@ -8685,11 +8689,9 @@ let _chatTargetNisns = null;  // array NISN untuk filter di APBO Siswa
 let _chatTargetSet   = false; // true jika target sudah dipilih (modal sudah pernah muncul)
 
 async function selectChatKelas(kelasId, kelasNama) {
-  // Reset badge kartu saat guru buka diskusi
-  // (dianggap sudah membaca semua)
-  // Reset target modal saat ganti kelas agar modal muncul lagi
-  _chatTargetSet   = false;
-  _chatTargetIds   = null;
+  // Reset target ke DEFAULT = semua siswa (tidak perlu modal setiap ganti kelas)
+  _chatTargetSet   = true;   // ← langsung true: kirim ke semua tanpa modal
+  _chatTargetIds   = null;   // null = broadcast semua
   _chatTargetNisns = null;
   resetChatTargetBar();
   chatKelasAktif = kelasId;
@@ -8700,10 +8702,8 @@ async function selectChatKelas(kelasId, kelasNama) {
   document.getElementById('chatToolbarSub').textContent    = 'Komunikasi guru & orang tua/siswa';
   document.getElementById('pengumumanKelasLabel').textContent = kelasNama;
   unreadChatMap[kelasId] = 0; updateNavChatBadge(); updateKelasChipBadge(kelasId);
-  // chatChannel per-kelas tidak digunakan lagi; globalChatChannel menangani semua
   if (chatChannel) { try { db.removeChannel(chatChannel); } catch(e){} chatChannel = null; }
   await loadChatMessages(kelasId);
-  // subscribeChatKelas sekarang no-op; global listener sudah aktif
 }
 
 async function loadChatMessages(kelasId) {
@@ -8744,6 +8744,7 @@ function buildBubbleGuru(m) {
   const isGuru   = m.peran==='Guru';
   const isPengum = m.tipe==='pengumuman';
   const isPrivat = m.tipe==='privat';
+  const isSiswaOrtu = m.peran==='Siswa' || m.peran==='OrangTua';
   const waktu    = m.created_at?new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'';
   const inisial  = (m.nama||'?')[0].toUpperCase();
   const extraCls = isPengum?'is-pengumuman':isGuru?'is-guru':'';
@@ -8753,7 +8754,6 @@ function buildBubbleGuru(m) {
     const ico=['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':['pdf'].includes(ext)?'📄':['doc','docx'].includes(ext)?'📝':['xls','xlsx'].includes(ext)?'📊':'📎';
     fileHtml=`<div class="cb-attach" onclick="downloadChatFile('${m.file_url}','${m.file_name||'file'}')"><div class="cb-attach-icon">${ico}</div><div style="flex:1;min-width:0"><div class="cb-attach-name">${m.file_name||'File'}</div><div class="cb-attach-size">${m.file_size||''}</div></div><span style="font-size:16px">⬇️</span></div>`;
   }
-  // Badge: pengumuman atau privat
   const badgeHtml = isPengum
     ? '<div class="pengumuman-badge">📢 Pengumuman</div>'
     : isPrivat
@@ -8769,12 +8769,20 @@ function buildBubbleGuru(m) {
         return `<div class="pengumuman-badge" style="background:#7c3aed;color:#fff">🔒 Privat${namaTarget?' → '+namaTarget:''}</div>`;
       })()
     : '';
+
+  // Tombol balas — hanya untuk pesan dari siswa/ortu, bukan dari guru sendiri
+  const replyBtn = isSiswaOrtu
+    ? `<button onclick="chatReply('${(m.siswa_id||'').toString()}','${(m.nisn||'').toString()}','${escChatHtml(m.nama||'').replace(/'/g,'\\'')}','${(m.peran||'Siswa')}')"
+        style="background:none;border:none;font-size:10px;color:#94a3b8;cursor:pointer;padding:2px 4px;margin-top:2px;display:inline-flex;align-items:center;gap:3px;font-family:inherit"
+        title="Balas pesan ini">↩ Balas</button>`
+    : '';
+
   return `<div class="cbw ${isMe?'me':'other'} ${extraCls}">
     ${!isMe?`<div class="cbav ${isGuru?'guru':''}">${inisial}</div>`:''}
     <div class="cbinner">
       ${!isMe?`<div class="cbname">${m.nama||'—'} <span class="cb-role">${m.peran||''}</span></div>`:''}
       <div class="cbb">${badgeHtml}${escChatHtml(m.pesan||'')}${fileHtml}</div>
-      <div class="cbtime">${waktu}</div>
+      <div class="cbtime">${waktu}${replyBtn}</div>
     </div>
   </div>`;
 }
@@ -9047,26 +9055,53 @@ async function migrasiChatApbo() {
 
 // [_chatTargetSet deklarasi dipindah ke atas — sebelum selectChatKelas]
 
-// ── Tampilkan popup pilih target ────────────────────────────
-// Modal hanya muncul SEKALI per sesi/kelas. Setelah target dipilih,
-// tombol kirim langsung mengirim tanpa membuka modal lagi.
-// Target akan reset otomatis saat ganti kelas atau klik tombol "✕ Batal".
+// ── Balas langsung ke siswa dari bubble — tanpa modal ────────
+function chatReply(siswaId, nisn, nama, peran) {
+  if (!chatKelasAktif) { toast('Pilih kelas terlebih dahulu','error'); return; }
+  // Jika siswaId tersedia gunakan privat, jika tidak (ortu tanpa siswaId) kirim ke semua
+  if (siswaId && siswaId !== 'null' && siswaId !== '0') {
+    _chatTargetIds   = [parseInt(siswaId)];
+    _chatTargetNisns = nisn ? [nisn] : null;
+    _chatTargetSet   = true;
+    // Update target bar
+    const bar = document.getElementById('chatTargetBar');
+    const namesEl = document.getElementById('chatTargetNames');
+    if (bar && namesEl) {
+      namesEl.textContent = nama || 'Siswa';
+      bar.style.display = 'flex';
+    }
+  } else {
+    // OrangTua tanpa siswaId — kirim ke semua
+    resetChatTarget();
+  }
+  // Fokus ke textarea
+  const input = document.getElementById('chatMsgInput');
+  if (input) { input.focus(); input.placeholder = `Balas ke ${nama}...`; }
+  // Scroll ke bawah
+  scrollChatBottom();
+}
+
+// ── Tampilkan popup pilih target ─────────────────────────────
 function showChatTargetPicker() {
   if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   const input = document.getElementById('chatMsgInput');
   if(!input.value.trim() && !chatFilesGuru.length) return;
-
-  // Jika target sudah pernah dipilih, langsung kirim tanpa buka modal lagi
-  if (_chatTargetSet) {
-    sendChatGuru(_chatTargetIds, _chatTargetNisns);
-    return;
+  // Pastikan target sudah di-set (default: semua siswa) — TIDAK perlu modal
+  if (!_chatTargetSet) {
+    _chatTargetIds   = null;
+    _chatTargetNisns = null;
+    _chatTargetSet   = true;
   }
+  // Langsung kirim ke target yang sudah dipilih — TIDAK buka modal
+  sendChatGuru(_chatTargetIds, _chatTargetNisns);
+}
 
-  // Pertama kali: tampilkan modal pilih target
+function openChatPrivatModal() {
+  // Hanya dipanggil saat guru klik tombol 🔒 Privat secara eksplisit
+  if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   document.getElementById('siswaPicker').style.display = 'none';
   document.getElementById('siswaPickerSearch').value = '';
-  const modal = document.getElementById('chatTargetModal');
-  modal.style.display = 'flex';
+  document.getElementById('chatTargetModal').style.display = 'flex';
 }
 
 function closeChatTargetModal() {
@@ -9200,8 +9235,10 @@ async function sendChatToSelected() {
 function resetChatTarget() {
   _chatTargetIds   = null;
   _chatTargetNisns = null;
-  _chatTargetSet   = false; // reset agar modal muncul lagi di pesan berikutnya
+  _chatTargetSet   = true;
   resetChatTargetBar();
+  const input = document.getElementById('chatMsgInput');
+  if (input) input.placeholder = 'Tulis pesan kepada siswa/orang tua...';
 }
 
 function resetChatTargetBar() {
@@ -9313,7 +9350,7 @@ function removeChatFile(i){chatFilesGuru.splice(i,1);updateChatFilePreview();}
 function downloadChatFile(url,name){if(url.startsWith('data:')){const a=document.createElement('a');a.href=url;a.download=name;a.click();}else window.open(url,'_blank');}
 function chatFileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
-function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru();}}
+function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!_chatTargetSet){_chatTargetIds=null;_chatTargetNisns=null;_chatTargetSet=true;}sendChatGuru(_chatTargetIds,_chatTargetNisns);}}
 function chatAutoResize(el){
   requestAnimationFrame(function(){
     el.style.height='';
@@ -9885,6 +9922,7 @@ function chatAutoResize(el){
           </label>
           <textarea class="chat-tinput" id="chatMsgInput" placeholder="Tulis pesan kepada siswa/orang tua..." rows="1"
             onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>
+          <button title="Kirim Privat ke Siswa Tertentu" onclick="openChatPrivatModal()" style="width:34px;height:34px;border-radius:50%;background:#f1f5f9;border:1.5px solid #e2e8f0;color:#64748b;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;will-change:transform;transition:background .15s">🔒</button>
           <button class="chat-send" onclick="showChatTargetPicker()">➤</button>
         </div>
       </div>
@@ -9996,8 +10034,8 @@ function chatAutoResize(el){
 
 <!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
 <div id="page-kalender" class="page">
-  <div class="page-inner" style="padding-top:0">
-    <div class="page-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <div class="page-inner" style="padding:4px 12px 80px;max-width:900px;margin:0 auto">
+    <div class="page-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px">
       <div>
         <h2 style="font-size:20px;font-weight:800;color:var(--text)">📆 Kalender Pendidikan</h2>
         <p style="font-size:12px;color:var(--text-light);margin-top:2px">Agenda & Kegiatan Sekolah Bersama</p>
