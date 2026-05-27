@@ -946,7 +946,7 @@ tr:hover td { background: #f8fafc; }
 #page-kalender.active ~ * ,
 #content:has(#page-kalender.active) { padding-top: 0 !important; }
 #page-kalender { padding-top: 0 !important; }
-#page-kalender .page-inner { padding-top: 4px !important; padding-left: 12px !important; padding-right: 12px !important; }
+#page-kalender .page-inner { padding-top: 12px !important; }
 .kal-day {
   aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
   align-items:center; justify-content:flex-start; padding:4px 2px;
@@ -9086,13 +9086,7 @@ function showChatTargetPicker() {
   if(!chatKelasAktif){toast('Pilih kelas terlebih dahulu','error');return;}
   const input = document.getElementById('chatMsgInput');
   if(!input.value.trim() && !chatFilesGuru.length) return;
-  // Pastikan target sudah di-set (default: semua siswa) — TIDAK perlu modal
-  if (!_chatTargetSet) {
-    _chatTargetIds   = null;
-    _chatTargetNisns = null;
-    _chatTargetSet   = true;
-  }
-  // Langsung kirim ke target yang sudah dipilih — TIDAK buka modal
+  // Langsung kirim ke target yang sudah dipilih (default: semua)
   sendChatGuru(_chatTargetIds, _chatTargetNisns);
 }
 
@@ -9350,7 +9344,7 @@ function removeChatFile(i){chatFilesGuru.splice(i,1);updateChatFilePreview();}
 function downloadChatFile(url,name){if(url.startsWith('data:')){const a=document.createElement('a');a.href=url;a.download=name;a.click();}else window.open(url,'_blank');}
 function chatFileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});}
 function formatChatFileSize(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(1)+'MB';}
-function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!_chatTargetSet){_chatTargetIds=null;_chatTargetNisns=null;_chatTargetSet=true;}sendChatGuru(_chatTargetIds,_chatTargetNisns);}}
+function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatGuru(_chatTargetIds,_chatTargetNisns);}}
 function chatAutoResize(el){
   requestAnimationFrame(function(){
     el.style.height='';
@@ -10034,8 +10028,8 @@ function chatAutoResize(el){
 
 <!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
 <div id="page-kalender" class="page">
-  <div class="page-inner" style="padding:4px 12px 80px;max-width:900px;margin:0 auto">
-    <div class="page-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px">
+  <div class="page-inner" style="padding:16px 16px 80px;max-width:900px;margin:0 auto">
+    <div class="page-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <h2 style="font-size:20px;font-weight:800;color:var(--text)">📆 Kalender Pendidikan</h2>
         <p style="font-size:12px;color:var(--text-light);margin-top:2px">Agenda & Kegiatan Sekolah Bersama</p>
