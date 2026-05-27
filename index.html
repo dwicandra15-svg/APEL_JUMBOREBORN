@@ -6891,6 +6891,9 @@ function goHome() {
     p.style.display = '';
   });
   document.getElementById('page-home').classList.add('active');
+  // Restore content padding ke default
+  const ct = document.getElementById('content');
+  if (ct) ct.style.paddingTop = '';
   // Hide topbar & restore back button
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = 'none';
@@ -6922,6 +6925,9 @@ function goPage(name) {
     if (tb) tb.style.display = '';
     const bb = document.getElementById('backBtn');
     if (bb) bb.classList.add('visible');
+    // Kurangi padding atas content agar kalender naik
+    const ct = document.getElementById('content');
+    if (ct) ct.style.paddingTop = '8px';
     loadKalender();
     return;
   }
@@ -8684,9 +8690,8 @@ let _chatTargetNisns = null;
 let _chatTargetSet   = true;  // default true: langsung kirim ke semua tanpa modal
 
 async function selectChatKelas(kelasId, kelasNama) {
-  // Reset target ke DEFAULT = semua siswa (tidak perlu modal setiap ganti kelas)
-  _chatTargetSet   = true;   // ← langsung true: kirim ke semua tanpa modal
-  _chatTargetIds   = null;   // null = broadcast semua
+  _chatTargetSet   = true;
+  _chatTargetIds   = null;
   _chatTargetNisns = null;
   resetChatTargetBar();
   chatKelasAktif = kelasId;
@@ -8698,7 +8703,10 @@ async function selectChatKelas(kelasId, kelasNama) {
   document.getElementById('pengumumanKelasLabel').textContent = kelasNama;
   unreadChatMap[kelasId] = 0; updateNavChatBadge(); updateKelasChipBadge(kelasId);
   if (chatChannel) { try { db.removeChannel(chatChannel); } catch(e){} chatChannel = null; }
-  await loadChatMessages(kelasId);
+  // Fokus textarea dulu agar guru bisa langsung ketik — load pesan di background
+  const input = document.getElementById('chatMsgInput');
+  if (input) input.focus();
+  loadChatMessages(kelasId); // tanpa await — background
 }
 
 async function loadChatMessages(kelasId) {
