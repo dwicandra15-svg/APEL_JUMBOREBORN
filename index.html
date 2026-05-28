@@ -943,7 +943,8 @@ tr:hover td { background: #f8fafc; }
 .ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
 
 /* Kalender — tarik konten naik rapat ke topbar */
-#page-kalender { margin-top: -28px; }
+#page-kalender { margin-top: -28px; padding-top: 8px; }
+@media (max-width: 600px) { #page-kalender { margin-top: -12px; padding-top: 4px; } }
 
 .kal-day {
   aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
