@@ -8785,7 +8785,7 @@ function buildBubbleGuru(m) {
   return `<div class="cbw ${isMe?'me':'other'} ${extraCls}">
     ${!isMe?`<div class="cbav ${isGuru?'guru':''}">${inisial}</div>`:''}
     <div class="cbinner">
-      ${!isMe?`<div class="cbname">${m.nama||'—'} <span class="cb-role">${m.peran||''}</span></div>`:''}
+      ${!isMe?`<div class="cbname">${isSiswaOrtu&&m.kelas_nama?`<span style="background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;margin-right:4px">[${m.kelas_nama}]</span>`:''} ${m.nama||'—'} <span class="cb-role">${m.peran||''}</span></div>`:''}
       <div class="cbb">${badgeHtml}${escChatHtml(m.pesan||'')}${fileHtml}</div>
       <div class="cbtime">${waktu}${replyBtn}</div>
     </div>
@@ -8930,22 +8930,18 @@ function renderBellList() {
     </div>`).join('');
 }
 function bellItemClick(notifId, kelasId, kelasNama) {
-  // Tandai dibaca
   const n = bellNotifs.find(x=>String(x.id)===String(notifId));
   if(n) n.dibaca = true;
   updateBellCount();
   closeBellPanel();
-  // Buka halaman diskusi DULU, lalu pilih kelas
-  // (harus urut: halaman dulu baru selectChatKelas)
+  // Buka diskusi dulu, lalu pilih kelas otomatis
   goPage('diskusi');
   if(kelasId) {
-    // Delay agar halaman diskusi sudah ter-render dulu
     setTimeout(() => {
       selectChatKelas(kelasId, kelasNama);
-      // Scroll ke chip kelas agar terlihat
       const chip = document.getElementById('kelas-chip-' + kelasId);
       if (chip) chip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 350);
+    }, 500); // diperpanjang agar page-diskusi sudah aktif
   }
 }
 
