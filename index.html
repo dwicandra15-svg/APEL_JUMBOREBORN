@@ -7322,6 +7322,7 @@ function goPage(name) {
     loadIzinSiswa();
     return;
   }
+  if (name === 'kalender') {
     showPage('kalender');
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
