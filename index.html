@@ -2455,6 +2455,11 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mp-sub-ico ic-pink" id="ico-mapel_bimbingan">💙</div>
             <div class="mp-sub-lbl" id="lbl-mapel_bimbingan">Bimbingan Wali</div>
           </div>
+          <div class="mp-sub-card" onclick="mpGoSub('ews')" style="position:relative">
+            <button class="mp-card-menu-btn" onclick="event.stopPropagation();mpEditSubCard(event,'mapel_ews','EWS')" title="Edit ikon">⋮</button>
+            <div class="mp-sub-ico ic-rose" id="ico-mapel_ews">🚨</div>
+            <div class="mp-sub-lbl" id="lbl-mapel_ews">EWS</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2814,7 +2819,74 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       <div id="bimbinganList"></div>
     </div>
 
-    <!-- ===== INTEGRASI ===== -->
+    <!-- ===== EWS (EARLY WARNING SYSTEM) ===== -->
+    <div id="page-ews" class="page">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🚨 Early Warning System</div>
+          <div class="section-sub">Deteksi dini siswa berisiko berdasarkan absensi</div>
+        </div>
+        <button class="btn btn-print" onclick="ewsCetakPDF()">🖨️ Download PDF</button>
+      </div>
+
+      <!-- Setting Threshold -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">⚙️ Setting Threshold Alert</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Filter Kelas</label>
+            <select id="ewsKelas" class="form-control" onchange="loadEWS()">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">⚠️ Warning (alfa ≥)</label>
+            <input type="number" id="ewsThresholdWarning" class="form-control" value="3" min="1" max="20" onchange="loadEWS()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🔴 Kritis (alfa ≥)</label>
+            <input type="number" id="ewsThresholdKritis" class="form-control" value="5" min="1" max="20" onchange="loadEWS()">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700">⚠️ Warning = alfa ≥ threshold warning</span>
+          <span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700">🔴 Kritis = alfa ≥ threshold kritis</span>
+          <span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700">✅ Aman = alfa di bawah warning</span>
+        </div>
+      </div>
+
+      <!-- Ringkasan -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px" id="ewsSummaryCards">
+        <div style="background:#fee2e2;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:24px;font-weight:800;color:#991b1b" id="ewsCountKritis">0</div>
+          <div style="font-size:11px;font-weight:700;color:#991b1b">🔴 Kritis</div>
+        </div>
+        <div style="background:#fef3c7;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:24px;font-weight:800;color:#92400e" id="ewsCountWarning">0</div>
+          <div style="font-size:11px;font-weight:700;color:#92400e">⚠️ Warning</div>
+        </div>
+        <div style="background:#d1fae5;border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:24px;font-weight:800;color:#065f46" id="ewsCountAman">0</div>
+          <div style="font-size:11px;font-weight:700;color:#065f46">✅ Aman</div>
+        </div>
+      </div>
+
+      <!-- Tabel EWS -->
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="kal-filter-btn active" onclick="ewsFilterStatus('semua',this)">Semua</button>
+          <button class="kal-filter-btn" onclick="ewsFilterStatus('kritis',this)">🔴 Kritis</button>
+          <button class="kal-filter-btn" onclick="ewsFilterStatus('warning',this)">⚠️ Warning</button>
+          <button class="kal-filter-btn" onclick="ewsFilterStatus('aman',this)">✅ Aman</button>
+        </div>
+        <div id="ewsTableWrap">
+          <div style="text-align:center;padding:40px;color:var(--text-light)">
+            <div style="font-size:32px;margin-bottom:8px">🔍</div>
+            <div>Pilih kelas untuk melihat data EWS</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="page-integrasi" class="page">
       <div class="section-header">
         <div>
@@ -6446,7 +6518,7 @@ function showPage(name) {
   const navMap = {
     'dashboard':'Dashboard','siswa':'Data Siswa','jadwal':'Jadwal Mengajar',
     'absensi':'Input Absensi','absenRekap':'Rekap Absensi','nilai':'Input Nilai',
-    'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali',
+    'nilaiRekap':'Rekap Nilai','jurnal':'Jurnal Mengajar','bimbingan':'Bimbingan Wali','ews':'Early Warning System',
     'integrasi':'Integrasi ASN','integrasiKinerja':'Integrasi Kinerja','pengaturan':'Pengaturan',
     'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9',
     'diskusi':'Diskusi Kelas',
@@ -6882,6 +6954,204 @@ async function kalenderHapus(id) {
 function goPageKalender() {
   loadKalender();
 }
+
+// ═══════════════════════════════════════════════════════════
+// EARLY WARNING SYSTEM (EWS)
+// ═══════════════════════════════════════════════════════════
+let _ewsData = [];       // raw absensi data
+let _ewsFilter = 'semua';
+
+function initEWS() {
+  // Populate kelas dropdown
+  const sel = document.getElementById('ewsKelas');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Semua Kelas</option>' +
+      (APP_DATA.kelas||[]).map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+    if (prev) sel.value = prev;
+  }
+  loadEWS();
+}
+
+async function loadEWS() {
+  if (!db) return;
+  const kelasId = document.getElementById('ewsKelas')?.value;
+  const wrap = document.getElementById('ewsTableWrap');
+  if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-light)"><div class="load-spin"></div><div style="margin-top:8px">Memuat data...</div></div>`;
+
+  let query = db.from('absensi').select('*').eq('user_id', currentUser.id);
+  if (kelasId) query = query.eq('kelas_id', parseInt(kelasId));
+
+  const { data, error } = await query;
+  if (error) { toast('Gagal load data: ' + error.message, 'error'); return; }
+  _ewsData = data || [];
+  renderEWS();
+}
+
+function renderEWS() {
+  const warnT = parseInt(document.getElementById('ewsThresholdWarning')?.value) || 3;
+  const kritisT = parseInt(document.getElementById('ewsThresholdKritis')?.value) || 5;
+  const kelasId = document.getElementById('ewsKelas')?.value;
+
+  // Group by siswa
+  const siswaList = kelasId
+    ? (APP_DATA.siswa||[]).filter(s => String(s.kelas_id) === String(kelasId))
+    : (APP_DATA.siswa||[]);
+
+  const rows = siswaList.map(s => {
+    const rec = _ewsData.filter(r => String(r.siswa_id) === String(s.id));
+    const alfa = rec.filter(r => r.status === 'A').length;
+    const sakit = rec.filter(r => r.status === 'S').length;
+    const izin = rec.filter(r => r.status === 'I').length;
+    const hadir = rec.filter(r => r.status === 'H').length;
+    const total = rec.length;
+    const pct = total ? Math.round(hadir/total*100) : 100;
+    let status = 'aman';
+    if (alfa >= kritisT) status = 'kritis';
+    else if (alfa >= warnT) status = 'warning';
+    return { ...s, alfa, sakit, izin, hadir, total, pct, status,
+      kelasNama: getKelasName(s.kelas_id) };
+  });
+
+  // Sort: kritis dulu, warning, aman
+  rows.sort((a,b) => {
+    const order = {kritis:0, warning:1, aman:2};
+    return order[a.status] - order[b.status] || b.alfa - a.alfa;
+  });
+
+  // Update summary
+  document.getElementById('ewsCountKritis').textContent = rows.filter(r=>r.status==='kritis').length;
+  document.getElementById('ewsCountWarning').textContent = rows.filter(r=>r.status==='warning').length;
+  document.getElementById('ewsCountAman').textContent = rows.filter(r=>r.status==='aman').length;
+
+  // Filter
+  const filtered = _ewsFilter === 'semua' ? rows : rows.filter(r => r.status === _ewsFilter);
+
+  const wrap = document.getElementById('ewsTableWrap');
+  if (!filtered.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:32px">✅</div><div style="margin-top:8px">Tidak ada siswa dengan status ini</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--bg)">
+            <th style="padding:8px 10px;text-align:left;font-weight:700;color:var(--text-light);border-bottom:2px solid var(--border)">Nama Siswa</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--text-light);border-bottom:2px solid var(--border)">Kelas</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--secondary);border-bottom:2px solid var(--border)">H</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:#f59e0b;border-bottom:2px solid var(--border)">S</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--primary);border-bottom:2px solid var(--border)">I</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--danger);border-bottom:2px solid var(--border)">A</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--text-light);border-bottom:2px solid var(--border)">% Hadir</th>
+            <th style="padding:8px 6px;text-align:center;font-weight:700;color:var(--text-light);border-bottom:2px solid var(--border)">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map((s,i) => {
+            const bg = i%2===0?'':'background:#f8fafc';
+            const badge = s.status==='kritis'
+              ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:800">🔴 Kritis</span>`
+              : s.status==='warning'
+              ? `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:800">⚠️ Warning</span>`
+              : `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:800">✅ Aman</span>`;
+            return `<tr style="${bg}">
+              <td style="padding:8px 10px;font-weight:600;color:var(--text)">${s.nama}</td>
+              <td style="padding:8px 6px;text-align:center;color:var(--text-light)">${s.kelasNama}</td>
+              <td style="padding:8px 6px;text-align:center;color:var(--secondary);font-weight:700">${s.hadir}</td>
+              <td style="padding:8px 6px;text-align:center;color:#f59e0b;font-weight:700">${s.sakit}</td>
+              <td style="padding:8px 6px;text-align:center;color:var(--primary);font-weight:700">${s.izin}</td>
+              <td style="padding:8px 6px;text-align:center;color:var(--danger);font-weight:700;font-size:14px">${s.alfa}</td>
+              <td style="padding:8px 6px;text-align:center">
+                <span class="badge ${s.pct>=80?'badge-success':s.pct>=60?'badge-warning':'badge-danger'}">${s.pct}%</span>
+              </td>
+              <td style="padding:8px 6px;text-align:center">${badge}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function ewsFilterStatus(status, btn) {
+  _ewsFilter = status;
+  document.querySelectorAll('#page-ews .kal-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderEWS();
+}
+
+async function ewsCetakPDF() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { toast('Library PDF tidak tersedia','error'); return; }
+
+  const warnT = parseInt(document.getElementById('ewsThresholdWarning')?.value) || 3;
+  const kritisT = parseInt(document.getElementById('ewsThresholdKritis')?.value) || 5;
+  const kelasId = document.getElementById('ewsKelas')?.value;
+  const kelasNama = kelasId ? getKelasName(parseInt(kelasId)) : 'Semua Kelas';
+
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const today = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Header
+  doc.setFontSize(14); doc.setFont(undefined,'bold');
+  doc.text('EARLY WARNING SYSTEM (EWS) — ABSENSI SISWA', 148, 15, {align:'center'});
+  doc.setFontSize(10); doc.setFont(undefined,'normal');
+  doc.text(`${CONFIG.sekolah||'SMP Negeri'} | Kelas: ${kelasNama} | Dicetak: ${today}`, 148, 22, {align:'center'});
+  doc.setFontSize(9);
+  doc.text(`Threshold: Warning ≥ ${warnT}x alfa | Kritis ≥ ${kritisT}x alfa`, 148, 28, {align:'center'});
+  doc.line(14, 31, 283, 31);
+
+  // Summary
+  const kritis = parseInt(document.getElementById('ewsCountKritis').textContent);
+  const warning = parseInt(document.getElementById('ewsCountWarning').textContent);
+  const aman = parseInt(document.getElementById('ewsCountAman').textContent);
+  doc.setFontSize(10);
+  doc.text(`🔴 Kritis: ${kritis}  |  ⚠️ Warning: ${warning}  |  ✅ Aman: ${aman}`, 14, 37);
+
+  // Table
+  const siswaList = kelasId
+    ? (APP_DATA.siswa||[]).filter(s => String(s.kelas_id) === String(kelasId))
+    : (APP_DATA.siswa||[]);
+  const rows = siswaList.map((s,i) => {
+    const rec = _ewsData.filter(r => String(r.siswa_id) === String(s.id));
+    const alfa = rec.filter(r=>r.status==='A').length;
+    const sakit = rec.filter(r=>r.status==='S').length;
+    const izin = rec.filter(r=>r.status==='I').length;
+    const hadir = rec.filter(r=>r.status==='H').length;
+    const total = rec.length;
+    const pct = total ? Math.round(hadir/total*100)+'%' : '100%';
+    const status = alfa>=kritisT?'KRITIS':alfa>=warnT?'WARNING':'AMAN';
+    return [i+1, s.nama, getKelasName(s.kelas_id), hadir, sakit, izin, alfa, pct, status];
+  }).sort((a,b)=>{ const o={KRITIS:0,WARNING:1,AMAN:2}; return o[a[8]]-o[b[8]]; });
+
+  doc.autoTable({
+    startY: 42,
+    head:[['No','Nama Siswa','Kelas','H','S','I','A','% Hadir','Status']],
+    body: rows,
+    theme:'grid',
+    headStyles:{fillColor:[26,86,219],textColor:255,fontSize:9,fontStyle:'bold'},
+    bodyStyles:{fontSize:8},
+    columnStyles:{
+      0:{cellWidth:10,halign:'center'},
+      3:{halign:'center'},4:{halign:'center'},5:{halign:'center'},
+      6:{halign:'center'},7:{halign:'center'},8:{halign:'center'},
+    },
+    didDrawCell(data) {
+      if (data.section==='body' && data.column.index===8) {
+        const val = data.cell.text[0];
+        if (val==='KRITIS') data.cell.styles.textColor=[153,27,27];
+        else if (val==='WARNING') data.cell.styles.textColor=[146,64,14];
+        else data.cell.styles.textColor=[6,95,70];
+      }
+    }
+  });
+
+  doc.save(`EWS_${kelasNama}_${today}.pdf`);
+  toast('PDF berhasil didownload!','success');
+}
+
+// ─── END EWS ────────────────────────────────────────────────
 
 function goHome() {
   // Detach visualViewport handler jika dari diskusi
@@ -7476,6 +7746,7 @@ function mpPreSelectMapel(page, mapelId) {
     'nilaiRekap': () => { try { loadRekapNilai(); } catch(e){} },
     'jurnal':     () => { try { loadJurnal(); } catch(e){} },
     'bimbingan':  () => { try { loadBimbingan(); } catch(e){} },
+    'ews':        () => { try { initEWS(); } catch(e){} },
   };
   if (loadFns[page]) setTimeout(loadFns[page], 200);
 }
@@ -8795,6 +9066,10 @@ function buildBubbleGuru(m) {
 function escChatHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 
 function appendChatBubble(m) {
+  // Fallback kelas_nama dari APP_DATA jika tidak ada di payload
+  if (!m.kelas_nama && m.kelas_id) {
+    m.kelas_nama = (APP_DATA.kelas||[]).find(k => String(k.id) === String(m.kelas_id))?.nama || '';
+  }
   const el=document.getElementById('chatMsgsWrap');
   const isEmpty=el.innerHTML.includes('Belum ada')||el.innerHTML.includes('Pilih kelas');
   if(isEmpty) el.innerHTML='';
@@ -8847,11 +9122,14 @@ function subscribeChatKelas(kelasId) {
 
 // ═══════ BELL NOTIFICATION FUNCTIONS ═══════
 function addBellNotif(m) {
+  // Cari nama kelas dari APP_DATA jika kelas_nama kosong di payload
+  const kelasNama = m.kelas_nama ||
+    (APP_DATA.kelas||[]).find(k => String(k.id) === String(m.kelas_id))?.nama || '';
   const notif = {
     id: Date.now() + Math.random(),
     nama: m.nama || 'Siswa',
     peran: m.peran || 'Siswa',
-    kelas_nama: m.kelas_nama || '',
+    kelas_nama: kelasNama,
     kelas_id: m.kelas_id,
     pesan: m.pesan || (m.file_name ? '[File: '+m.file_name+']' : ''),
     waktu: m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '',
