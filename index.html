@@ -695,7 +695,13 @@ tr:hover td { background: #f8fafc; }
 
 /* PAGE HIDE */
 .page { display: none; }
-.page.active { display: block; }
+.page.active {
+  display: block;
+  /* Posisikan absolut dalam #content agar tidak saling dorong */
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  min-height: 100%;
+}
 
 /* Scroll */
 ::-webkit-scrollbar { width: 6px; }
@@ -750,7 +756,7 @@ tr:hover td { background: #f8fafc; }
 .burger { display: none !important; }
 
 /* Content: no padding since home page has its own */
-#content { padding: 0 !important; }
+#content { padding: 0 !important; position: relative; }
 
 /* HOME PAGE */
 #page-home { background: var(--bg); min-height: 100vh; display: none; }
@@ -947,22 +953,17 @@ tr:hover td { background: #f8fafc; }
 #page-kalender { margin-top: -28px; padding-top: 8px; }
 @media (max-width: 600px) { #page-kalender { margin-top: -12px; padding-top: 4px; } }
 
-/* Surat Izin — naik rapat ke topbar dengan sedikit spacing */
+/* Surat Izin — padding proper dengan sedikit space dari topbar */
 #page-izinSiswa {
-  margin-top: -28px;
-  padding: 12px 28px 80px;
+  padding: 14px 28px 80px;
 }
 @media (max-width: 600px) {
   #page-izinSiswa {
-    margin-top: 0;
-    padding: 12px 12px 80px;
+    padding: 14px 14px 80px;
   }
 }
 
-/* Global fix: semua halaman sub naik rapat ke topbar di mobile */
-@media (max-width: 600px) {
-  #content > .page.active { margin-top: -12px; padding-top: 4px; }
-}
+/* Global fix: tidak diperlukan karena page sudah position:absolute */
 
 .kal-day {
   aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
