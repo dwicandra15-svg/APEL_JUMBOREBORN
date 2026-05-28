@@ -943,7 +943,7 @@ tr:hover td { background: #f8fafc; }
 .ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
 
 /* Kalender — tarik konten naik rapat ke topbar */
-#page-kalender { margin-top: -20px; }
+#page-kalender { margin-top: -28px; }
 
 .kal-day {
   aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
@@ -6896,8 +6896,7 @@ function goHome() {
   document.getElementById('page-home').classList.add('active');
   // Restore content padding ke default
   const ct = document.getElementById('content');
-  if (ct) { ct.style.paddingTop = ''; ct.style.paddingBottom = ''; }
-  // Hide topbar & restore back button
+  if (ct) { ct.style.paddingTop = ''; ct.style.paddingBottom = ''; }  // Hide topbar & restore back button
   const tb = document.getElementById('mainTopbar');
   if (tb) tb.style.display = 'none';
   const bb = document.getElementById('backBtn');
@@ -6928,8 +6927,6 @@ function goPage(name) {
     if (tb) tb.style.display = '';
     const bb = document.getElementById('backBtn');
     if (bb) bb.classList.add('visible');
-    const ct = document.getElementById('content');
-    if (ct) { ct.style.paddingTop = '0'; ct.style.paddingBottom = '80px'; }
     loadKalender();
     return;
   }
@@ -10045,14 +10042,10 @@ function chatAutoResize(el){
 
 <!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
 <div id="page-kalender" class="page">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div>
-        <h2 style="font-size:20px;font-weight:800;color:var(--text)">📆 Kalender Pendidikan</h2>
-        <p style="font-size:12px;color:var(--text-light);margin-top:2px">Agenda & Kegiatan Sekolah Bersama</p>
-      </div>
-      <button onclick="kalenderOpenForm()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
-        ＋ Tambah Event
-      </button>
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:2px">📆 Kalender Pendidikan</div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:10px">Agenda & Kegiatan Sekolah Bersama</div>
+      <button onclick="kalenderOpenForm()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer">＋ Tambah Event</button>
     </div>
 
     <!-- Navigasi Bulan -->
