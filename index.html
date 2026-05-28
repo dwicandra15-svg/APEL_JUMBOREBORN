@@ -947,9 +947,17 @@ tr:hover td { background: #f8fafc; }
 #page-kalender { margin-top: -28px; padding-top: 8px; }
 @media (max-width: 600px) { #page-kalender { margin-top: -12px; padding-top: 4px; } }
 
-/* Surat Izin — sama seperti kalender */
-#page-izinSiswa { margin-top: -28px; padding-top: 8px; }
-@media (max-width: 600px) { #page-izinSiswa { margin-top: -12px; padding-top: 4px; } }
+/* Surat Izin — naik rapat ke topbar dengan sedikit spacing */
+#page-izinSiswa {
+  margin-top: -28px;
+  padding: 12px 28px 80px;
+}
+@media (max-width: 600px) {
+  #page-izinSiswa {
+    margin-top: 0;
+    padding: 12px 12px 80px;
+  }
+}
 
 /* Global fix: semua halaman sub naik rapat ke topbar di mobile */
 @media (max-width: 600px) {
@@ -10456,7 +10464,7 @@ function chatAutoResize(el){
 
 <!-- ═══════════════ HALAMAN SURAT IZIN SISWA ═══════════════ -->
 <div id="page-izinSiswa" class="page">
-  <div class="section-header">
+  <div class="section-header" style="margin-bottom:12px">
     <div>
       <div class="section-title">📨 Surat Izin Siswa</div>
       <div class="section-sub">Izin tidak masuk dari orang tua</div>
