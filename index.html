@@ -941,6 +941,7 @@ tr:hover td { background: #f8fafc; }
 .ic-orange { background:linear-gradient(135deg,#ffedd5,#fed7aa); }
 .ic-purple { background:linear-gradient(135deg,#ede9fe,#ddd6fe); }
 .ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
+.ic-amber  { background:linear-gradient(135deg,#fef3c7,#fde68a); }
 
 /* Kalender — tarik konten naik rapat ke topbar */
 #page-kalender { margin-top: -28px; padding-top: 8px; }
@@ -2298,6 +2299,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   box-shadow:0 2px 6px rgba(224,36,36,.4);
   z-index:10;
 "></span></div>
+            <div class="mh-card" data-id="izinSiswa" onclick="goPage('izinSiswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'izinSiswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-amber" id="ico-izinSiswa" style="position:relative">📨<span id="izinBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e02424;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;padding:0 4px;line-height:16px;text-align:center"></span></div><div class="mh-card-lbl" id="lbl-izinSiswa">Surat Izin</div></div>
             <div class="mh-card" data-id="kalender" onclick="goPage('kalender')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'kalender')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-rose" id="ico-kalender">📆</div><div class="mh-card-lbl" id="lbl-kalender">Kalender</div></div>
           </div>
 
@@ -3863,6 +3865,7 @@ async function afterLogin() {
   // Hanya perlu load hal-hal yang tidak ada di loadAllData
   setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 300);
   setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 500);
+  setTimeout(() => { try { if(db) initIzinBadge(); } catch(e){} }, 800);
   setTimeout(() => { try { if(db) mpLoadSavedIcons(); } catch(e){} }, 400);
   // Restore halaman terakhir sebelum refresh
   const lastPage = localStorage.getItem('apel_last_page');
@@ -6523,6 +6526,7 @@ function showPage(name) {
     'ummiTingkatan':'Tingkatan UMMI','ummi7':'Pembayaran UMMI 7','ummi8':'Pembayaran UMMI 8','ummi9':'Pembayaran UMMI 9',
     'diskusi':'Diskusi Kelas',
     'kalender':'Kalender Pendidikan',
+    'izinSiswa':'Surat Izin Siswa',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
@@ -6956,6 +6960,123 @@ function goPageKalender() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// SURAT IZIN SISWA
+// ═══════════════════════════════════════════════════════════
+let _izinData = [];
+let _izinFilter = 'semua';
+let _izinSelectedId = null;
+
+async function loadIzinSiswa() {
+  if (!db) return;
+  const el = document.getElementById('izinSiswaList');
+  if (el) el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-light)"><div class="load-spin"></div></div>`;
+  const { data } = await db.from('izin_siswa').select('*').order('created_at', {ascending:false});
+  _izinData = data || [];
+  renderIzinSiswa();
+  updateIzinBadge();
+}
+
+function renderIzinSiswa() {
+  const el = document.getElementById('izinSiswaList');
+  let list = _izinFilter === 'semua' ? _izinData : _izinData.filter(r => r.status === _izinFilter);
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:32px;margin-bottom:8px">📭</div><div>Tidak ada surat izin</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(r => {
+    const tgl = r.tanggal_selesai && r.tanggal_selesai !== r.tanggal
+      ? `${fmtTglIzin(r.tanggal)} — ${fmtTglIzin(r.tanggal_selesai)}`
+      : fmtTglIzin(r.tanggal);
+    const [badge,w] = r.status==='disetujui'?['✅ Disetujui','#10b981']:r.status==='ditolak'?['❌ Ditolak','#ef4444']:['⏳ Menunggu','#f59e0b'];
+    const isNew = r.status === 'menunggu';
+    return `<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);border-left:4px solid ${w};${isNew?'border:2px solid #f59e0b;':''}" onclick="izinShowDetail('${r.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)">${r.nama_siswa||'—'}</div>
+          <div style="font-size:11px;color:var(--text-light)">${getKelasName(r.kelas_id)} · ${tgl}</div>
+        </div>
+        <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;flex-shrink:0">${badge}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-light);background:var(--bg);padding:6px 10px;border-radius:8px">${r.alasan}</div>
+      ${r.status==='menunggu'?`<div style="margin-top:8px;font-size:11px;color:#f59e0b;font-weight:700">Ketuk untuk tindak lanjut →</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function fmtTglIzin(str) {
+  if (!str) return '—';
+  const d = new Date(str+'T00:00:00');
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function updateIzinBadge() {
+  const count = _izinData.filter(r=>r.status==='menunggu').length;
+  const badge = document.getElementById('izinBadge');
+  if (!badge) return;
+  if (count > 0) { badge.style.display='inline-block'; badge.textContent=count; }
+  else badge.style.display='none';
+}
+
+function izinFilter(status, btn) {
+  _izinFilter = status;
+  document.querySelectorAll('#page-izinSiswa .kal-filter-btn').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderIzinSiswa();
+}
+
+function izinShowDetail(id) {
+  const r = _izinData.find(x=>x.id===id);
+  if (!r) return;
+  _izinSelectedId = id;
+  const tgl = r.tanggal_selesai && r.tanggal_selesai !== r.tanggal
+    ? `${fmtTglIzin(r.tanggal)} — ${fmtTglIzin(r.tanggal_selesai)}`
+    : fmtTglIzin(r.tanggal);
+  const [badge,w] = r.status==='disetujui'?['✅ Disetujui','#10b981']:r.status==='ditolak'?['❌ Ditolak','#ef4444']:['⏳ Menunggu','#f59e0b'];
+  document.getElementById('izinDetailContent').innerHTML = `
+    <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:4px">${r.nama_siswa}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:8px">${getKelasName(r.kelas_id)} · NISN: ${r.nisn||'—'}</div>
+      <div style="font-size:12px;margin-bottom:4px">📅 <strong>Tanggal:</strong> ${tgl}</div>
+      <div style="font-size:12px;margin-bottom:8px">📝 <strong>Alasan:</strong> ${r.alasan}</div>
+      <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${badge}</span>
+    </div>`;
+  document.getElementById('izinCatatan').value = r.catatan_guru || '';
+  // Sembunyikan tombol jika sudah diproses
+  const btnWrap = document.getElementById('izinDetailModal').querySelector('div[style*="display:flex;gap"]');
+  if (btnWrap) btnWrap.style.display = r.status === 'menunggu' ? 'flex' : 'none';
+  document.getElementById('izinDetailModal').style.display = 'flex';
+}
+
+async function izinTindak(status) {
+  if (!_izinSelectedId) return;
+  const catatan = document.getElementById('izinCatatan').value.trim();
+  const { error } = await db.from('izin_siswa').update({ status, catatan_guru: catatan }).eq('id', _izinSelectedId);
+  if (error) { toast('Gagal update: '+error.message,'error'); return; }
+  document.getElementById('izinDetailModal').style.display = 'none';
+  toast(status==='disetujui'?'✅ Izin disetujui!':'❌ Izin ditolak', status==='disetujui'?'success':'error');
+  loadIzinSiswa();
+}
+
+// Load izin badge saat init
+async function initIzinBadge() {
+  if (!db || !currentUser) return;
+  const { data } = await db.from('izin_siswa').select('id,status').eq('status','menunggu');
+  _izinData = data || [];
+  updateIzinBadge();
+  // Realtime listener izin baru
+  db.channel('izin_realtime').on('postgres_changes',
+    {event:'INSERT',schema:'public',table:'izin_siswa'},
+    (payload) => {
+      _izinData.unshift(payload.new);
+      updateIzinBadge();
+      toast(`📨 Surat izin baru: ${payload.new.nama_siswa||'Siswa'}`, 'info');
+    }
+  ).subscribe();
+}
+
+// ─── END IZIN SISWA ─────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════
 // EARLY WARNING SYSTEM (EWS)
 // ═══════════════════════════════════════════════════════════
 let _ewsData = [];       // raw absensi data
@@ -7192,7 +7313,15 @@ function goPage(name) {
     return;
   }
   if(window._chatDetachVP) window._chatDetachVP();
-  if (name === 'kalender') {
+  if (name === 'izinSiswa') {
+    showPage('izinSiswa');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    loadIzinSiswa();
+    return;
+  }
     showPage('kalender');
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
@@ -10311,6 +10440,51 @@ function chatAutoResize(el){
     </div>
     <div class="log-list" id="logList">
       <div style="text-align:center;padding:30px;color:var(--text-light);font-size:13px">Memuat riwayat...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HALAMAN SURAT IZIN SISWA ═══════════════ -->
+<div id="page-izinSiswa" class="page">
+  <div class="section-header">
+    <div>
+      <div class="section-title">📨 Surat Izin Siswa</div>
+      <div class="section-sub">Izin tidak masuk dari orang tua</div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="kal-filter-btn active" onclick="izinFilter('semua',this)">📋 Semua</button>
+    <button class="kal-filter-btn" onclick="izinFilter('menunggu',this)">⏳ Menunggu</button>
+    <button class="kal-filter-btn" onclick="izinFilter('disetujui',this)">✅ Disetujui</button>
+    <button class="kal-filter-btn" onclick="izinFilter('ditolak',this)">❌ Ditolak</button>
+  </div>
+
+  <!-- List -->
+  <div id="izinSiswaList">
+    <div style="text-align:center;padding:40px;color:var(--text-light)">
+      <div style="font-size:32px;margin-bottom:8px">📨</div>
+      <div>Memuat data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detail Izin -->
+<div id="izinDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:420px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:15px;font-weight:800">📨 Detail Surat Izin</h3>
+      <button onclick="document.getElementById('izinDetailModal').style.display='none'" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer">✕</button>
+    </div>
+    <div id="izinDetailContent"></div>
+    <div style="margin-top:14px">
+      <label style="font-size:11px;font-weight:700;color:var(--text-light);display:block;margin-bottom:5px">Catatan (opsional)</label>
+      <input type="text" id="izinCatatan" placeholder="Catatan untuk orang tua..." style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;box-sizing:border-box;margin-bottom:12px">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="izinTindak('ditolak')" style="flex:1;background:#fee2e2;color:#e02424;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">❌ Tolak</button>
+      <button onclick="izinTindak('disetujui')" style="flex:2;background:#10b981;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">✅ Setujui</button>
     </div>
   </div>
 </div>
