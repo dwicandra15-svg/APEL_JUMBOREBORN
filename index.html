@@ -7007,16 +7007,21 @@ function renderIzinSiswa() {
       : fmtTglIzin(r.tanggal);
     const [badge,w] = r.status==='disetujui'?['✅ Disetujui','#10b981']:r.status==='ditolak'?['❌ Ditolak','#ef4444']:['⏳ Menunggu','#f59e0b'];
     const isNew = r.status === 'menunggu';
-    return `<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);border-left:4px solid ${w};${isNew?'border:2px solid #f59e0b;':''}" onclick="izinShowDetail('${r.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--text)">${r.nama_siswa||'—'}</div>
-          <div style="font-size:11px;color:var(--text-light)">${getKelasName(r.kelas_id)} · ${tgl}</div>
+    return `<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);border-left:4px solid ${w};${isNew?'border:2px solid #f59e0b;':''}">
+      <div onclick="izinShowDetail('${r.id}')" style="cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--text)">${r.nama_siswa||'—'}</div>
+            <div style="font-size:11px;color:var(--text-light)">${getKelasName(r.kelas_id)} · ${tgl}</div>
+          </div>
+          <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;flex-shrink:0">${badge}</span>
         </div>
-        <span style="background:${w}22;color:${w};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;flex-shrink:0">${badge}</span>
+        <div style="font-size:12px;color:var(--text-light);background:var(--bg);padding:6px 10px;border-radius:8px">${r.alasan}</div>
+        ${r.status==='menunggu'?`<div style="margin-top:6px;font-size:11px;color:#f59e0b;font-weight:700">Ketuk untuk tindak lanjut →</div>`:''}
       </div>
-      <div style="font-size:12px;color:var(--text-light);background:var(--bg);padding:6px 10px;border-radius:8px">${r.alasan}</div>
-      ${r.status==='menunggu'?`<div style="margin-top:8px;font-size:11px;color:#f59e0b;font-weight:700">Ketuk untuk tindak lanjut →</div>`:''}
+      <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
+        <button onclick="event.stopPropagation();izinHapus('${r.id}')" style="background:#fff1f2;color:#ef4444;border:1px solid #fecaca;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">🗑️ Hapus</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -7074,6 +7079,16 @@ async function izinTindak(status) {
   toast(status==='disetujui'?'✅ Izin disetujui!':'❌ Izin ditolak', status==='disetujui'?'success':'error');
   loadIzinSiswa();
 }
+
+// ── Hapus surat izin (guru) ──────────────────────────────────
+async function izinHapus(id) {
+  if (!confirm('Hapus surat izin ini?')) return;
+  const { error } = await db.from('izin_siswa').delete().eq('id', id);
+  if (error) { toast('Gagal hapus: ' + error.message, 'error'); return; }
+  toast('🗑️ Surat izin dihapus', 'success');
+  loadIzinSiswa();
+}
+// ─────────────────────────────────────────────────────────────
 
 // Load izin badge saat init
 async function initIzinBadge() {
