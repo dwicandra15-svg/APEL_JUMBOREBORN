@@ -1538,12 +1538,22 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   background: var(--bg);
   display: none;
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0; left: 0; right: 0;
+  /* Gunakan dvh agar otomatis menyesuaikan keyboard di mobile */
+  bottom: 0;
+  height: 100dvh;
   z-index: 10;
   flex-direction: column;
   overflow: hidden;
 }
 #page-diskusi.active { display: flex; }
+
+/* Pastikan chat-input-area selalu di bawah konten, bukan tertutup keyboard */
+#page-diskusi .chat-input-area {
+  flex-shrink: 0;
+  /* Safe area untuk iPhone notch/home bar */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
 
 /* Diskusi top header */
 .chat-page-header {
@@ -9117,6 +9127,45 @@ function initChatPage() {
     }
   }
 }
+
+// ── Visual Viewport: chat input ikut naik saat keyboard muncul ──
+(function() {
+  function onViewportResize() {
+    const pg = document.getElementById('page-diskusi');
+    if (!pg || !pg.classList.contains('active')) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    // Hitung offset: seberapa jauh keyboard mendorong viewport ke atas
+    const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
+    pg.style.height = vv.height + 'px';
+    pg.style.top    = vv.offsetTop + 'px';
+    // Scroll chat ke bawah agar pesan terbaru tetap kelihatan
+    const msgs = document.getElementById('chatMsgs');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function resetViewport() {
+    const pg = document.getElementById('page-diskusi');
+    if (!pg) return;
+    pg.style.height = '';
+    pg.style.top    = '';
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    window.visualViewport.addEventListener('scroll', onViewportResize);
+  }
+
+  // Reset saat diskusi ditutup
+  document.addEventListener('DOMContentLoaded', () => {
+    const obs = new MutationObserver(() => {
+      const pg = document.getElementById('page-diskusi');
+      if (pg && !pg.classList.contains('active')) resetViewport();
+    });
+    const pg = document.getElementById('page-diskusi');
+    if (pg) obs.observe(pg, { attributes: true, attributeFilter: ['class'] });
+  });
+})();
 
 // ── State untuk target chat ──
 let _chatTargetIds   = null;  // null = semua, array = siswa tertentu
