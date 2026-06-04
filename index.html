@@ -3985,6 +3985,18 @@ function savePengaturan() {
   applyConfig();
   const gt = document.getElementById('guruTopbar');
   if (gt) gt.textContent = CONFIG.guru || '';
+  // Simpan ke Supabase agar bisa dibaca APBO Siswa
+  try {
+    if (db) {
+      db.from('app_settings').upsert(
+        { key: 'apel_config', value: JSON.stringify(CONFIG) },
+        { onConflict: 'key' }
+      ).then(({ error }) => {
+        if (error) console.warn('Gagal simpan config ke Supabase:', error.message);
+        else console.log('apel_config tersimpan ke Supabase ✓');
+      });
+    }
+  } catch(e) { console.warn('upsert apel_config:', e); }
   toast('Pengaturan berhasil disimpan!', 'success');
 }
 
