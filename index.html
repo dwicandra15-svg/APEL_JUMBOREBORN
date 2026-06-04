@@ -3897,6 +3897,20 @@ async function afterLogin() {
   // Hanya perlu load hal-hal yang tidak ada di loadAllData
   setTimeout(() => { try { guruPiketLoad(); } catch(e){} }, 300);
   setTimeout(() => { try { if(db) startGlobalChatListener(); } catch(e){ console.warn('globalChatListener error:', e); } }, 500);
+  // Realtime: monitor tap RFID masuk (untuk dashboard)
+  setTimeout(() => {
+    try {
+      if (!db) return;
+      db.channel('rt_rfid_guru').on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'absensi_rfid' },
+        payload => {
+          const n = payload.new;
+          const tipe = n.tipe === 'masuk' ? '✅ Masuk' : '🚪 Pulang';
+          addBellNotif({ nama: n.nama_siswa||'Siswa', pesan: `${tipe} — ${n.lokasi||'Sekolah'}`, kelas_id: null });
+        }
+      ).subscribe();
+    } catch(e) { console.warn('rt_rfid_guru:', e); }
+  }, 800);
   setTimeout(() => { try { if(db) initIzinBadge(); } catch(e){} }, 800);
   setTimeout(() => { try { if(db) mpLoadSavedIcons(); } catch(e){} }, 400);
   // Restore halaman terakhir sebelum refresh
@@ -7137,14 +7151,32 @@ async function initIzinBadge() {
   _izinData = data || [];
   updateIzinBadge();
   // Realtime listener izin baru
-  db.channel('izin_realtime').on('postgres_changes',
-    {event:'INSERT',schema:'public',table:'izin_siswa'},
-    (payload) => {
-      _izinData.unshift(payload.new);
-      updateIzinBadge();
-      toast(`📨 Surat izin baru: ${payload.new.nama_siswa||'Siswa'}`, 'info');
-    }
-  ).subscribe();
+  db.channel('izin_realtime')
+    .on('postgres_changes',
+      {event:'INSERT', schema:'public', table:'izin_siswa'},
+      (payload) => {
+        _izinData.unshift(payload.new);
+        updateIzinBadge();
+        addBellNotif({nama: payload.new.nama_siswa||'Siswa', pesan:`📨 Surat izin baru masuk`, kelas_id: payload.new.kelas_id});
+        toast(`📨 Surat izin baru: ${payload.new.nama_siswa||'Siswa'}`, 'success');
+        // Reload list jika halaman izin sedang terbuka
+        if (document.getElementById('page-izinSiswa')?.classList.contains('active')) loadIzinSiswa();
+      })
+    .on('postgres_changes',
+      {event:'UPDATE', schema:'public', table:'izin_siswa'},
+      (payload) => {
+        // Update badge & reload list jika sedang terbuka
+        initIzinBadge();
+        if (document.getElementById('page-izinSiswa')?.classList.contains('active')) loadIzinSiswa();
+      })
+    .on('postgres_changes',
+      {event:'DELETE', schema:'public', table:'izin_siswa'},
+      (payload) => {
+        _izinData = _izinData.filter(x => x.id !== payload.old?.id);
+        updateIzinBadge();
+        if (document.getElementById('page-izinSiswa')?.classList.contains('active')) loadIzinSiswa();
+      })
+    .subscribe();
 }
 
 // ─── END IZIN SISWA ─────────────────────────────────────────
