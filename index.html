@@ -3376,6 +3376,10 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
     </div>
+      <div class="form-group">
+        <label class="form-label">UID Kartu RFID <span style="font-size:11px;color:#94a3b8;font-weight:400">(untuk AbsensiKu)</span></label>
+        <input type="text" id="siswaRfidUid" class="form-control" placeholder="Kosongkan jika belum ada kartu">
+      </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalSiswa')">Batal</button>
       <button class="btn btn-primary" onclick="saveSiswa()">Simpan</button>
@@ -4289,6 +4293,7 @@ function showAddSiswa() {
   // Always rebuild kelas dropdown with latest data
   const kelasOpts = APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
   document.getElementById('siswaKelas').innerHTML = kelasOpts || '<option value="">-- Tambah kelas dulu di Pengaturan --</option>';
+  document.getElementById('siswaRfidUid').value = '';
   document.getElementById('modalSiswaTitle').textContent = 'Tambah Siswa Baru';
   openModal('modalSiswa');
 }
@@ -4303,6 +4308,7 @@ function editSiswa(id) {
   document.getElementById('siswaNama').value = s.nama||'';
   document.getElementById('siswaJK').value = s.jenis_kelamin||'Laki-laki';
   document.getElementById('siswaBimbingan').value = s.bimbingan||'0';
+  document.getElementById('siswaRfidUid').value = s.rfid_uid||'';
   document.getElementById('modalSiswaTitle').textContent = 'Edit Data Siswa';
   openModal('modalSiswa');
 }
@@ -4316,6 +4322,7 @@ async function saveSiswa() {
     kelas_id: kelasId,
     jenis_kelamin: document.getElementById('siswaJK').value,
     bimbingan: parseInt(document.getElementById('siswaBimbingan').value),
+    rfid_uid: document.getElementById('siswaRfidUid').value.trim() || null,
     user_id: currentUser.id
   };
   if (!row.nama) return toast('Nama harus diisi', 'error');
