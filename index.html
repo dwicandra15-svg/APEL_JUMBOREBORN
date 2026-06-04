@@ -3988,13 +3988,24 @@ function savePengaturan() {
   // Simpan ke Supabase agar bisa dibaca APBO Siswa
   try {
     if (db) {
+      // Simpan full config
       db.from('app_settings').upsert(
         { key: 'apel_config', value: JSON.stringify(CONFIG) },
         { onConflict: 'key' }
       ).then(({ error }) => {
-        if (error) console.warn('Gagal simpan config ke Supabase:', error.message);
-        else console.log('apel_config tersimpan ke Supabase ✓');
+        if (error) console.warn('Gagal simpan apel_config:', error.message);
+        else console.log('apel_config tersimpan ✓');
       });
+      // Simpan URL AbsensiKu sebagai key terpisah agar mudah dibaca APBO Siswa
+      if (CONFIG.absensiKuUrl) {
+        db.from('app_settings').upsert(
+          { key: 'absensiku_url', value: CONFIG.absensiKuUrl },
+          { onConflict: 'key' }
+        ).then(({ error }) => {
+          if (error) console.warn('Gagal simpan absensiku_url:', error.message);
+          else console.log('absensiku_url tersimpan ✓');
+        });
+      }
     }
   } catch(e) { console.warn('upsert apel_config:', e); }
   toast('Pengaturan berhasil disimpan!', 'success');
