@@ -954,6 +954,15 @@ tr:hover td { background: #f8fafc; }
 @media (max-width: 600px) { #page-kalender { padding-top: 38px; } }
 
 /* Surat Izin — padding proper dengan sedikit space dari topbar */
+.rfid-period-btn {
+  padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--card); color: var(--text-light); font-size: 12px;
+  font-weight: 600; cursor: pointer; transition: all .2s;
+}
+.rfid-period-btn.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+}
+
 #page-izinSiswa {
   padding: 18px 28px 80px;
 }
@@ -2308,6 +2317,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mh-card" data-id="siswa" onclick="goPage('siswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'siswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-siswa">👨‍🎓</div><div class="mh-card-lbl" id="lbl-siswa">Data Siswa</div></div>
             <div class="mh-card" data-id="jadwal" onclick="goPage('jadwal')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-jadwal">📅</div><div class="mh-card-lbl" id="lbl-jadwal">Jadwal Mengajar</div></div>
             <div class="mh-card" data-id="jurnal" onclick="absensiKuBuka()" style="cursor:pointer"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jurnal')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jurnal">🔗</div><div class="mh-card-lbl" id="lbl-jurnal">AbsensiKu</div></div>
+            <div class="mh-card" data-id="rfidLog" onclick="goPage('rfidLog')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'rfidLog')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-rfidLog">📡</div><div class="mh-card-lbl" id="lbl-rfidLog">Log Absensi RFID</div></div>
             <div class="mh-card" data-id="diskusi" onclick="goPage('diskusi')" style="position:relative"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'diskusi')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-indigo" id="ico-diskusi">💬</div><div class="mh-card-lbl" id="lbl-diskusi">Diskusi Kelas</div><span id="diskusiBadge" style="
   display:none;
   position:absolute;
@@ -3028,6 +3038,24 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <label class="form-label">🔗 URL AbsensiKu</label>
             <input type="url" id="setAbsensiKuUrl" class="form-control" placeholder="https://absensi.example.com/...">
             <small style="color:var(--text-light);font-size:11px">Link aplikasi absensi eksternal yang akan dibuka saat klik kartu AbsensiKu</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🖼️ Logo AbsensiKu</label>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+              <div id="absKuLogoPreview" style="width:56px;height:56px;border-radius:14px;background:#f1f5f9;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0">📲</div>
+              <div style="flex:1">
+                <input type="file" id="absKuLogoFile" accept="image/*" style="display:none" onchange="previewAbsKuLogo(this)">
+                <button class="btn btn-outline" onclick="document.getElementById('absKuLogoFile').click()" style="font-size:12px;padding:6px 12px">📁 Pilih Logo</button>
+                <button class="btn btn-outline" onclick="clearAbsKuLogo()" style="font-size:12px;padding:6px 12px;margin-left:6px;color:#ef4444;border-color:#ef4444">✕ Hapus</button>
+              </div>
+            </div>
+            <input type="hidden" id="setAbsensiKuLogo">
+            <small style="color:var(--text-light);font-size:11px">Logo akan muncul di kartu AbsensiKu pada APBO Siswa</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🏷️ Nama Kartu AbsensiKu</label>
+            <input type="text" id="setAbsensiKuNama" class="form-control" placeholder="AbsensiKu" value="AbsensiKu">
+            <small style="color:var(--text-light);font-size:11px">Nama yang ditampilkan pada kartu di APBO Siswa</small>
           </div>
         </div>
       </div>
@@ -3777,6 +3805,7 @@ function applyConfig() {
 
     const setAku = document.getElementById('setAbsensiKuUrl');
     if (setAku) setAku.value = CONFIG.absensiKuUrl || '';
+    loadAbsKuLogoUI();
     const setAppName = document.getElementById('setAppName');
     if (setAppName) setAppName.value = CONFIG.appName || '';
     const setAppSub = document.getElementById('setAppSubtitle');
@@ -3995,6 +4024,8 @@ function savePengaturan() {
   CONFIG.wali = document.getElementById('setWali').value.trim();
   CONFIG.tahunPelajaran = document.getElementById('setTP').value.trim();
   CONFIG.absensiKuUrl  = document.getElementById('setAbsensiKuUrl')?.value.trim() || '';
+  CONFIG.absensiKuLogo = document.getElementById('setAbsensiKuLogo')?.value || '';
+  CONFIG.absensiKuNama = document.getElementById('setAbsensiKuNama')?.value.trim() || 'AbsensiKu';
   CONFIG.appName = document.getElementById('setAppName')?.value.trim() || CONFIG.appName;
   CONFIG.appSubtitle = document.getElementById('setAppSubtitle')?.value.trim() || CONFIG.appSubtitle;
   if (CONFIG._pendingLogo) { CONFIG.logo = CONFIG._pendingLogo; delete CONFIG._pendingLogo; }
@@ -4014,15 +4045,25 @@ function savePengaturan() {
         if (error) console.warn('Gagal simpan apel_config:', error.message);
         else console.log('apel_config tersimpan ✓');
       });
-      // Simpan URL AbsensiKu sebagai key terpisah agar mudah dibaca APBO Siswa
-      if (CONFIG.absensiKuUrl) {
+      // Simpan konfigurasi AbsensiKu sebagai key terpisah agar mudah dibaca APBO Siswa
+      if (CONFIG.absensiKuUrl || CONFIG.absensiKuLogo) {
+        const absKuCfg = {
+          url:  CONFIG.absensiKuUrl  || '',
+          logo: CONFIG.absensiKuLogo || '',
+          nama: CONFIG.absensiKuNama || 'AbsensiKu'
+        };
         db.from('app_settings').upsert(
-          { key: 'absensiku_url', value: CONFIG.absensiKuUrl },
+          { key: 'absensiku_config', value: JSON.stringify(absKuCfg) },
           { onConflict: 'key' }
         ).then(({ error }) => {
-          if (error) console.warn('Gagal simpan absensiku_url:', error.message);
-          else console.log('absensiku_url tersimpan ✓');
+          if (error) console.warn('Gagal simpan absensiku_config:', error.message);
+          else console.log('absensiku_config tersimpan ✓');
         });
+        // Tetap simpan URL saja untuk backward compatibility
+        db.from('app_settings').upsert(
+          { key: 'absensiku_url', value: CONFIG.absensiKuUrl || '' },
+          { onConflict: 'key' }
+        ).then(()=>{});
       }
     }
   } catch(e) { console.warn('upsert apel_config:', e); }
@@ -5092,6 +5133,40 @@ async function cetakJurnal() {
 }
 
 // ── AbsensiKu: buka URL eksternal ──────────────────────────
+// ── Logo AbsensiKu ───────────────────────────────────────────
+function previewAbsKuLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    document.getElementById('setAbsensiKuLogo').value = data;
+    const prev = document.getElementById('absKuLogoPreview');
+    prev.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearAbsKuLogo() {
+  document.getElementById('setAbsensiKuLogo').value = '';
+  document.getElementById('absKuLogoPreview').innerHTML = '📲';
+  document.getElementById('absKuLogoFile').value = '';
+}
+
+function loadAbsKuLogoUI() {
+  const logo = CONFIG.absensiKuLogo || '';
+  const nama = CONFIG.absensiKuNama || 'AbsensiKu';
+  const prev = document.getElementById('absKuLogoPreview');
+  if (prev) {
+    prev.innerHTML = logo
+      ? `<img src="${logo}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`
+      : '📲';
+  }
+  if (document.getElementById('setAbsensiKuLogo')) document.getElementById('setAbsensiKuLogo').value = logo;
+  if (document.getElementById('setAbsensiKuNama')) document.getElementById('setAbsensiKuNama').value = nama;
+}
+// ─────────────────────────────────────────────────────────────
+
 function absensiKuBuka() {
   hbnHide(); // sembunyikan bottom nav
   const url = CONFIG.absensiKuUrl || '';
@@ -6626,6 +6701,7 @@ function showPage(name) {
     }
   }
   if (name==='diskusi') { initChatPage(); }
+  if (name==='rfidLog') { initRfidLogPage(); }
   if (name==='absenRekap') {
     // Populate mapel filter
     const rmp = document.getElementById('rekapAbsenMapel');
@@ -7133,6 +7209,190 @@ async function izinTindak(status) {
   toast(status==='disetujui'?'✅ Izin disetujui!':'❌ Izin ditolak', status==='disetujui'?'success':'error');
   loadIzinSiswa();
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  LOG ABSENSI RFID
+// ═══════════════════════════════════════════════════════════════
+let _rfidPeriod = 'hari';
+let _rfidLogData = [];
+
+function setRfidPeriod(p) {
+  _rfidPeriod = p;
+  document.querySelectorAll('.rfid-period-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('rfidPeriod-' + p);
+  if (btn) btn.classList.add('active');
+  loadRfidLog();
+}
+
+async function initRfidLogPage() {
+  // Populate filter kelas
+  const selKelas = document.getElementById('rfidFilterKelas');
+  if (selKelas && APP_DATA?.kelas?.length) {
+    selKelas.innerHTML = '<option value="">Semua Kelas</option>' +
+      APP_DATA.kelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+  }
+  // Set tanggal default hari ini
+  const tglInput = document.getElementById('rfidFilterTgl');
+  if (tglInput) tglInput.value = new Date().toISOString().slice(0,10);
+  await loadRfidLog();
+}
+
+async function loadRfidLog() {
+  const tbody = document.getElementById('rfidLogTbody');
+  const emptyEl = document.getElementById('rfidLogEmpty');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light)">⏳ Memuat...</td></tr>';
+
+  const today = new Date().toISOString().slice(0,10);
+  let startDate, endDate;
+
+  if (_rfidPeriod === 'hari') {
+    startDate = endDate = today;
+  } else if (_rfidPeriod === 'minggu') {
+    const d = new Date();
+    const day = d.getDay();
+    const mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    startDate = mon.toISOString().slice(0,10);
+    endDate   = sun.toISOString().slice(0,10);
+  } else if (_rfidPeriod === 'bulan') {
+    const d = new Date();
+    startDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+    endDate   = today;
+  } else if (_rfidPeriod === 'custom') {
+    const tgl = document.getElementById('rfidFilterTgl')?.value;
+    if (!tgl) return;
+    startDate = endDate = tgl;
+  }
+
+  try {
+    // Ambil log absensi_rfid
+    const { data: logs, error } = await db.from('absensi_rfid')
+      .select('siswa_id,nisn,tipe,waktu,tanggal,status,lokasi')
+      .gte('tanggal', startDate)
+      .lte('tanggal', endDate)
+      .order('tanggal', {ascending: false})
+      .order('waktu', {ascending: true});
+
+    if (error) { toast('Gagal load log: ' + error.message, 'error'); return; }
+
+    // Join dengan data siswa dari APP_DATA
+    const siswaNamaMap = {};
+    const siswaKelasMap = {};
+    (APP_DATA?.siswa || []).forEach(s => {
+      siswaNamaMap[s.id] = s.nama;
+      siswaKelasMap[s.id] = getKelasName(s.kelas_id);
+    });
+
+    // Filter kelas & nama
+    const filterKelasId = document.getElementById('rfidFilterKelas')?.value;
+    const filterNama    = (document.getElementById('rfidFilterNama')?.value||'').toLowerCase().trim();
+
+    // Group per tanggal+siswa
+    const grouped = {};
+    (logs||[]).forEach(l => {
+      const key = l.tanggal + '_' + (l.siswa_id||l.nisn);
+      if (!grouped[key]) grouped[key] = {
+        tanggal: l.tanggal, siswa_id: l.siswa_id, nisn: l.nisn,
+        masuk: null, keluar: null, statusMasuk: ''
+      };
+      if (l.tipe === 'masuk' && !grouped[key].masuk) {
+        grouped[key].masuk = l.waktu;
+        grouped[key].statusMasuk = l.status || '';
+      }
+      if (l.tipe === 'keluar') grouped[key].keluar = l.waktu;
+    });
+
+    // Filter & render
+    const fmt = iso => iso ? new Date(iso).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '—';
+    let rows = Object.values(grouped);
+
+    // Apply filter kelas
+    if (filterKelasId) {
+      rows = rows.filter(r => {
+        const s = (APP_DATA?.siswa||[]).find(x => String(x.id) === String(r.siswa_id));
+        return s && String(s.kelas_id) === String(filterKelasId);
+      });
+    }
+    // Apply filter nama
+    if (filterNama) {
+      rows = rows.filter(r => {
+        const nama = siswaNamaMap[r.siswa_id] || r.nisn || '';
+        return nama.toLowerCase().includes(filterNama);
+      });
+    }
+
+    _rfidLogData = rows;
+
+    // Update stats
+    const statM  = rows.filter(r => r.masuk && r.statusMasuk !== 'terlambat').length;
+    const statT  = rows.filter(r => r.masuk && r.statusMasuk === 'terlambat').length;
+    const statK  = rows.filter(r => r.keluar).length;
+    document.getElementById('rfidStatMasuk').textContent     = statM;
+    document.getElementById('rfidStatTerlambat').textContent = statT;
+    document.getElementById('rfidStatKeluar').textContent    = statK;
+
+    if (!rows.length) {
+      if (tbody) tbody.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = '';
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    // Sort by tanggal desc then nama
+    rows.sort((a,b) => b.tanggal.localeCompare(a.tanggal) ||
+      (siswaNamaMap[a.siswa_id]||'').localeCompare(siswaNamaMap[b.siswa_id]||''));
+
+    if (tbody) tbody.innerHTML = rows.map(r => {
+      const nama  = siswaNamaMap[r.siswa_id] || r.nisn || '—';
+      const kelas = siswaKelasMap[r.siswa_id] || '—';
+      const tglFmt = new Date(r.tanggal+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+      const stBadge = r.statusMasuk === 'terlambat'
+        ? '<span style="background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700">⏰ Terlambat</span>'
+        : r.masuk
+        ? '<span style="background:#f0fdf4;color:#15803d;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700">✅ Hadir</span>'
+        : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700">❌ Tidak Hadir</span>';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 12px">
+          <div style="font-weight:700;font-size:12px;color:var(--text)">${nama}</div>
+          <div style="font-size:10px;color:var(--text-light)">${tglFmt}</div>
+        </td>
+        <td style="padding:8px;text-align:center;font-size:12px;color:var(--text-light)">${kelas}</td>
+        <td style="padding:8px;text-align:center;font-size:12px;font-weight:700;color:#15803d">${fmt(r.masuk)}</td>
+        <td style="padding:8px;text-align:center;font-size:12px;font-weight:700;color:#1d4ed8">${fmt(r.keluar)}</td>
+        <td style="padding:8px;text-align:center">${stBadge}</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    console.error('loadRfidLog:', e);
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+function rfidLogExportExcel() {
+  if (!_rfidLogData.length) { toast('Tidak ada data untuk diexport', 'error'); return; }
+  const siswaNamaMap = {};
+  const siswaKelasMap = {};
+  (APP_DATA?.siswa||[]).forEach(s => {
+    siswaNamaMap[s.id] = s.nama;
+    siswaKelasMap[s.id] = getKelasName(s.kelas_id);
+  });
+  const fmt = iso => iso ? new Date(iso).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+  const rows = [['Nama','Kelas','Tanggal','Masuk','Pulang','Status']];
+  _rfidLogData.forEach(r => {
+    rows.push([
+      siswaNamaMap[r.siswa_id]||r.nisn||'',
+      siswaKelasMap[r.siswa_id]||'',
+      r.tanggal, fmt(r.masuk), fmt(r.keluar),
+      r.statusMasuk||''
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Log Absensi RFID');
+  XLSX.writeFile(wb, `log_absensi_rfid_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+// ═══════════════════════════════════════════════════════════════
 
 // ── Hapus surat izin (guru) ──────────────────────────────────
 async function izinHapus(id) {
@@ -10635,6 +10895,73 @@ function chatAutoResize(el){
 </div>
 
 <!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
+<!-- ═══════════════ PAGE: LOG ABSENSI RFID ═══════════════ -->
+<div id="page-rfidLog" class="page">
+  <div style="padding:14px 16px 80px">
+
+    <!-- Header & Filter -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">📡 Log Absensi RFID</div>
+        <div style="font-size:12px;color:var(--text-light)">Riwayat tap kartu siswa</div>
+      </div>
+      <button onclick="rfidLogExportExcel()" style="background:var(--secondary,#10b981);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">📥 Export</button>
+    </div>
+
+    <!-- Filter Row -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <select id="rfidFilterKelas" onchange="loadRfidLog()" style="flex:1;min-width:120px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+        <option value="">Semua Kelas</option>
+      </select>
+      <input type="text" id="rfidFilterNama" placeholder="🔍 Nama siswa..." oninput="loadRfidLog()" style="flex:1;min-width:120px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="rfid-period-btn active" id="rfidPeriod-hari" onclick="setRfidPeriod('hari')">📅 Hari Ini</button>
+      <button class="rfid-period-btn" id="rfidPeriod-minggu" onclick="setRfidPeriod('minggu')">📆 Minggu Ini</button>
+      <button class="rfid-period-btn" id="rfidPeriod-bulan" onclick="setRfidPeriod('bulan')">🗓️ Bulan Ini</button>
+      <input type="date" id="rfidFilterTgl" onchange="setRfidPeriod('custom')" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#15803d" id="rfidStatMasuk">0</div>
+        <div style="font-size:10px;color:#16a34a;font-weight:600">✅ Masuk</div>
+      </div>
+      <div style="background:#fef3c7;border:1.5px solid #fde68a;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#b45309" id="rfidStatTerlambat">0</div>
+        <div style="font-size:10px;color:#d97706;font-weight:600">⏰ Terlambat</div>
+      </div>
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:#1d4ed8" id="rfidStatKeluar">0</div>
+        <div style="font-size:10px;color:#3b82f6;font-weight:600">🚪 Pulang</div>
+      </div>
+    </div>
+
+    <!-- Tabel Log -->
+    <div style="background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--primary);color:#fff">
+            <th style="padding:10px 12px;text-align:left;font-weight:700">Nama</th>
+            <th style="padding:10px 8px;text-align:center;font-weight:700">Kelas</th>
+            <th style="padding:10px 8px;text-align:center;font-weight:700">Masuk</th>
+            <th style="padding:10px 8px;text-align:center;font-weight:700">Pulang</th>
+            <th style="padding:10px 8px;text-align:center;font-weight:700">Status</th>
+          </tr>
+        </thead>
+        <tbody id="rfidLogTbody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light)">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="rfidLogEmpty" style="display:none;text-align:center;padding:40px;color:var(--text-light)">
+      <div style="font-size:40px;margin-bottom:10px">📭</div>
+      <div style="font-weight:600">Tidak ada data absensi</div>
+    </div>
+  </div>
+</div>
+
 <div id="page-kalender" class="page">
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:12px;color:var(--text-light);margin-bottom:10px">Agenda & Kegiatan Sekolah Bersama</div>
