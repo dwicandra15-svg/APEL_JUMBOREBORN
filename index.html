@@ -4012,7 +4012,7 @@ function saveConfig() {
   document.getElementById('loginPage').classList.remove('hide');
 }
 
-function savePengaturan() {
+async function savePengaturan() {
   CONFIG.school = document.getElementById('setSchool').value.trim();
   CONFIG.subtitle = document.getElementById('setSubtitle').value.trim();
   CONFIG.npsn = document.getElementById('setNpsn').value.trim();
@@ -4037,34 +4037,23 @@ function savePengaturan() {
   // Simpan ke Supabase agar bisa dibaca APBO Siswa
   try {
     if (db) {
+      const uid = currentUser?.id || null;
+      // Helper upsert dengan user_id agar lolos RLS policy
+      const appSet = (key, value) => db.from('app_settings')
+        .upsert({ key, value, user_id: uid }, { onConflict: 'key' })
+        .then(({ error }) => { if (error) console.warn(`Gagal simpan ${key}:`, error.message); });
+
       // Simpan full config
-      db.from('app_settings').upsert(
-        { key: 'apel_config', value: JSON.stringify(CONFIG) },
-        { onConflict: 'key' }
-      ).then(({ error }) => {
-        if (error) console.warn('Gagal simpan apel_config:', error.message);
-        else console.log('apel_config tersimpan ✓');
-      });
+      await appSet('apel_config', JSON.stringify(CONFIG));
+
       // Simpan konfigurasi AbsensiKu sebagai key terpisah agar mudah dibaca APBO Siswa
-      if (CONFIG.absensiKuUrl || CONFIG.absensiKuLogo) {
-        const absKuCfg = {
-          url:  CONFIG.absensiKuUrl  || '',
-          logo: CONFIG.absensiKuLogo || '',
-          nama: CONFIG.absensiKuNama || 'AbsensiKu'
-        };
-        db.from('app_settings').upsert(
-          { key: 'absensiku_config', value: JSON.stringify(absKuCfg) },
-          { onConflict: 'key' }
-        ).then(({ error }) => {
-          if (error) console.warn('Gagal simpan absensiku_config:', error.message);
-          else console.log('absensiku_config tersimpan ✓');
-        });
-        // Tetap simpan URL saja untuk backward compatibility
-        db.from('app_settings').upsert(
-          { key: 'absensiku_url', value: CONFIG.absensiKuUrl || '' },
-          { onConflict: 'key' }
-        ).then(()=>{});
-      }
+      const absKuCfg = {
+        url:  CONFIG.absensiKuUrl  || '',
+        logo: CONFIG.absensiKuLogo || '',
+        nama: CONFIG.absensiKuNama || 'AbsensiKu'
+      };
+      await appSet('absensiku_config', JSON.stringify(absKuCfg));
+      await appSet('absensiku_url', CONFIG.absensiKuUrl || '');
     }
   } catch(e) { console.warn('upsert apel_config:', e); }
   toast('Pengaturan berhasil disimpan!', 'success');
@@ -7978,10 +7967,8 @@ async function ecmSave() {
   };
   allCards[ecm_id] = newData;
 
-  const { error } = await db.from('app_settings').upsert(
-    { key: 'card_config', value: JSON.stringify(allCards) },
-    { onConflict: 'key' }
-  );
+  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards),
+          user_id: currentUser?.id || null}, { onConflict: 'key' });
 
   if (error) {
     if (error.code === '42P01' || error.message.includes('does not exist') || error.code === '406' || error.status === 406) {
@@ -8006,10 +7993,8 @@ async function ecmDoReset(id) {
     if (data?.value) allCards = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
   } catch(e) {}
   delete allCards[id];
-  const { error } = await db.from('app_settings').upsert(
-    { key: 'card_config', value: JSON.stringify(allCards) },
-    { onConflict: 'key' }
-  );
+  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards),
+          user_id: currentUser?.id || null}, { onConflict: 'key' });
   if (!error) {
     ecmApplyToDOM(id, ECM_DEFAULTS[id]);
     toast('Kartu dikembalikan ke default ✓', 'success');
@@ -8802,10 +8787,8 @@ function guruPiketRender() {
 
 async function guruPiketSave() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
-  const { error } = await db.from('app_settings').upsert(
-    { key:'guru_piket', value: JSON.stringify(GURU_PIKET_LIST) },
-    { onConflict:'key' }
-  );
+  const { error } = await db.from('app_settings').upsert({ key:'guru_piket', value: JSON.stringify(GURU_PIKET_LIST),
+          user_id: currentUser?.id || null}, { onConflict:'key' });
   if (error) { toast('Gagal menyimpan: '+error.message,'error'); return; }
   piketPopulateGuruDropdowns();
   toast('Data guru berhasil disimpan ✓','success');
@@ -9018,10 +9001,8 @@ async function mpSaveCardEdit(mapelId) {
   };
   allIcons[mapelId] = newData;
 
-  const { error } = await db.from('app_settings').upsert(
-    { key: 'mapel_icons', value: JSON.stringify(allIcons) },
-    { onConflict: 'key' }
-  );
+  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allIcons),
+          user_id: currentUser?.id || null}, { onConflict: 'key' });
 
   if (error && (error.code === '42P01' || error.message.includes('does not exist'))) {
     ecmClose();
@@ -9351,10 +9332,8 @@ async function ecmSaveMapel() {
   };
   allMapelIcons[ecm_id] = newData;
 
-  const { error } = await db.from('app_settings').upsert(
-    { key: 'mapel_icons', value: JSON.stringify(allMapelIcons) },
-    { onConflict: 'key' }
-  );
+  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allMapelIcons),
+          user_id: currentUser?.id || null}, { onConflict: 'key' });
 
   if (error) { toast('Gagal menyimpan: ' + error.message,'error'); return; }
 
