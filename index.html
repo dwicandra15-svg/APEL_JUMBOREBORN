@@ -6,12 +6,37 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- ══ PWA Manifest ══ -->
-  <link rel="manifest" href="/manifest.json">
+  <!-- ══ PWA Manifest (inline) ══ -->
   <meta name="theme-color" content="#1a56db">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="APEL JUMBO">
+  <script>
+  // Inject PWA manifest inline via blob URL
+  (function() {
+    const manifest = {
+      "name": "APEL JUMBO Reborn",
+      "short_name": "APEL JUMBO",
+      "description": "Aplikasi Elektronik Jurnal Mengajar Berbasis Online",
+      "start_url": "https://apeljumboreborn.web.id/",
+      "display": "standalone",
+      "background_color": "#0f172a",
+      "theme_color": "#1a56db",
+      "orientation": "portrait",
+      "icons": [
+        { "src": "https://apeljumboreborn.web.id/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "https://apeljumboreborn.web.id/icon-512.png", "sizes": "512x512", "type": "image/png" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel   = 'manifest';
+    link.href  = url;
+    document.head.appendChild(link);
+  })();
+  </script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2270,6 +2295,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       <span id="pageTitle">Dashboard</span>
     </div>
     <div class="topbar-actions">
+      <button id="pwaInstallBtn" onclick="pwaInstall()" title="Install App" style="display:none;background:var(--primary);border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">📲 Install</button>
       <span id="guruTopbar" style="font-size:12px;color:var(--text-light);font-weight:600"></span>
     </div>
   </div>
@@ -12689,16 +12715,38 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!navigator.onLine) showOfflineBanner(true);
 });
 
-// ── Registrasi Service Worker ─────────────────────────────────────
+// ── Service Worker inline via blob URL ───────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    const swCode = `
+const CACHE = 'apeljumbo-v1';
+const OFFLINE_URLS = ['/'];
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS).catch(()=>{})));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+  caches.keys().then(keys => keys.filter(k=>k!==CACHE).forEach(k=>caches.delete(k)));
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('supabase.co')) return;
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
+});
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});`;
+    const blob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, { scope: '/' })
       .then(reg => {
         console.log('[SW] ✅ Terdaftar');
-        setInterval(() => reg.update(), 60 * 60 * 1000);
         reg.addEventListener('updatefound', () => {
           const sw = reg.installing;
-          sw.addEventListener('statechange', () => {
+          sw?.addEventListener('statechange', () => {
             if (sw.state === 'installed' && navigator.serviceWorker.controller)
               sw.postMessage({ type: 'SKIP_WAITING' });
           });
@@ -12711,6 +12759,35 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// ── PWA Install Prompt ────────────────────────────────────────
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = '';
+});
+function pwaInstall() {
+  if (!_pwaPrompt) {
+    alert('Untuk install:\n1. Buka menu browser (⋮)\n2. Pilih "Add to Home Screen" atau "Install App"');
+    return;
+  }
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      const btn = document.getElementById('pwaInstallBtn');
+      if (btn) btn.style.display = 'none';
+    }
+    _pwaPrompt = null;
+  });
+}
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  toast('✅ APEL JUMBO berhasil diinstall!', 'success');
+});
+// ─────────────────────────────────────────────────────────────
 
 
 </script>
