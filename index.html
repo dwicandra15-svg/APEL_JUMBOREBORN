@@ -74,6 +74,7 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
+  font-size: 14px;
   min-height: 100vh;
   display: flex;
   position: relative;
@@ -252,7 +253,7 @@ nav { flex: 1; padding: 12px 0; }
   border-bottom: 1px solid var(--border);
 }
 
-.card-title { font-size: 15px; font-weight: 700; }
+.card-title { font-size: 13px; font-weight: 700; }
 
 .stat-card {
   background: var(--card);
@@ -720,8 +721,8 @@ tr:hover td { background: #f8fafc; }
 
 /* SECTION HEADER */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.section-title { font-size: 18px; font-weight: 800; color: var(--text); }
-.section-sub { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+.section-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.section-sub { font-size: 12px; color: var(--text-light); margin-top: 2px; }
 
 /* EMPTY STATE */
 .empty-state { text-align: center; padding: 50px 20px; }
@@ -957,6 +958,21 @@ tr:hover td { background: #f8fafc; }
 .ic-purple { background:linear-gradient(135deg,#ede9fe,#ddd6fe); }
 .ic-rose   { background:linear-gradient(135deg,#ffe4e6,#fecdd3); }
 .ic-amber  { background:linear-gradient(135deg,#fef3c7,#fde68a); }
+
+/* Shortcut navigasi antar fitur mapel */
+.mapel-shortcut-bar {
+  display:flex; gap:6px; overflow-x:auto; padding:0 0 10px;
+  margin-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.mapel-shortcut-bar::-webkit-scrollbar { display:none; }
+.msc-btn {
+  flex-shrink:0; background:#fff; border:1.5px solid var(--border);
+  border-radius:20px; padding:5px 12px; font-size:11px; font-weight:700;
+  cursor:pointer; color:var(--text-light); white-space:nowrap;
+  transition:all .15s; display:flex; align-items:center; gap:4px;
+}
+.msc-btn:hover { background:var(--primary); border-color:var(--primary); color:#fff; }
+.msc-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
 
 /* Kalender — tarik konten naik rapat ke topbar */
 #page-kalender { padding-top: 18px; }
@@ -2630,6 +2646,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== ABSENSI ===== -->
     <div id="page-absensi" class="page">
+      <div id="mapelShortcutAbsensi" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div><div class="section-title">Input Absensi</div></div>
       </div>
@@ -2660,6 +2677,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== REKAP ABSENSI ===== -->
     <div id="page-absenRekap" class="page">
+      <div id="mapelShortcutAbsenRekap" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div><div class="section-title">Rekap & Cetak Absensi</div></div>
         <button class="btn btn-print" onclick="cetakAbsensi()">🖨️ Cetak PDF</button>
@@ -2696,6 +2714,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== INPUT NILAI ===== -->
     <div id="page-nilai" class="page">
+      <div id="mapelShortcutNilai" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div><div class="section-title">Input Nilai Akademik</div></div>
       </div>
@@ -2754,6 +2773,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== REKAP NILAI ===== -->
     <div id="page-nilaiRekap" class="page">
+      <div id="mapelShortcutNilaiRekap" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div><div class="section-title">Rekapitulasi Nilai Siswa</div></div>
         <button class="btn btn-print" onclick="cetakNilai()">🖨️ Cetak PDF</button>
@@ -2795,6 +2815,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== JURNAL MENGAJAR ===== -->
     <div id="page-jurnal" class="page">
+      <div id="mapelShortcutJurnal" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div>
           <div class="section-title">📔 Jurnal Mengajar</div>
@@ -2841,6 +2862,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== BIMBINGAN ===== -->
     <div id="page-bimbingan" class="page">
+      <div id="mapelShortcutBimbingan" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div><div class="section-title">Bimbingan Wali Kelas</div></div>
         <div style="display:flex;gap:10px">
@@ -2870,6 +2892,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
     <!-- ===== EWS (EARLY WARNING SYSTEM) ===== -->
     <div id="page-ews" class="page">
+      <div id="mapelShortcutEws" class="mapel-shortcut-bar"></div>
       <div class="section-header">
         <div>
           <div class="section-title">🚨 Early Warning System</div>
@@ -5085,6 +5108,14 @@ async function saveJurnal() {
   if (err) { toast(err.message, 'error'); return; }
   toast(eid ? 'Jurnal diperbarui! ✓' : 'Jurnal disimpan! ✓', 'success');
   closeModal('modalJurnal');
+  // Set filter bulan ke bulan jurnal yang disimpan agar langsung muncul
+  const savedMonth = tanggal.substring(5, 7); // MM dari YYYY-MM-DD
+  const filterBulanEl = document.getElementById('filterJurnalBulan');
+  if (filterBulanEl && savedMonth) filterBulanEl.value = savedMonth;
+  const filterKelasEl = document.getElementById('filterJurnalKelas');
+  if (filterKelasEl && kelasId) filterKelasEl.value = kelasId;
+  const filterMapelEl = document.getElementById('filterJurnalMapel');
+  if (filterMapelEl && mapelId) filterMapelEl.value = mapelId;
   loadJurnal();
 }
 
@@ -7639,6 +7670,24 @@ async function ewsCetakPDF() {
 
 // ─── END EWS ────────────────────────────────────────────────
 
+// ── Shortcut navigasi antar fitur mapel ──────────────────────
+function mapelShortcutBar(activeKey) {
+  const items = [
+    { key:'absensi',    label:'📋 Absensi' },
+    { key:'absenRekap', label:'📊 Rekap Absensi' },
+    { key:'nilai',      label:'🎯 Input Nilai' },
+    { key:'nilaiRekap', label:'📈 Rekap Nilai' },
+    { key:'jurnal',     label:'📔 Jurnal' },
+    { key:'bimbingan',  label:'💙 Bimbingan' },
+    { key:'ews',        label:'🚨 EWS' },
+  ];
+  return `<div class="mapel-shortcut-bar">
+    ${items.map(i => `<button class="msc-btn ${i.key===activeKey?'active':''}" onclick="mpGoSub('${i.key}')">${i.label}</button>`).join('')}
+  </div>`;
+}
+
+// ─── END SHORTCUT ────────────────────────────────────────────
+
 function goHome() {
   // Detach visualViewport handler jika dari diskusi
   if(window._chatDetachVP) window._chatDetachVP();
@@ -8199,8 +8248,18 @@ function mpGoSub(page) {
   // Navigate to the page
   goPage(page);
 
-  // Pre-select the mapel in the page's dropdowns
+  // Render shortcut bar dengan active state
   setTimeout(() => {
+    const barMap = {
+      'absensi':'mapelShortcutAbsensi','absenRekap':'mapelShortcutAbsenRekap',
+      'nilai':'mapelShortcutNilai','nilaiRekap':'mapelShortcutNilaiRekap',
+      'jurnal':'mapelShortcutJurnal','bimbingan':'mapelShortcutBimbingan','ews':'mapelShortcutEws'
+    };
+    const barId = barMap[page];
+    if (barId) {
+      const el = document.getElementById(barId);
+      if (el) el.innerHTML = mapelShortcutBar(page);
+    }
     mpPreSelectMapel(page, MP_SELECTED_ID);
     // Update back button to go back to mapel detail
     const bb = document.getElementById('backBtn');
