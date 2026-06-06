@@ -1557,9 +1557,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0;
-  /* Gunakan dvh agar otomatis menyesuaikan keyboard di mobile */
-  bottom: 0;
-  height: 100dvh;
+  height: 100%;
   z-index: 10;
   flex-direction: column;
   overflow: hidden;
@@ -7674,6 +7672,7 @@ function goPage(name) {
     if(pg) pg.classList.add('active');
     initChatPage();
     if(window._chatAttachVP) window._chatAttachVP();
+    setTimeout(() => { if(window._vpApply) window._vpApply(); }, 100);
     return;
   }
   if(window._chatDetachVP) window._chatDetachVP();
@@ -9441,16 +9440,22 @@ function initChatPage() {
 
 // ── Visual Viewport: chat input ikut naik saat keyboard muncul ──
 (function() {
-  function onViewportResize() {
+  var _raf = null;
+
+  function applyVP() {
     const pg = document.getElementById('page-diskusi');
     if (!pg || !pg.classList.contains('active')) return;
     const vv = window.visualViewport;
     if (!vv) return;
     pg.style.height = Math.round(vv.height) + 'px';
     pg.style.top    = Math.round(vv.offsetTop) + 'px';
-    // Scroll chat ke bawah agar pesan terbaru tetap kelihatan
     const msgs = document.getElementById('chatMsgsWrap');
-    if (msgs) setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 60);
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function onViewportResize() {
+    if (_raf) cancelAnimationFrame(_raf);
+    _raf = requestAnimationFrame(applyVP);
   }
 
   function resetViewport() {
@@ -9465,14 +9470,19 @@ function initChatPage() {
     window.visualViewport.addEventListener('scroll', onViewportResize);
   }
 
-  // Reset saat diskusi ditutup
+  // Expose untuk dipanggil saat buka/tutup diskusi
+  window._vpApply = applyVP;
+  window._vpReset = resetViewport;
+
+  // Reset saat diskusi ditutup via MutationObserver
   document.addEventListener('DOMContentLoaded', () => {
-    const obs = new MutationObserver(() => {
-      const pg = document.getElementById('page-diskusi');
-      if (pg && !pg.classList.contains('active')) resetViewport();
-    });
     const pg = document.getElementById('page-diskusi');
-    if (pg) obs.observe(pg, { attributes: true, attributeFilter: ['class'] });
+    if (!pg) return;
+    const obs = new MutationObserver(() => {
+      if (!pg.classList.contains('active')) resetViewport();
+      else { applyVP(); }
+    });
+    obs.observe(pg, { attributes: true, attributeFilter: ['class'] });
   });
 })();
 
