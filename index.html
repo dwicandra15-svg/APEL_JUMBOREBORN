@@ -4557,7 +4557,8 @@ async function loadRekapAbsen() {
   if (kelasId) query = query.eq('kelas_id', kelasId);
   if (bulan) {
     const yr = new Date().getFullYear();
-    query = query.gte('tanggal', `${yr}-${bulan}-01`).lte('tanggal', `${yr}-${bulan}-31`);
+    const lastDay4560 = new Date(yr, parseInt(bulan), 0).getDate();
+    query = query.gte('tanggal', `${yr}-${bulan}-01`).lte('tanggal', `${yr}-${bulan}-${String(lastDay4560).padStart(2,'0')}`);
   }
   const { data } = await query;
   const records = data || [];
@@ -4823,7 +4824,8 @@ async function loadJurnal() {
   if (mapelFilter) q = q.eq('mapel_id', mapelFilter);
   if (bulanFilter) {
     const yr = new Date().getFullYear();
-    q = q.gte('tanggal', `${yr}-${bulanFilter}-01`).lte('tanggal', `${yr}-${bulanFilter}-31`);
+    const lastDay4826 = new Date(yr, parseInt(bulanFilter), 0).getDate();
+    q = q.gte('tanggal', `${yr}-${bulanFilter}-01`).lte('tanggal', `${yr}-${bulanFilter}-${String(lastDay4826).padStart(2,'0')}`);
   }
 
   const { data, error } = await q;
