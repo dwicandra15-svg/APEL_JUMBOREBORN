@@ -4265,7 +4265,7 @@ async function loadDashboard() {
   `).join('') : '<div class="empty-state" style="padding:30px"><div class="empty-icon">🎉</div><p>Tidak ada jadwal hari ini</p></div>';
   
   // Jurnal terbaru
-  const { data: jurnals } = await db.from('jurnal').select('*').order('tanggal',{ascending:false}).order('created_at',{ascending:false}).limit(3);
+  const { data: jurnals } = await db.from('jurnal').select('*').order('created_at',{ascending:false}).limit(3);
   const getNK2 = id => (APP_DATA.kelas||[]).find(k=>String(k.id)===String(id))?.nama||'—';
   const getNM2 = id => (APP_DATA.mapel||[]).find(m=>String(m.id)===String(id))?.nama||'—';
   document.getElementById('jurnalRecent').innerHTML = (jurnals||[]).length ? (jurnals||[]).map(j=>`
@@ -4818,7 +4818,7 @@ async function loadJurnal() {
   const mapelFilter = document.getElementById('filterJurnalMapel')?.value;
   const bulanFilter = document.getElementById('filterJurnalBulan')?.value;
 
-  let q = db.from('jurnal').select('*').order('tanggal', { ascending: false }).order('created_at', { ascending: false });
+  let q = db.from('jurnal').select('*').order('tanggal', { ascending: false });
   if (kelasFilter) q = q.eq('kelas_id', kelasFilter);
   if (mapelFilter) q = q.eq('mapel_id', mapelFilter);
   if (bulanFilter) {
@@ -12732,9 +12732,7 @@ self.addEventListener('fetch', e => {
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });`;
-    const blob = new Blob([swCode], {type:'text/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl, { scope: '/' })
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
         console.log('[SW] ✅ Terdaftar');
         reg.addEventListener('updatefound', () => {
