@@ -9446,13 +9446,11 @@ function initChatPage() {
     if (!pg || !pg.classList.contains('active')) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    // Hitung offset: seberapa jauh keyboard mendorong viewport ke atas
-    const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
-    pg.style.height = vv.height + 'px';
-    pg.style.top    = vv.offsetTop + 'px';
+    pg.style.height = Math.round(vv.height) + 'px';
+    pg.style.top    = Math.round(vv.offsetTop) + 'px';
     // Scroll chat ke bawah agar pesan terbaru tetap kelihatan
-    const msgs = document.getElementById('chatMsgs');
-    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    const msgs = document.getElementById('chatMsgsWrap');
+    if (msgs) setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 60);
   }
 
   function resetViewport() {
