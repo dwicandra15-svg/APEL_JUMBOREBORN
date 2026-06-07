@@ -7496,8 +7496,16 @@ async function loadEWS() {
   const wrap = document.getElementById('ewsTableWrap');
   if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-light)"><div class="load-spin"></div><div style="margin-top:8px">Memuat data...</div></div>`;
 
-  let query = db.from('absensi').select('*').eq('user_id', currentUser.id);
-  if (kelasId) query = query.eq('kelas_id', parseInt(kelasId));
+  // Ambil SEMUA absensi dari semua guru/mapel (bukan hanya user yg login)
+  // EWS menghitung total alpha siswa lintas mapel dan guru
+  let query = db.from('absensi').select('siswa_id,kelas_id,mapel_id,status,tanggal');
+  if (kelasId) {
+    query = query.eq('kelas_id', parseInt(kelasId));
+  } else {
+    // Semua kelas — filter berdasarkan kelas yang ada di sekolah ini
+    const kelasIds = (APP_DATA.kelas||[]).map(k => k.id);
+    if (kelasIds.length) query = query.in('kelas_id', kelasIds);
+  }
 
   const { data, error } = await query;
   if (error) { toast('Gagal load data: ' + error.message, 'error'); return; }
