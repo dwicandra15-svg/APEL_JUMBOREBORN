@@ -7498,7 +7498,7 @@ async function loadEWS() {
 
   // Ambil SEMUA absensi dari semua guru/mapel (bukan hanya user yg login)
   // EWS menghitung total alpha siswa lintas mapel dan guru
-  let query = db.from('absensi').select('siswa_id,kelas_id,mapel_id,status,tanggal');
+  let query = db.from('absensi').select('siswa_id,kelas_id,status,tanggal');
   if (kelasId) {
     query = query.eq('kelas_id', parseInt(kelasId));
   } else {
