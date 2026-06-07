@@ -2660,6 +2660,12 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <label class="form-label">Tanggal</label>
             <input type="date" id="absenDate" class="form-control">
           </div>
+          <div class="form-group">
+            <label class="form-label">Mata Pelajaran</label>
+            <select id="absenMapel" class="form-control">
+              <option value="">-- Pilih Mapel --</option>
+            </select>
+          </div>
         </div>
         <div style="margin-bottom:12px">
           <div style="display:grid;grid-template-columns:1fr repeat(4,36px);gap:6px;padding:8px 0;border-bottom:2px solid var(--border)">
@@ -4218,7 +4224,7 @@ function populateAllSelects() {
     if (savedVal && [...el.options].some(o => o.value === savedVal)) el.value = savedVal;
   });
   // Populate mapel selects
-  ['jadwalMapel','jurnalMapel','rekapNilaiMapel','filterJurnalMapel'].forEach(id => {
+  ['jadwalMapel','jurnalMapel','rekapNilaiMapel','filterJurnalMapel','absenMapel'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const hasAll = ['filterJurnalMapel'].includes(id);
@@ -4551,8 +4557,11 @@ async function simpanAbsen() {
   const kelasId = document.getElementById('absenKelas').value;
   const tanggal = document.getElementById('absenDate').value;
   if (!tanggal) return toast('Pilih tanggal', 'error');
+  const mapelId = document.getElementById('absenMapel')?.value;
   const rows = Object.entries(absenData).map(([siswa_id, status])=>({
-    siswa_id: parseInt(siswa_id), tanggal, status, kelas_id: parseInt(kelasId), user_id: currentUser.id
+    siswa_id: parseInt(siswa_id), tanggal, status, kelas_id: parseInt(kelasId),
+    mapel_id: mapelId ? parseInt(mapelId) : null,
+    user_id: currentUser.id
   }));
   if (!rows.length) return toast('Tidak ada siswa', 'error');
   // Upsert (delete then insert)
@@ -6400,10 +6409,15 @@ CREATE TABLE IF NOT EXISTS jadwal (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Jalankan SEKALI di Supabase SQL Editor:
+ALTER TABLE absensi ADD COLUMN IF NOT EXISTS mapel_id BIGINT REFERENCES mapel(id);
+CREATE INDEX IF NOT EXISTS idx_absensi_mapel ON absensi(mapel_id);
+
 CREATE TABLE IF NOT EXISTS absensi (
   id BIGSERIAL PRIMARY KEY,
   siswa_id BIGINT REFERENCES siswa(id),
   kelas_id BIGINT REFERENCES kelas(id),
+  mapel_id BIGINT REFERENCES mapel(id),
   tanggal DATE,
   status TEXT,
   user_id UUID REFERENCES auth.users(id),
