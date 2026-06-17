@@ -2364,6 +2364,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 "></span></div>
             <div class="mh-card" data-id="izinSiswa" onclick="goPage('izinSiswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'izinSiswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-amber" id="ico-izinSiswa" style="position:relative">📨<span id="izinBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e02424;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;padding:0 4px;line-height:16px;text-align:center"></span></div><div class="mh-card-lbl" id="lbl-izinSiswa">Surat Izin</div></div>
             <div class="mh-card" data-id="kalender" onclick="goPage('kalender')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'kalender')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-rose" id="ico-kalender">📆</div><div class="mh-card-lbl" id="lbl-kalender">Kalender</div></div>
+            <div class="mh-card" data-id="trackingSiswa" onclick="goPage('trackingSiswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'trackingSiswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-trackingSiswa">📍</div><div class="mh-card-lbl" id="lbl-trackingSiswa">Tracking Siswa</div></div>
           </div>
 
           <div class="mh-sec-title">Administrasi</div>
@@ -6719,6 +6720,7 @@ function showPage(name) {
     'diskusi':'Diskusi Kelas',
     'kalender':'Kalender Pendidikan',
     'izinSiswa':'Surat Izin Siswa',
+    'trackingSiswa':'Tracking Siswa',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
@@ -7158,6 +7160,88 @@ function goPageKalender() {
 let _izinData = [];
 let _izinFilter = 'semua';
 let _izinSelectedId = null;
+
+// ══════════════════════════════════════════════
+//  TRACKING SISWA — Lokasi opt-in via push notif
+// ══════════════════════════════════════════════
+async function loadTrackingSiswa() {
+  if (!db) return;
+  // Isi filter kelas
+  const sel = document.getElementById('trackingKelasFilter');
+  if (sel && sel.options.length <= 1) {
+    sel.innerHTML = '<option value="">Semua Kelas</option>' +
+      APP_DATA.kelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+  }
+  const kelasFilter = sel?.value || '';
+
+  // ── Bagian 1: Siswa yang belum presensi hari ini ──
+  const elBelum = document.getElementById('trackingBelumPresensi');
+  if (elBelum) elBelum.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-light)"><div class="load-spin"></div></div>`;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { data: absensiHariIni } = await db.from('absensi').select('siswa_id').eq('tanggal', todayStr);
+  const sudahAbsenIds = new Set((absensiHariIni||[]).map(a => a.siswa_id));
+
+  let siswaFiltered = kelasFilter
+    ? APP_DATA.siswa.filter(s => String(s.kelas_id) === String(kelasFilter))
+    : APP_DATA.siswa;
+  const belumPresensi = siswaFiltered.filter(s => !sudahAbsenIds.has(s.id));
+
+  // Cek consent untuk siswa yang belum presensi
+  const idsBelumPresensi = belumPresensi.map(s => s.id);
+  let consentMap = {};
+  if (idsBelumPresensi.length) {
+    const { data: consentData } = await db.from('tracking_consent').select('siswa_id,setuju').in('siswa_id', idsBelumPresensi);
+    (consentData||[]).forEach(c => consentMap[c.siswa_id] = c.setuju);
+  }
+
+  if (elBelum) {
+    if (!belumPresensi.length) {
+      elBelum.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-light)"><div style="font-size:28px;margin-bottom:6px">🎉</div>Semua siswa sudah presensi hari ini</div>`;
+    } else {
+      elBelum.innerHTML = belumPresensi.map(s => {
+        const hasConsent = consentMap[s.id] === true;
+        const badgeHtml = hasConsent
+          ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✅ Opt-in</span>`
+          : `<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⚪ Belum Opt-in</span>`;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${s.nama}</div>
+            <div style="font-size:11px;color:var(--text-light)">${getKelasName(s.kelas_id)}</div>
+          </div>
+          ${badgeHtml}
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Bagian 2: Riwayat lokasi terbaru ──
+  const elLokasi = document.getElementById('trackingLokasiList');
+  if (elLokasi) elLokasi.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-light)"><div class="load-spin"></div></div>`;
+
+  let lokasiQuery = db.from('lokasi_siswa').select('*').order('created_at', {ascending:false}).limit(30);
+  if (kelasFilter) lokasiQuery = lokasiQuery.eq('kelas_id', kelasFilter);
+  const { data: lokasiData } = await lokasiQuery;
+  const lokasiRec = lokasiData || [];
+
+  if (elLokasi) {
+    if (!lokasiRec.length) {
+      elLokasi.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-light)">Belum ada data lokasi tercatat</div>`;
+    } else {
+      elLokasi.innerHTML = lokasiRec.map(r => {
+        const waktu = r.created_at ? new Date(r.created_at).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '-';
+        const mapsUrl = `https://www.google.com/maps?q=${r.latitude},${r.longitude}`;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${r.nama_siswa||'—'}</div>
+            <div style="font-size:11px;color:var(--text-light)">${getKelasName(r.kelas_id)} · 🕓 ${waktu}</div>
+          </div>
+          <a href="${mapsUrl}" target="_blank" style="background:var(--primary);color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">🗺️ Peta</a>
+        </div>`;
+      }).join('');
+    }
+  }
+}
 
 async function loadIzinSiswa() {
   if (!db) return;
@@ -7766,6 +7850,15 @@ function goPage(name) {
     const bb = document.getElementById('backBtn');
     if (bb) bb.classList.add('visible');
     loadKalender();
+    return;
+  }
+  if (name === 'trackingSiswa') {
+    showPage('trackingSiswa');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    loadTrackingSiswa();
     return;
   }
   showPage(name);
@@ -10196,6 +10289,51 @@ async function sendChatGuru(targetIds = null, targetNisns = null) {
     errSend=res2.error;
   }
   if(errSend){toast('Gagal kirim: '+errSend.message,'error');sentChatKeys.delete(key);}
+  else {
+    // Trigger push notification ke siswa kelas ini (non-blocking)
+    try { kirimPushNotifKelas(chatKelasAktif, kObjSend?.nama||'', pesan||'Pesan baru', targetIds); } catch(e) { console.warn('Push notif error:', e); }
+  }
+}
+
+// ══════════════════════════════════════════════
+//  PUSH NOTIFICATION VIA ONESIGNAL (dari guru ke siswa)
+// ══════════════════════════════════════════════
+const ONESIGNAL_APP_ID_GURU = 'b4ffddcd-87ac-4b5a-939e-aeb7c5f396b7';
+const ONESIGNAL_REST_KEY    = 'os_v2_app_wt753tmhvrfvve46v234l44ww4jpzqrfavxekbf7gemw5thd76rejryi57vf5stqazfgd6q2zmydqxpk5harzftlobyhgc3rp3gkhdi';
+
+async function kirimPushNotifKelas(kelasId, kelasNama, pesanText, targetIds) {
+  if (!kelasId) return;
+  const judul = targetIds && targetIds.length
+    ? `💬 Pesan Privat dari Wali Kelas`
+    : `💬 Pesan Baru — Kelas ${kelasNama}`;
+  const isi = pesanText.length > 100 ? pesanText.substring(0,100)+'…' : pesanText;
+
+  // Filter berdasarkan tag kelas_id yang sudah di-set di sisi siswa (OneSignal.User.addTags)
+  const filters = targetIds && targetIds.length
+    ? targetIds.map((id,i) => i===0
+        ? { field:'tag', key:'siswa_id', relation:'=', value:String(id) }
+        : { operator:'OR', field:'tag', key:'siswa_id', relation:'=', value:String(id) })
+    : [{ field:'tag', key:'kelas_id', relation:'=', value:String(kelasId) }];
+
+  try {
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID_GURU,
+        filters: filters,
+        headings: { en: judul, id: judul },
+        contents: { en: isi, id: isi },
+        web_url: 'https://apbosiswa.web.id/',
+        chrome_web_icon: 'https://apbosiswa.web.id/icon-192.png'
+      })
+    });
+  } catch(e) {
+    console.warn('Gagal kirim push notif:', e);
+  }
 }
 
 function openPengumuman(){
@@ -10975,7 +11113,45 @@ function chatAutoResize(el){
   </div>
 </div>
 
-<!-- ═══════════════ HALAMAN KALENDER PENDIDIKAN ═══════════════ -->
+<!-- ═══════════════ HALAMAN TRACKING SISWA ═══════════════ -->
+<div id="page-trackingSiswa" class="page">
+  <div class="section-header" style="margin-bottom:12px">
+    <div>
+      <div class="section-title">📍 Tracking Siswa</div>
+      <div class="section-sub">Lokasi siswa yang belum melakukan presensi (opt-in orang tua)</div>
+    </div>
+  </div>
+
+  <!-- Info banner -->
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.5">
+    ℹ️ Fitur ini hanya menampilkan lokasi siswa yang <strong>orang tuanya sudah menyetujui</strong> pelacakan, dan lokasi hanya terkirim saat siswa membuka APBO Siswa setelah menerima notifikasi chat dari Anda.
+  </div>
+
+  <!-- Filter kelas -->
+  <div style="margin-bottom:14px">
+    <select id="trackingKelasFilter" class="form-control" onchange="loadTrackingSiswa()" style="max-width:280px">
+      <option value="">Semua Kelas</option>
+    </select>
+  </div>
+
+  <!-- Daftar siswa belum presensi -->
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">⚠️ Belum Presensi Hari Ini</div>
+    <div style="font-size:11px;color:var(--text-light);margin-bottom:12px">Siswa berikut belum tercatat hadir hari ini</div>
+    <div id="trackingBelumPresensi">
+      <div style="text-align:center;padding:20px;color:var(--text-light)">Memuat data...</div>
+    </div>
+  </div>
+
+  <!-- Riwayat lokasi -->
+  <div class="card">
+    <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">🗺️ Riwayat Lokasi Terbaru</div>
+    <div style="font-size:11px;color:var(--text-light);margin-bottom:12px">Lokasi terakhir yang tercatat dari siswa yang sudah opt-in</div>
+    <div id="trackingLokasiList">
+      <div style="text-align:center;padding:20px;color:var(--text-light)">Memuat data...</div>
+    </div>
+  </div>
+</div>
 <!-- ═══════════════ PAGE: LOG ABSENSI RFID ═══════════════ -->
 <div id="page-rfidLog" class="page">
   <div style="padding:14px 16px 80px">
