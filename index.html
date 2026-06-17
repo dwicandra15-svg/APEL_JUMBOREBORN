@@ -10296,41 +10296,23 @@ async function sendChatGuru(targetIds = null, targetNisns = null) {
 }
 
 // ══════════════════════════════════════════════
-//  PUSH NOTIFICATION VIA ONESIGNAL (dari guru ke siswa)
+//  PUSH NOTIFICATION VIA SUPABASE EDGE FUNCTION (proxy ke OneSignal)
 // ══════════════════════════════════════════════
-const ONESIGNAL_APP_ID_GURU = 'b4ffddcd-87ac-4b5a-939e-aeb7c5f396b7';
-const ONESIGNAL_REST_KEY    = 'os_v2_app_wt753tmhvrfvve46v234l44ww4jpzqrfavxekbf7gemw5thd76rejryi57vf5stqazfgd6q2zmydqxpk5harzftlobyhgc3rp3gkhdi';
+const PUSH_FUNCTION_URL = 'https://owejzwznmmyqxkefgbtv.supabase.co/functions/v1/hyper-api';
 
 async function kirimPushNotifKelas(kelasId, kelasNama, pesanText, targetIds) {
   if (!kelasId) return;
-  const judul = targetIds && targetIds.length
-    ? `💬 Pesan Privat dari Wali Kelas`
-    : `💬 Pesan Baru — Kelas ${kelasNama}`;
-  const isi = pesanText.length > 100 ? pesanText.substring(0,100)+'…' : pesanText;
-
-  // Filter berdasarkan tag kelas_id yang sudah di-set di sisi siswa (OneSignal.User.addTags)
-  const filters = targetIds && targetIds.length
-    ? targetIds.map((id,i) => i===0
-        ? { field:'tag', key:'siswa_id', relation:'=', value:String(id) }
-        : { operator:'OR', field:'tag', key:'siswa_id', relation:'=', value:String(id) })
-    : [{ field:'tag', key:'kelas_id', relation:'=', value:String(kelasId) }];
-
   try {
-    await fetch('https://onesignal.com/api/v1/notifications', {
+    const res = await fetch(PUSH_FUNCTION_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Basic ${ONESIGNAL_REST_KEY}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.supaKey}`
       },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID_GURU,
-        filters: filters,
-        headings: { en: judul, id: judul },
-        contents: { en: isi, id: isi },
-        web_url: 'https://apbosiswa.web.id/',
-        chrome_web_icon: 'https://apbosiswa.web.id/icon-192.png'
-      })
+      body: JSON.stringify({ kelasId, kelasNama, pesan: pesanText, targetIds })
     });
+    const result = await res.json();
+    if (!result.success) console.warn('Push notif gagal:', result.error);
   } catch(e) {
     console.warn('Gagal kirim push notif:', e);
   }
