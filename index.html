@@ -205,16 +205,16 @@ nav { flex: 1; padding: 12px 0; }
 /* GUEST MODE BANNER */
 #guestBanner {
   display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0;
   background: linear-gradient(90deg, #7c3aed, #6d28d9);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
-  padding: 7px 16px;
+  padding: 8px 16px;
   text-align: center;
-  z-index: 9998;
   letter-spacing: 0.3px;
+  width: 100%;
+  box-sizing: border-box;
+  /* Bukan position:fixed — ikut alur dokumen di dalam #main agar tidak overlap */
 }
 #guestBanner.show { display: flex; align-items: center; justify-content: center; gap: 10px; }
 #guestBanner .gb-exit {
@@ -222,8 +222,8 @@ nav { flex: 1; padding: 12px 0; }
   color: #fff; border-radius: 6px; padding: 2px 12px; font-size: 11px;
   cursor: pointer; font-weight: 800; margin-left: 6px;
 }
-/* Dorong seluruh #main ke bawah agar tidak tertutup banner */
-body.guest-mode #main { margin-top: 36px; }
+/* Tidak perlu margin-top lagi karena banner sudah in-flow */
+body.guest-mode #main { margin-top: 0; }
 
 /* IC PURPLE */
 .ic-purple { background: linear-gradient(135deg, #7c3aed22, #6d28d911); color: #7c3aed; }
@@ -2196,12 +2196,6 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   </div>
 </div>
 
-<!-- GUEST MODE BANNER -->
-<div id="guestBanner">
-  👤 <strong>Guest Mode</strong>
-  <span style="font-weight:400;font-size:11px;opacity:0.85">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
-  <button class="gb-exit" onclick="exitGuestMode()">✕ Keluar</button>
-</div>
 <div id="setupPage" class="hide">
   <div class="setup-card">
     <h2>⚙️ Konfigurasi Aplikasi</h2>
@@ -2344,6 +2338,12 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 
 <!-- ===================== MAIN CONTENT ===================== -->
 <div id="main">
+  <!-- GUEST MODE BANNER — di dalam #main agar ikut alur dokumen, tidak ada overlap -->
+  <div id="guestBanner">
+    👤 <strong>Guest Mode</strong>
+    <span style="font-weight:400;font-size:11px;opacity:0.85">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
+    <button class="gb-exit" onclick="exitGuestMode()">✕ Keluar</button>
+  </div>
   <div class="topbar" id="mainTopbar" style="display:none">
     <button id="backBtn" onclick="goHome()">← Kembali</button>
     <div class="topbar-title">
