@@ -207,14 +207,13 @@ nav { flex: 1; padding: 12px 0; }
   display: none;
   background: linear-gradient(90deg, #7c3aed, #6d28d9);
   color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
   text-align: center;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   width: 100%;
   box-sizing: border-box;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
   /* Bukan position:fixed — ikut alur dokumen di dalam #main agar tidak overlap */
 }
 #guestBanner.show { display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -228,6 +227,13 @@ body.guest-mode #main { margin-top: 0; }
 
 /* Global fix: semua halaman butuh padding-top agar tidak tertutup sticky topbar (~56px) */
 .page.active:not(#page-home) { padding-top: 96px; }
+
+/* Mobile: banner jadi 2 baris → butuh padding lebih besar di guest mode */
+@media (max-width: 768px) {
+  body.guest-mode .page.active:not(#page-home) { padding-top: 140px; }
+  /* Persingkat teks banner agar tetap 1 baris di mobile */
+  #guestBanner .gb-desc { display: none; }
+}
 
 /* IC PURPLE */
 .ic-purple { background: linear-gradient(135deg, #7c3aed22, #6d28d911); color: #7c3aed; }
@@ -2345,7 +2351,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   <!-- GUEST MODE BANNER — di dalam #main agar ikut alur dokumen, tidak ada overlap -->
   <div id="guestBanner">
     👤 <strong>Guest Mode</strong>
-    <span style="font-weight:700;font-size:12px;color:#e9d5ff">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
+    <span class="gb-desc" style="font-weight:400;font-size:11px;opacity:0.85">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
     <button class="gb-exit" onclick="exitGuestMode()">✕ Keluar</button>
   </div>
   <div class="topbar" id="mainTopbar" style="display:none">
@@ -3787,13 +3793,6 @@ const ADMIN_EMAIL = 'dwicandra15@guru.smp.belajar.id';
 // ===================== INIT =====================
 window.addEventListener('DOMContentLoaded', async () => {
   loadConfig();
-  // Restore guest mode jika sebelumnya dalam mode tamu
-  if (localStorage.getItem('apel_guest_mode') === '1') {
-    isGuestMode = true;
-    if (!db) initSupabase();
-    await afterLoginGuest();
-    return; // skip login biasa
-  }
   applyConfig();
   setDefaultDates();
   populateBulan();
@@ -3876,7 +3875,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Tidak ada session valid → tampilkan halaman login
+  // Tidak ada session valid → cek apakah sebelumnya Guest Mode
+  const prevSessionType = localStorage.getItem('apel_session_type');
+  if (prevSessionType === 'guest') {
+    // Restore guest mode tanpa perlu login ulang
+    await doGuestLogin();
+    return;
+  }
+
+  // Benar-benar tidak ada session → tampilkan halaman login
   localStorage.removeItem('apel_session');
   document.getElementById('loginPage').classList.remove('hide');
 });
@@ -4019,6 +4026,7 @@ async function doRegister() {
 async function doLogout() {
   localStorage.removeItem('apel_session');
   localStorage.removeItem('apel_last_page');
+  localStorage.removeItem('apel_session_type');
   if (db) await db.auth.signOut();
   location.reload();
 }
@@ -4029,14 +4037,15 @@ async function doGuestLogin() {
   currentUser = null;
   if (!db) { initSupabase(); }
   if (!db) { toast('Konfigurasi Supabase belum tersedia', 'error'); return; }
+  localStorage.setItem('apel_session_type', 'guest'); // simpan status guest
   await afterLoginGuest();
 }
 
 async function afterLoginGuest() {
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('setupPage')?.classList.add('hide');
-  // Simpan state guest ke localStorage agar tetap aktif setelah refresh
-  localStorage.setItem('apel_guest_mode', '1');
+  // Tandai guest mode di localStorage agar bisa di-restore setelah refresh
+  localStorage.setItem('apel_session_type', 'guest');
   // Tampilkan guest banner
   const gb = document.getElementById('guestBanner');
   if (gb) gb.classList.add('show');
@@ -4049,16 +4058,22 @@ async function afterLoginGuest() {
   if (guruEl) guruEl.innerHTML = '<span style="background:#7c3aed;color:#fff;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:0.3px">👤 Guest</span>';
   // Load jadwal MGMP saja untuk guest
   try { loadJadwalMGMP(); } catch(e){}
-  goHome();
-  hbnShow();
-  toast('Mode Tamu aktif — akses terbatas (read-only)', 'info');
+  // Restore halaman terakhir sebelum refresh
+  const lastPage = localStorage.getItem('apel_last_page');
+  if (lastPage && lastPage !== 'home' && document.getElementById('page-' + lastPage)) {
+    goPage(lastPage);
+  } else {
+    goHome();
+    hbnShow();
+  }
+  toast('Mode Guest aktif — akses terbatas (read-only)', 'info');
 }
 
 function exitGuestMode() {
   isGuestMode = false;
   currentUser = null;
-  // Hapus state guest dari localStorage
-  localStorage.removeItem('apel_guest_mode');
+  localStorage.removeItem('apel_session_type');
+  localStorage.removeItem('apel_last_page');
   document.getElementById('guestBanner')?.classList.remove('show');
   document.body.classList.remove('guest-mode');
   location.reload();
@@ -11365,23 +11380,40 @@ function chatAutoResize(el){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Tanggal *</label>
-          <input type="date" id="mgmpTanggal" class="form-control">
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Hari *</label>
+          <select id="mgmpHari" class="form-control">
+            <option value="">-- Pilih Hari --</option>
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+          </select>
         </div>
         <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Jam Mulai *</label>
-          <input type="time" id="mgmpJamMulai" class="form-control">
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Frekuensi</label>
+          <select id="mgmpFrekuensi" class="form-control">
+            <option value="Setiap Minggu">Setiap Minggu</option>
+            <option value="2 Minggu Sekali">2 Minggu Sekali</option>
+            <option value="Sebulan Sekali">Sebulan Sekali</option>
+            <option value="Insidental">Insidental</option>
+          </select>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Jam Mulai *</label>
+          <input type="time" id="mgmpJamMulai" class="form-control">
+        </div>
+        <div>
           <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Jam Selesai</label>
           <input type="time" id="mgmpJamSelesai" class="form-control">
         </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Tempat / Lokasi</label>
-          <input type="text" id="mgmpTempat" placeholder="cth: SMPN 1 Sampang..." class="form-control">
-        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Tempat / Lokasi</label>
+        <input type="text" id="mgmpTempat" placeholder="cth: SMPN 1 Sampang..." class="form-control">
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:5px">Keterangan</label>
@@ -13362,6 +13394,8 @@ async function loadJadwalMGMP() {
       return;
     }
 
+    const hariSekarang = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
+
     // Grup berdasarkan mapel
     const byMapel = {};
     data.forEach(j => {
@@ -13370,8 +13404,12 @@ async function loadJadwalMGMP() {
       byMapel[mp].push(j);
     });
 
+    // Urutkan hari
+    const hariOrder = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+
     let html = '';
     Object.entries(byMapel).forEach(([mapel, jadwals]) => {
+      jadwals.sort((a,b) => hariOrder.indexOf(a.hari) - hariOrder.indexOf(b.hari));
       html += `
         <div style="margin-bottom:16px">
           <div style="font-size:12px;font-weight:800;color:#7c3aed;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px">
@@ -13379,21 +13417,18 @@ async function loadJadwalMGMP() {
             <span style="font-weight:400;color:var(--text-light);text-transform:none">${jadwals.length} jadwal</span>
           </div>`;
       jadwals.forEach(j => {
-        const tgl = j.tanggal ? new Date(j.tanggal).toLocaleDateString('id-ID', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '-';
         const jam = j.jam_mulai ? j.jam_mulai.slice(0,5) : '';
         const jamSel = j.jam_selesai ? '– ' + j.jam_selesai.slice(0,5) : '';
-        const isLalu = j.tanggal && new Date(j.tanggal) < new Date(new Date().toDateString());
-        const isBesok = j.tanggal === new Date(Date.now() + 86400000).toISOString().slice(0,10);
-        const isHariIni = j.tanggal === new Date().toISOString().slice(0,10);
+        const isHariIni = j.hari === hariSekarang;
+        const frek = j.frekuensi || 'Setiap Minggu';
         let badge = '';
         if (isHariIni) badge = '<span style="background:#16a34a;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px">HARI INI</span>';
-        else if (isBesok) badge = '<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px">BESOK</span>';
-        else if (isLalu) badge = '<span style="background:#94a3b8;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px">SELESAI</span>';
         html += `
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:4px solid ${isHariIni?'#16a34a':isLalu?'#cbd5e1':'#7c3aed'}">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:4px solid ${isHariIni?'#16a34a':'#7c3aed'}">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
               <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">${tgl}${badge}</div>
+                <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">📅 ${j.hari || '-'}${badge}</div>
+                <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-bottom:4px">🔁 ${frek}</div>
                 ${jam ? `<div style="font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px">🕐 ${jam} ${jamSel}</div>` : ''}
                 ${j.tempat ? `<div style="font-size:12px;color:var(--text-light);margin-bottom:3px">📍 ${j.tempat}</div>` : ''}
                 ${j.keterangan ? `<div style="font-size:11px;color:var(--text-light);margin-top:5px;font-style:italic">"${j.keterangan}"</div>` : ''}
@@ -13429,12 +13464,12 @@ function showTambahJadwalMGMP() {
   mgmpEditingId = null;
   document.getElementById('mgmpModalTitle').textContent = '➕ Tambah Jadwal MGMP';
   document.getElementById('mgmpMapel').value = '';
-  document.getElementById('mgmpTanggal').value = new Date().toISOString().slice(0,10);
+  document.getElementById('mgmpHari').value = '';
+  document.getElementById('mgmpFrekuensi').value = 'Setiap Minggu';
   document.getElementById('mgmpJamMulai').value = '08:00';
   document.getElementById('mgmpJamSelesai').value = '';
   document.getElementById('mgmpTempat').value = '';
   document.getElementById('mgmpKeterangan').value = '';
-  // Isi nama penginput dari config atau currentUser
   const nama = CONFIG.guru || currentUser?.email?.split('@')[0] || '';
   document.getElementById('mgmpNamaPenginput').value = nama;
   document.getElementById('mgmpEditId').value = '';
@@ -13449,7 +13484,8 @@ function closeMgmpModal() {
 
 async function simpanJadwalMGMP() {
   const mapel = document.getElementById('mgmpMapel').value.trim();
-  const tanggal = document.getElementById('mgmpTanggal').value;
+  const hari = document.getElementById('mgmpHari').value;
+  const frekuensi = document.getElementById('mgmpFrekuensi').value;
   const jamMulai = document.getElementById('mgmpJamMulai').value;
   const jamSelesai = document.getElementById('mgmpJamSelesai').value;
   const tempat = document.getElementById('mgmpTempat').value.trim();
@@ -13458,13 +13494,16 @@ async function simpanJadwalMGMP() {
   const editId = document.getElementById('mgmpEditId').value;
 
   if (!mapel) return toast('Mata pelajaran wajib diisi', 'error');
-  if (!tanggal) return toast('Tanggal wajib diisi', 'error');
+  if (!hari) return toast('Hari wajib dipilih', 'error');
   if (!jamMulai) return toast('Jam mulai wajib diisi', 'error');
   if (!db) return toast('Supabase belum tersambung', 'error');
 
-  const payload = { mata_pelajaran: mapel, tanggal, jam_mulai: jamMulai,
-    jam_selesai: jamSelesai || null, tempat: tempat || null,
-    keterangan: keterangan || null, nama_penginput: namaPenginput || null };
+  const payload = {
+    mata_pelajaran: mapel, hari, frekuensi: frekuensi || 'Setiap Minggu',
+    jam_mulai: jamMulai, jam_selesai: jamSelesai || null,
+    tempat: tempat || null, keterangan: keterangan || null,
+    nama_penginput: namaPenginput || null
+  };
 
   const btn = document.getElementById('mgmpSimpanBtn');
   const origText = btn.textContent;
@@ -13499,7 +13538,8 @@ async function editJadwalMGMP(id) {
     mgmpEditingId = id;
     document.getElementById('mgmpModalTitle').textContent = '✏️ Edit Jadwal MGMP';
     document.getElementById('mgmpMapel').value = data.mata_pelajaran || '';
-    document.getElementById('mgmpTanggal').value = data.tanggal || '';
+    document.getElementById('mgmpHari').value = data.hari || '';
+    document.getElementById('mgmpFrekuensi').value = data.frekuensi || 'Setiap Minggu';
     document.getElementById('mgmpJamMulai').value = (data.jam_mulai || '').slice(0,5);
     document.getElementById('mgmpJamSelesai').value = (data.jam_selesai || '').slice(0,5);
     document.getElementById('mgmpTempat').value = data.tempat || '';
