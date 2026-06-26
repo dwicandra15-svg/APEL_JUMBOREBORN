@@ -3136,7 +3136,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <label class="form-label">Kelas yang Diampu (Wali)</label>
             <input type="text" id="setWali" class="form-control" placeholder="Kelas 7A">
           </div>
-          <div class="form-group">
+          <div class="form-group admin-only-field">
             <label class="form-label">Tahun Pelajaran</label>
             <input type="text" id="setTP" class="form-control" placeholder="2025/2026">
           </div>
@@ -4224,14 +4224,10 @@ async function savePengaturan() {
   // Simpan ke Supabase agar bisa dibaca APBO Siswa
   try {
     if (db) {
-      const uid = currentUser?.id || null;
-      // Helper upsert dengan user_id agar lolos RLS policy
+      // Helper upsert — tanpa user_id karena app_settings hanya punya key & value
       const appSet = (key, value) => db.from('app_settings')
-        .upsert({ key, value, user_id: uid }, { onConflict: 'key' })
+        .upsert({ key, value }, { onConflict: 'key' })
         .then(({ error }) => { if (error) console.warn(`Gagal simpan ${key}:`, error.message); });
-
-      // Simpan full config
-      await appSet('apel_config', JSON.stringify(CONFIG));
 
       // Simpan konfigurasi AbsensiKu sebagai key terpisah agar mudah dibaca APBO Siswa
       const absKuCfg = {
@@ -4245,25 +4241,29 @@ async function savePengaturan() {
       // Jika admin — simpan global_config agar semua guru bisa membaca
       if (currentUser?.email === ADMIN_EMAIL) {
         const globalCfg = {
-          school:       CONFIG.school || '',
-          subtitle:     CONFIG.subtitle || '',
-          npsn:         CONFIG.npsn || '',
-          address:      CONFIG.address || '',
-          phone:        CONFIG.phone || '',
-          logo:         CONFIG.logo || '',
-          appName:      CONFIG.appName || '',
-          appSubtitle:  CONFIG.appSubtitle || '',
-          appLogo:      CONFIG.appLogo || '',
+          // Informasi Sekolah
+          school:        CONFIG.school || '',
+          subtitle:      CONFIG.subtitle || '',
+          npsn:          CONFIG.npsn || '',
+          address:       CONFIG.address || '',
+          phone:         CONFIG.phone || '',
+          // Logo & Branding
+          logo:          CONFIG.logo || '',
+          appName:       CONFIG.appName || '',
+          appSubtitle:   CONFIG.appSubtitle || '',
+          appLogo:       CONFIG.appLogo || '',
+          // Tahun Pelajaran — berlaku untuk semua guru
+          tahunPelajaran: CONFIG.tahunPelajaran || '',
+          // AbsensiKu
           absensiKuUrl:  CONFIG.absensiKuUrl || '',
           absensiKuLogo: CONFIG.absensiKuLogo || '',
           absensiKuNama: CONFIG.absensiKuNama || 'AbsensiKu',
         };
-        await db.from('app_settings')
-          .upsert({ key: 'global_config', value: JSON.stringify(globalCfg) }, { onConflict: 'key' });
-        toast('✅ Pengaturan global berhasil disimpan & disinkronkan ke semua guru!', 'success');
+        await appSet('global_config', JSON.stringify(globalCfg));
+        toast('✅ Semua pengaturan berhasil disimpan & disinkronkan ke semua guru!', 'success');
       }
     }
-  } catch(e) { console.warn('upsert apel_config:', e); }
+  } catch(e) { console.warn('upsert app_settings:', e); }
   toast('Pengaturan berhasil disimpan!', 'success');
 }
 
@@ -4320,6 +4320,7 @@ async function loadAppSettings() {
       if (row.key === 'global_config') {
         const shared = ['school','subtitle','npsn','address','phone','logo',
                         'appName','appSubtitle','appLogo',
+                        'tahunPelajaran',
                         'absensiKuUrl','absensiKuLogo','absensiKuNama'];
         shared.forEach(k => { if (val[k] !== undefined) CONFIG[k] = val[k]; });
         localStorage.setItem('apel_config', JSON.stringify(CONFIG));
