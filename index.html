@@ -225,6 +225,9 @@ nav { flex: 1; padding: 12px 0; }
 /* Tidak perlu margin-top lagi karena banner sudah in-flow */
 body.guest-mode #main { margin-top: 0; }
 
+/* Global fix: semua halaman butuh padding-top agar tidak tertutup sticky topbar (~56px) */
+.page.active:not(#page-home) { padding-top: 62px; }
+
 /* IC PURPLE */
 .ic-purple { background: linear-gradient(135deg, #7c3aed22, #6d28d911); color: #7c3aed; }
 
@@ -6887,6 +6890,8 @@ function showPage(name) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg = document.getElementById(`page-${name}`);
   if (pg) pg.classList.add('active');
+  // Reset scroll ke atas saat ganti halaman (kecuali chat)
+  if (name !== 'diskusi') window.scrollTo(0, 0);
   // match nav
   const navMap = {
     'dashboard':'Dashboard','siswa':'Data Siswa','jadwal':'Jadwal Mengajar',
@@ -11290,7 +11295,7 @@ function chatAutoResize(el){
 <!-- ═══════════════ HALAMAN TRACKING SISWA ═══════════════ -->
 <!-- ═══════════════ PAGE: JADWAL MGMP ═══════════════ -->
 <div id="page-jadwalMGMP" class="page">
-  <div style="padding:12px 0 100px">
+  <div style="padding:0 0 100px">
 
     <!-- Judul -->
     <div style="margin-bottom:14px">
