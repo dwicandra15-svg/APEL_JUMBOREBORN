@@ -207,13 +207,14 @@ nav { flex: 1; padding: 12px 0; }
   display: none;
   background: linear-gradient(90deg, #7c3aed, #6d28d9);
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 16px;
   text-align: center;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   width: 100%;
   box-sizing: border-box;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
   /* Bukan position:fixed — ikut alur dokumen di dalam #main agar tidak overlap */
 }
 #guestBanner.show { display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -2344,7 +2345,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   <!-- GUEST MODE BANNER — di dalam #main agar ikut alur dokumen, tidak ada overlap -->
   <div id="guestBanner">
     👤 <strong>Guest Mode</strong>
-    <span style="font-weight:400;font-size:11px;opacity:0.85">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
+    <span style="font-weight:700;font-size:12px;color:#e9d5ff">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
     <button class="gb-exit" onclick="exitGuestMode()">✕ Keluar</button>
   </div>
   <div class="topbar" id="mainTopbar" style="display:none">
@@ -3786,6 +3787,13 @@ const ADMIN_EMAIL = 'dwicandra15@guru.smp.belajar.id';
 // ===================== INIT =====================
 window.addEventListener('DOMContentLoaded', async () => {
   loadConfig();
+  // Restore guest mode jika sebelumnya dalam mode tamu
+  if (localStorage.getItem('apel_guest_mode') === '1') {
+    isGuestMode = true;
+    if (!db) initSupabase();
+    await afterLoginGuest();
+    return; // skip login biasa
+  }
   applyConfig();
   setDefaultDates();
   populateBulan();
@@ -4027,6 +4035,8 @@ async function doGuestLogin() {
 async function afterLoginGuest() {
   document.getElementById('loginPage').classList.add('hide');
   document.getElementById('setupPage')?.classList.add('hide');
+  // Simpan state guest ke localStorage agar tetap aktif setelah refresh
+  localStorage.setItem('apel_guest_mode', '1');
   // Tampilkan guest banner
   const gb = document.getElementById('guestBanner');
   if (gb) gb.classList.add('show');
@@ -4047,6 +4057,8 @@ async function afterLoginGuest() {
 function exitGuestMode() {
   isGuestMode = false;
   currentUser = null;
+  // Hapus state guest dari localStorage
+  localStorage.removeItem('apel_guest_mode');
   document.getElementById('guestBanner')?.classList.remove('show');
   document.body.classList.remove('guest-mode');
   location.reload();
