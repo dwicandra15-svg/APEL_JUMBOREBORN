@@ -225,13 +225,10 @@ nav { flex: 1; padding: 12px 0; }
 /* Tidak perlu margin-top lagi karena banner sudah in-flow */
 body.guest-mode #main { margin-top: 0; }
 
-/* Global fix: semua halaman butuh padding-top agar tidak tertutup sticky topbar (~56px) */
-.page.active:not(#page-home) { padding-top: 96px; }
-
-/* Mobile: banner jadi 2 baris → butuh padding lebih besar di guest mode */
+/* Padding-top HANYA di guest mode (banner ada) agar konten tidak tertutup */
+body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 @media (max-width: 768px) {
   body.guest-mode .page.active:not(#page-home) { padding-top: 140px; }
-  /* Persingkat teks banner agar tetap 1 baris di mobile */
   #guestBanner .gb-desc { display: none; }
 }
 
@@ -8368,8 +8365,7 @@ async function ecmSave() {
   };
   allCards[ecm_id] = newData;
 
-  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards),
-          user_id: currentUser?.id || null}, { onConflict: 'key' });
+  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards) }, { onConflict: 'key' });
 
   if (error) {
     if (error.code === '42P01' || error.message.includes('does not exist') || error.code === '406' || error.status === 406) {
@@ -8394,8 +8390,7 @@ async function ecmDoReset(id) {
     if (data?.value) allCards = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
   } catch(e) {}
   delete allCards[id];
-  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards),
-          user_id: currentUser?.id || null}, { onConflict: 'key' });
+  const { error } = await db.from('app_settings').upsert({ key: 'card_config', value: JSON.stringify(allCards) }, { onConflict: 'key' });
   if (!error) {
     ecmApplyToDOM(id, ECM_DEFAULTS[id]);
     toast('Kartu dikembalikan ke default ✓', 'success');
@@ -9198,8 +9193,7 @@ function guruPiketRender() {
 
 async function guruPiketSave() {
   if (!db) { toast('Koneksi database belum siap','error'); return; }
-  const { error } = await db.from('app_settings').upsert({ key:'guru_piket', value: JSON.stringify(GURU_PIKET_LIST),
-          user_id: currentUser?.id || null}, { onConflict:'key' });
+  const { error } = await db.from('app_settings').upsert({ key:'guru_piket', value: JSON.stringify(GURU_PIKET_LIST) }, { onConflict:'key' });
   if (error) { toast('Gagal menyimpan: '+error.message,'error'); return; }
   piketPopulateGuruDropdowns();
   toast('Data guru berhasil disimpan ✓','success');
@@ -9412,8 +9406,7 @@ async function mpSaveCardEdit(mapelId) {
   };
   allIcons[mapelId] = newData;
 
-  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allIcons),
-          user_id: currentUser?.id || null}, { onConflict: 'key' });
+  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allIcons) }, { onConflict: 'key' });
 
   if (error && (error.code === '42P01' || error.message.includes('does not exist'))) {
     ecmClose();
@@ -9743,8 +9736,7 @@ async function ecmSaveMapel() {
   };
   allMapelIcons[ecm_id] = newData;
 
-  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allMapelIcons),
-          user_id: currentUser?.id || null}, { onConflict: 'key' });
+  const { error } = await db.from('app_settings').upsert({ key: 'mapel_icons', value: JSON.stringify(allMapelIcons) }, { onConflict: 'key' });
 
   if (error) { toast('Gagal menyimpan: ' + error.message,'error'); return; }
 
