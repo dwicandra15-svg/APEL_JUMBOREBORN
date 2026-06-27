@@ -239,6 +239,10 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 .admin-only-field { display: none !important; }
 body.is-admin .admin-only-field { display: block !important; }
 
+/* NON-ADMIN-ONLY — hanya muncul jika bukan admin */
+.non-admin-only { display: block; }
+body.is-admin .non-admin-only { display: none !important; }
+
 /* GUEST LOGIN BUTTON */
 .btn-guest {
   width: 100%;
@@ -3065,8 +3069,9 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         <div><div class="section-title">Pengaturan Aplikasi</div></div>
         <button class="btn btn-primary" onclick="savePengaturan()">💾 Simpan Perubahan</button>
       </div>
-      <div class="grid grid-2">
-        <div class="card admin-only-field">
+      <!-- Admin: Informasi Sekolah + Logo & Tampilan -->
+      <div class="grid grid-2 admin-only-field">
+        <div class="card">
           <div class="card-header"><span class="card-title">🏫 Informasi Sekolah</span></div>
           <div class="form-group">
             <label class="form-label">Nama Sekolah</label>
@@ -3125,14 +3130,6 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
               </div>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Nama Guru / Wali Kelas</label>
-            <input type="text" id="setGuru" class="form-control" placeholder="Nama lengkap guru">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kelas yang Diampu (Wali)</label>
-            <input type="text" id="setWali" class="form-control" placeholder="Kelas 7A">
-          </div>
           <div class="form-group admin-only-field">
             <label class="form-label">Tahun Pelajaran</label>
             <input type="text" id="setTP" class="form-control" placeholder="2025/2026">
@@ -3161,9 +3158,23 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <small style="color:var(--text-light);font-size:11px">Nama yang ditampilkan pada kartu di APBO Siswa</small>
           </div>
         </div>
+      </div><!-- end grid admin-only-field -->
+
+      <!-- Profil Mengajar — selalu tampil untuk semua user -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><span class="card-title">👤 Profil Mengajar</span></div>
+        <div class="form-group">
+          <label class="form-label">Nama Guru / Wali Kelas</label>
+          <input type="text" id="setGuru" class="form-control" placeholder="Nama lengkap guru">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kelas yang Diampu (Wali)</label>
+          <input type="text" id="setWali" class="form-control" placeholder="Kelas 7A">
+        </div>
       </div>
 
-      <div class="card" style="margin-top:20px">
+      <!-- Preview Kop Surat — admin only -->
+      <div class="card admin-only-field" style="margin-top:4px">
         <div class="card-header"><span class="card-title">📋 Preview Kop Surat</span></div>
         <div class="kop-preview" id="kopPreview">
           <div class="kop-preview-inner">
@@ -3190,7 +3201,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
 
-      <div class="card" style="margin-top:20px">
+      <div class="card admin-only-field" style="margin-top:20px">
         <div class="card-header"><span class="card-title">📚 Manajemen Mata Pelajaran</span></div>
         <div style="display:flex;gap:10px;margin-bottom:14px">
           <input type="text" id="newMapel" class="form-control" style="width:200px" placeholder="Nama mata pelajaran...">
@@ -4306,7 +4317,7 @@ async function loadAppSettings() {
     // Ambil semua settings sekaligus dalam 1 query
     const { data } = await db.from('app_settings')
       .select('key, value')
-      .in('key', ['card_config', 'mapel_icons', 'guru_piket', 'global_config']);
+      .in('key', ['card_config', 'mapel_icons', 'guru_piket', 'global_config', 'global_integrasi']);
     if (!data) return;
 
     data.forEach(row => {
@@ -4345,8 +4356,12 @@ async function loadAppSettings() {
         });
       }
       if (row.key === 'guru_piket') {
-        // Cache guru piket data
         window._guruPiketCache = val;
+      }
+      // Global integrasi — untuk non-admin, update APP_DATA
+      if (row.key === 'global_integrasi' && currentUser?.email !== ADMIN_EMAIL) {
+        APP_DATA.integrasi = Array.isArray(val) ? val : [];
+        try { renderIntegrasi(); } catch(e) {}
       }
     });
   } catch(e) {
@@ -4384,8 +4399,25 @@ async function loadJadwalAll() {
 
 async function loadIntegrasi() {
   if (!db) return;
-  const { data } = await db.from('integrasi').select('*').order('nama');
-  APP_DATA.integrasi = data || [];
+  // Admin: baca data milik sendiri (dari tabel integrasi, difilter RLS)
+  if (currentUser?.email === ADMIN_EMAIL) {
+    const { data } = await db.from('integrasi').select('*').order('nama');
+    APP_DATA.integrasi = data || [];
+  } else {
+    // Non-admin: baca global_integrasi dari app_settings (hasil sync admin)
+    try {
+      const { data } = await db.from('app_settings')
+        .select('value').eq('key', 'global_integrasi').single();
+      if (data?.value) {
+        const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        APP_DATA.integrasi = Array.isArray(parsed) ? parsed : [];
+      } else {
+        APP_DATA.integrasi = [];
+      }
+    } catch(e) {
+      APP_DATA.integrasi = [];
+    }
+  }
   renderIntegrasi();
 }
 
@@ -5535,6 +5567,10 @@ async function saveIntegrasi() {
   toast(editId ? 'Link diperbarui! ✅' : 'Link ditambahkan! ✅', 'success');
   closeModal('modalIntegrasi');
   await loadIntegrasi();
+  // Jika admin → simpan semua integrasi ke app_settings agar guru lain bisa lihat
+  if (currentUser?.email === ADMIN_EMAIL) {
+    await syncGlobalIntegrasi();
+  }
 }
 
 
@@ -5683,6 +5719,23 @@ async function deleteIntegrasi(id) {
   if (!confirm('Hapus link ini?')) return;
   await db.from('integrasi').delete().eq('id',id);
   toast('Link dihapus'); await loadIntegrasi();
+  if (currentUser?.email === ADMIN_EMAIL) {
+    await syncGlobalIntegrasi();
+  }
+}
+
+// Simpan semua integrasi admin ke app_settings.global_integrasi
+// agar semua guru (akun lain) bisa membaca tanpa terhalang RLS
+async function syncGlobalIntegrasi() {
+  if (!db) return;
+  try {
+    const { data } = await db.from('integrasi').select('*').order('nama');
+    if (data) {
+      await db.from('app_settings')
+        .upsert({ key: 'global_integrasi', value: JSON.stringify(data) }, { onConflict: 'key' });
+      console.log('[syncGlobalIntegrasi] Berhasil sync', data.length, 'integrasi');
+    }
+  } catch(e) { console.warn('[syncGlobalIntegrasi]', e.message); }
 }
 
 
