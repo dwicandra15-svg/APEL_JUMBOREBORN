@@ -4105,6 +4105,34 @@ function checkWrite(customMsg) {
 }
 // =================== END GUEST MODE ====================
 
+// Interceptor global: blokir semua aksi tulis di guest mode
+// kecuali di halaman Jadwal MGMP
+document.addEventListener('click', function(e) {
+  if (!isGuestMode) return;
+  const btn = e.target.closest('button, a[onclick]');
+  if (!btn) return;
+
+  // Boleh: tombol di halaman / modal Jadwal MGMP
+  if (btn.closest('#page-jadwalMGMP') || btn.closest('#mgmpModal')) return;
+
+  // Boleh: tombol navigasi & keluar
+  const txt = (btn.textContent || '').trim().toLowerCase();
+  const safeWords = ['kembali','keluar','tutup','batal','close','install','share','ok','beranda','←'];
+  if (safeWords.some(w => txt.includes(w))) return;
+
+  // Boleh: tombol yang bukan aksi tulis
+  const writeWords = ['simpan','tambah','hapus','kirim','upload','sync','submit','edit','ubah','add','save','delete','update','import'];
+  const isWriteAction = writeWords.some(w => txt.includes(w)) ||
+    btn.getAttribute('onclick')?.match(/simpan|save|hapus|delete|tambah|kirim|upload|sync/i);
+
+  if (isWriteAction) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toast('🔒 Guest Mode — hanya bisa melihat. Login untuk akses penuh.', 'warning');
+    return false;
+  }
+}, true);
+
 async function afterLogin() {
   isGuestMode = false;
   document.getElementById('guestBanner')?.classList.remove('show');
@@ -4213,6 +4241,7 @@ function saveConfig() {
 }
 
 async function savePengaturan() {
+  if (checkWrite('🔒 Guest Mode tidak bisa mengubah pengaturan')) return;
   CONFIG.school = document.getElementById('setSchool').value.trim();
   CONFIG.subtitle = document.getElementById('setSubtitle').value.trim();
   CONFIG.npsn = document.getElementById('setNpsn').value.trim();
@@ -4611,6 +4640,7 @@ function editSiswa(id) {
 }
 
 async function saveSiswa() {
+  if (checkWrite()) return;
   const kelasId = document.getElementById('siswaKelas').value;
   if (!kelasId) return toast('Pilih kelas terlebih dahulu. Tambahkan kelas di menu Pengaturan jika belum ada.', 'error');
   const row = {
@@ -4707,6 +4737,7 @@ function showAddJadwal() {
 }
 
 async function saveJadwal() {
+  if (checkWrite()) return;
   const row = {
     hari: document.getElementById('jadwalHari').value,
     kelas_id: document.getElementById('jadwalKelas').value,
@@ -4769,6 +4800,7 @@ function setAbsen(siswaId, status, el, allIds) {
 }
 
 async function simpanAbsen() {
+  if (checkWrite()) return;
   const kelasId = document.getElementById('absenKelas').value;
   const tanggal = document.getElementById('absenDate').value;
   if (!tanggal) return toast('Pilih tanggal', 'error');
@@ -4919,6 +4951,7 @@ async function loadSiswaNilai() {
 }
 
 async function simpanNilai(kelasId, mapelId, kategori, pertemuan) {
+  if (checkWrite()) return;
   pertemuan = parseInt(pertemuan)||1;
   const siswaKelas = APP_DATA.siswa.filter(s=>s.kelas_id==kelasId);
   // Hapus entri lama untuk pertemuan ini dulu (upsert manual)
@@ -5300,6 +5333,7 @@ async function editJurnal(id) {
 }
 
 async function saveJurnal() {
+  if (checkWrite()) return;
   const materi  = document.getElementById('jurnalMateri').value.trim();
   const kelasId = document.getElementById('jurnalKelas').value;
   const mapelId = document.getElementById('jurnalMapel').value;
@@ -5471,6 +5505,7 @@ function showAddBimbingan() {
 }
 
 async function saveBimbingan() {
+  if (checkWrite()) return;
   const row = {
     siswa_id: document.getElementById('bimbinganSiswa').value,
     tanggal: document.getElementById('bimbinganTgl').value,
@@ -6318,6 +6353,7 @@ async function showAddUmmi(lvl, preSiswaId = null) {
 }
 
 async function saveUmmi() {
+  if (checkWrite()) return;
   const lvl = document.getElementById('ummiLevel').value;
   const row = {
     siswa_id: document.getElementById('ummiSiswa').value,
@@ -7382,6 +7418,7 @@ function kalenderEdit(id) {
 }
 
 async function kalenderSimpan() {
+  if (checkWrite()) return;
   const judul = document.getElementById('kalenderJudul').value.trim();
   const kategori = document.getElementById('kalenderKategori').value;
   const tanggal_mulai = document.getElementById('kalenderTglMulai').value;
