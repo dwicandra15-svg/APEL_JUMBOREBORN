@@ -3067,7 +3067,12 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     <div id="page-pengaturan" class="page">
       <div class="section-header">
         <div><div class="section-title">Pengaturan Aplikasi</div></div>
-        <button class="btn btn-primary" onclick="savePengaturan()">💾 Simpan Perubahan</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn admin-only-field" onclick="adminForceSyncAll()" style="background:#7c3aed;color:#fff;font-size:12px;padding:8px 12px;display:flex;align-items:center;gap:5px">
+            🔄 Sync ke Semua Guru
+          </button>
+          <button class="btn btn-primary" onclick="savePengaturan()">💾 Simpan Perubahan</button>
+        </div>
       </div>
       <!-- Admin: Informasi Sekolah + Logo & Tampilan -->
       <div class="grid grid-2 admin-only-field">
@@ -13402,9 +13407,93 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.style.display = 'none';
   toast('✅ APEL JUMBO berhasil diinstall!', 'success');
 });
-// ═══════════════════════════════════════════════════════════
-// JADWAL MGMP — Fungsi lengkap
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// ADMIN: Paksa sinkronisasi semua kustomisasi ke Supabase
+// ════════════════════════════════════════════════════════════
+async function adminForceSyncAll() {
+  if (!db || currentUser?.email !== ADMIN_EMAIL) return;
+  if (!confirm('Sinkronisasi semua tampilan (icon, nama kartu, integrasi) ke Supabase agar semua guru bisa melihat?\n\nPastikan tampilan APEL JUMBO di layar Anda sudah sesuai sebelum melanjutkan.')) return;
+
+  toast('⏳ Menyinkronkan semua kustomisasi...', 'info');
+
+  try {
+    // 1. Baca card_config dari Supabase (existing data)
+    let allCards = {};
+    const { data: existingCards } = await db.from('app_settings')
+      .select('value').eq('key','card_config').maybeSingle();
+    if (existingCards?.value) {
+      allCards = typeof existingCards.value === 'string'
+        ? JSON.parse(existingCards.value) : existingCards.value;
+    }
+
+    // 2. Scan DOM: ambil semua elemen ico-* dan lbl-* yang ada
+    document.querySelectorAll('[id^="ico-"]').forEach(el => {
+      const id = el.id.replace('ico-', '');
+      if (!id || id.includes('-')) return; // skip complex IDs
+      if (!allCards[id]) allCards[id] = {};
+      const imgEl = el.querySelector('img');
+      if (imgEl) {
+        allCards[id].img = imgEl.src;
+        allCards[id].emoji = null;
+      } else {
+        const txt = el.textContent.trim();
+        if (txt) allCards[id].emoji = txt;
+      }
+      // Ambil color class (ic-blue, ic-green, dll)
+      const colorCls = [...el.classList].find(c => c.startsWith('ic-'));
+      if (colorCls) allCards[id].color = colorCls;
+    });
+    document.querySelectorAll('[id^="lbl-"]').forEach(el => {
+      const id = el.id.replace('lbl-', '');
+      if (!id || id.includes('-')) return;
+      if (!allCards[id]) allCards[id] = {};
+      const txt = el.textContent.trim();
+      if (txt) allCards[id].lbl = txt;
+    });
+
+    // 3. Baca mapel_icons dari Supabase (existing data — sudah bisa tersimpan per-save)
+    let allMapelIcons = {};
+    const { data: existingMapel } = await db.from('app_settings')
+      .select('value').eq('key','mapel_icons').maybeSingle();
+    if (existingMapel?.value) {
+      allMapelIcons = typeof existingMapel.value === 'string'
+        ? JSON.parse(existingMapel.value) : existingMapel.value;
+    }
+
+    // 4. Simpan card_config ke Supabase
+    const { error: e1 } = await db.from('app_settings')
+      .upsert({ key: 'card_config', value: JSON.stringify(allCards) }, { onConflict: 'key' });
+    if (e1) throw new Error('card_config: ' + e1.message);
+
+    // 5. Simpan mapel_icons ke Supabase (jika ada data)
+    if (Object.keys(allMapelIcons).length > 0) {
+      await db.from('app_settings')
+        .upsert({ key: 'mapel_icons', value: JSON.stringify(allMapelIcons) }, { onConflict: 'key' });
+    }
+
+    // 6. Simpan global_config (nama sekolah, logo, tahun pelajaran, dll)
+    const globalCfg = {
+      school: CONFIG.school || '', subtitle: CONFIG.subtitle || '',
+      npsn: CONFIG.npsn || '', address: CONFIG.address || '', phone: CONFIG.phone || '',
+      logo: CONFIG.logo || '', appName: CONFIG.appName || '',
+      appSubtitle: CONFIG.appSubtitle || '', appLogo: CONFIG.appLogo || '',
+      tahunPelajaran: CONFIG.tahunPelajaran || '',
+      absensiKuUrl: CONFIG.absensiKuUrl || '', absensiKuLogo: CONFIG.absensiKuLogo || '',
+      absensiKuNama: CONFIG.absensiKuNama || 'AbsensiKu',
+    };
+    await db.from('app_settings')
+      .upsert({ key: 'global_config', value: JSON.stringify(globalCfg) }, { onConflict: 'key' });
+
+    // 7. Sync integrasi
+    await syncGlobalIntegrasi();
+
+    toast('✅ Semua kustomisasi berhasil disinkronkan ke Supabase!\nGuru lain akan melihat tampilan yang sama saat login.', 'success');
+  } catch(e) {
+    toast('❌ Gagal sync: ' + e.message, 'error');
+    console.error('[adminForceSyncAll]', e);
+  }
+}
+// ════════════════════════════════════════════════════════════
 let mgmpEditingId = null;
 
 async function loadJadwalMGMP() {
