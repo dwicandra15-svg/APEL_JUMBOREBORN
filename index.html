@@ -3042,7 +3042,19 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
     </div>
-    <div id="page-integrasi" class="page">
+    <!-- PAGE: ABSENSIKU (guest mode - hanya tampil logo & nama) -->
+<div id="page-absensiku" class="page">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 20px;text-align:center">
+    <div id="absKuGuestLogo" style="width:90px;height:90px;border-radius:22px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:18px;overflow:hidden">🔗</div>
+    <div id="absKuGuestNama" style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">AbsensiKu</div>
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:28px;max-width:260px;line-height:1.6">Login dengan akun guru untuk mengakses fitur ini</div>
+    <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:14px 20px;font-size:12px;color:#5b21b6;display:flex;align-items:center;gap:8px">
+      👤 <span>Mode Guest — fitur ini tidak tersedia</span>
+    </div>
+  </div>
+</div>
+
+<div id="page-integrasi" class="page">
       <div class="section-header">
         <div>
           <div class="section-title">🔗 Integrasi Layanan ASN</div>
@@ -5465,7 +5477,28 @@ function loadAbsKuLogoUI() {
 // ─────────────────────────────────────────────────────────────
 
 function absensiKuBuka() {
-  hbnHide(); // sembunyikan bottom nav
+  hbnHide();
+
+  // Guest mode: tampilkan halaman kosong dengan logo & nama saja
+  if (isGuestMode) {
+    // Update logo & nama dari CONFIG
+    const logoEl = document.getElementById('absKuGuestLogo');
+    const namaEl = document.getElementById('absKuGuestNama');
+    if (logoEl) {
+      const logo = CONFIG.absensiKuLogo || '';
+      logoEl.innerHTML = logo
+        ? `<img src="${logo}" style="width:100%;height:100%;object-fit:cover;border-radius:22px">`
+        : '🔗';
+    }
+    if (namaEl) namaEl.textContent = CONFIG.absensiKuNama || 'AbsensiKu';
+    showPage('absensiku');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    return;
+  }
+
   const url = CONFIG.absensiKuUrl || '';
   if (!url) {
     toast('URL AbsensiKu belum diatur. Buka Pengaturan untuk mengisinya.', 'error');
@@ -7031,6 +7064,7 @@ function showPage(name) {
     'izinSiswa':'Surat Izin Siswa',
     'trackingSiswa':'Tracking Siswa',
     'jadwalMGMP':'Jadwal MGMP',
+    'absensiku':'AbsensiKu',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
   document.getElementById('pageTitle').textContent = navMap[name] || name;
