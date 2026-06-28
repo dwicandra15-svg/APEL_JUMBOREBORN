@@ -222,8 +222,16 @@ nav { flex: 1; padding: 12px 0; }
   color: #fff; border-radius: 6px; padding: 2px 12px; font-size: 11px;
   cursor: pointer; font-weight: 800; margin-left: 6px;
 }
-/* Tidak perlu margin-top lagi karena banner sudah in-flow */
-body.guest-mode #main { margin-top: 0; }
+/* Guest mode: sembunyikan kartu Lab IPA, UMMI, dan Shortcut App */
+body.guest-mode [data-id="labInventaris"],
+body.guest-mode [data-id="labPeminjaman"],
+body.guest-mode [data-id="labPresensi"],
+body.guest-mode [data-id="ummiTingkatan"],
+body.guest-mode [data-id="ummi7"],
+body.guest-mode [data-id="ummi8"],
+body.guest-mode [data-id="ummi9"],
+body.guest-mode [data-id="integrasiKinerja"],
+body.guest-mode #hbn-tab-ummi { display: none !important; }
 
 /* Padding-top HANYA di guest mode (banner ada) agar konten tidak tertutup */
 body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
@@ -8132,6 +8140,13 @@ function goPage(name) {
   // Guard: tamu tidak bisa akses pengaturan
   if (isGuestMode && name === 'pengaturan') {
     toast('🔒 Mode Tamu tidak dapat mengakses Pengaturan', 'warning');
+    return;
+  }
+  // Guard: fitur yang disembunyikan di guest mode
+  const guestHidden = ['labInventaris','labPeminjaman','labPresensi',
+                       'ummiTingkatan','ummi7','ummi8','ummi9','integrasiKinerja'];
+  if (isGuestMode && guestHidden.includes(name)) {
+    toast('🔒 Fitur ini tidak tersedia di Guest Mode', 'warning');
     return;
   }
   if (name === 'diskusi') {
