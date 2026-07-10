@@ -243,6 +243,28 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 /* IC PURPLE */
 .ic-purple { background: linear-gradient(135deg, #7c3aed22, #6d28d911); color: #7c3aed; }
 
+/* ═══════════ PROGKOL CSS ═══════════ */
+.pk-waka-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 22px 18px; cursor: pointer;
+  transition: all 0.18s; display: flex; flex-direction: column;
+  align-items: center; gap: 12px; text-align: center;
+}
+.pk-waka-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(59,130,246,0.12); transform: translateY(-2px); }
+.pk-waka-ico { width: 62px; height: 62px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.pk-waka-nama { font-size: 14px; font-weight: 800; color: var(--text); }
+.pk-waka-sub { font-size: 11px; color: var(--text-light); }
+.pk-jangka-tab { display: flex; gap: 8px; margin-bottom: 16px; }
+.pk-tab-btn { flex:1; padding:9px 6px; border-radius:10px; border:1.5px solid var(--border); background:var(--card); color:var(--text-light); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:var(--font); }
+.pk-tab-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.pk-program-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; cursor:pointer; transition:all 0.15s; border-left:4px solid var(--border); }
+.pk-program-card:hover { border-left-color:var(--primary); }
+.pk-status-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; border-radius:6px; padding:2px 8px; }
+.pk-status-rencana { background:#f1f5f9; color:#64748b; }
+.pk-status-berjalan { background:#fef3c7; color:#d97706; }
+.pk-status-selesai { background:#dcfce7; color:#16a34a; }
+/* ═══════════ END PROGKOL CSS ═══════════ */
+
 /* ADMIN-ONLY FIELDS — hanya muncul jika akun admin login */
 .admin-only-field { display: none !important; }
 body.is-admin .admin-only-field { display: block !important; }
@@ -2441,6 +2463,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mh-card" data-id="kalender" onclick="goPage('kalender')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'kalender')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-rose" id="ico-kalender">📆</div><div class="mh-card-lbl" id="lbl-kalender">Kalender</div></div>
             <div class="mh-card" data-id="trackingSiswa" onclick="goPage('trackingSiswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'trackingSiswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-trackingSiswa">📍</div><div class="mh-card-lbl" id="lbl-trackingSiswa">Tracking Siswa</div></div>
             <div class="mh-card" data-id="jadwalMGMP" onclick="goPage('jadwalMGMP')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwalMGMP')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jadwalMGMP">🏫</div><div class="mh-card-lbl" id="lbl-jadwalMGMP">Jadwal MGMP</div></div>
+            <div class="mh-card" data-id="progkol" onclick="goPage('progkol')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'progkol')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-progkol">📋</div><div class="mh-card-lbl" id="lbl-progkol">Progkol</div></div>
           </div>
 
           <div class="mh-sec-title">Administrasi</div>
@@ -7064,6 +7087,9 @@ function showPage(name) {
     'izinSiswa':'Surat Izin Siswa',
     'trackingSiswa':'Tracking Siswa',
     'jadwalMGMP':'Jadwal MGMP',
+    'progkol':'Program Sekolah',
+    'progkol-detail':'Program Sekolah',
+    'progkol-program':'Detail Program',
     'absensiku':'AbsensiKu',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
@@ -7094,6 +7120,7 @@ function showPage(name) {
   if (name==='diskusi') { initChatPage(); }
   if (name==='rfidLog') { initRfidLogPage(); }
   if (name==='jadwalMGMP') { loadJadwalMGMP(); }
+  if (name==='progkol-detail') { pkLoadProgram(); }
   if (name==='absenRekap') {
     // Populate mapel filter
     const rmp = document.getElementById('rekapAbsenMapel');
@@ -8221,6 +8248,14 @@ function goPage(name) {
   }
   if (name === 'jadwalMGMP') {
     showPage('jadwalMGMP');
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    return;
+  }
+  if (name === 'progkol' || name === 'progkol-detail' || name === 'progkol-program') {
+    showPage(name);
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
     const bb = document.getElementById('backBtn');
@@ -11569,7 +11604,125 @@ function chatAutoResize(el){
   </div>
 </div>
 
-<!-- ═══════════════ PAGE: TRACKING SISWA ═══════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE: PROGKOL — Program Sekolah Wakasek              -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="page-progkol" class="page">
+  <div style="padding:0 0 100px">
+    <div style="margin-bottom:20px">
+      <div class="section-title">📋 Program Sekolah</div>
+      <div class="section-sub">Pilih bidang Wakil Kepala Sekolah</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+      <div class="pk-waka-card" onclick="pkBukaWaka('kurikulum')">
+        <div class="pk-waka-ico" style="background:#eff6ff;color:#2563eb">📚</div>
+        <div class="pk-waka-nama">Kurikulum</div>
+        <div class="pk-waka-sub">Waka Kurikulum</div>
+      </div>
+      <div class="pk-waka-card" onclick="pkBukaWaka('kesiswaan')">
+        <div class="pk-waka-ico" style="background:#f0fdf4;color:#16a34a">👥</div>
+        <div class="pk-waka-nama">Kesiswaan</div>
+        <div class="pk-waka-sub">Waka Kesiswaan</div>
+      </div>
+      <div class="pk-waka-card" onclick="pkBukaWaka('humas')">
+        <div class="pk-waka-ico" style="background:#fff7ed;color:#ea580c">🤝</div>
+        <div class="pk-waka-nama">Humas</div>
+        <div class="pk-waka-sub">Waka Humas</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- PAGE: PROGKOL DETAIL -->
+<div id="page-progkol-detail" class="page">
+  <div style="padding:0 0 100px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div id="pkDetailIco" style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:#eff6ff">📚</div>
+      <div>
+        <div id="pkDetailNama" class="section-title" style="margin:0">Kurikulum</div>
+        <div class="section-sub" style="margin:0">Program Wakil Kepala Sekolah</div>
+      </div>
+    </div>
+    <div class="pk-jangka-tab">
+      <button class="pk-tab-btn active" onclick="pkSwitchJangka('pendek',this)">⚡ Pendek</button>
+      <button class="pk-tab-btn" onclick="pkSwitchJangka('menengah',this)">📆 Menengah</button>
+      <button class="pk-tab-btn" onclick="pkSwitchJangka('panjang',this)">🎯 Panjang</button>
+    </div>
+    <button onclick="pkTambahProgram()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">➕ Tambah Program</button>
+    <div id="pkProgramList"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Memuat...</div></div>
+  </div>
+</div>
+<!-- PAGE: PROGKOL PROGRAM DETAIL -->
+<div id="page-progkol-program" class="page">
+  <div style="padding:0 0 100px" id="pkProgramDetailContent"></div>
+</div>
+<!-- MODAL TAMBAH/EDIT PROGRAM -->
+<div id="pkModalProgram" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+  <div style="background:var(--card);border-radius:16px;max-width:480px;margin:0 auto;padding:22px 18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)" id="pkModalTitle">➕ Tambah Program</div>
+      <button onclick="pkCloseModal('pkModalProgram')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Nama Program *</label><input type="text" id="pkNamaProgram" class="form-control" placeholder="cth: Workshop Perangkat Pembelajaran"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Deskripsi</label><textarea id="pkDeskripsi" rows="3" class="form-control" placeholder="Uraian singkat program..." style="resize:vertical"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Tanggal Mulai *</label><input type="date" id="pkTanggalMulai" class="form-control"></div>
+        <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Tanggal Selesai</label><input type="date" id="pkTanggalSelesai" class="form-control"></div>
+      </div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Target / Sasaran</label><input type="text" id="pkTarget" class="form-control" placeholder="cth: Semua guru, Siswa kelas 9..."></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Status</label>
+        <select id="pkStatus" class="form-control">
+          <option value="rencana">📋 Rencana</option>
+          <option value="berjalan">🔄 Sedang Berjalan</option>
+          <option value="selesai">✅ Selesai</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Penanggung Jawab</label><input type="text" id="pkPenanggungJawab" class="form-control" placeholder="Nama guru PJ..."></div>
+    </div>
+    <input type="hidden" id="pkEditId">
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="pkCloseModal('pkModalProgram')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+      <button onclick="pkSimpanProgram()" class="btn btn-primary" style="flex:2" id="pkSimpanBtn">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL LAPORAN PELAKSANAAN -->
+<div id="pkModalLaporan" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+  <div style="background:var(--card);border-radius:16px;max-width:480px;margin:0 auto;padding:22px 18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)">📝 Laporan Pelaksanaan</div>
+      <button onclick="pkCloseModal('pkModalLaporan')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+    </div>
+    <div id="pkLaporanNamaProgram" style="background:var(--primary-light);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:14px"></div>
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Tanggal Pelaksanaan *</label><input type="date" id="pkLapTanggal" class="form-control"></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Catatan Pelaksanaan *</label><textarea id="pkLapCatatan" rows="4" class="form-control" placeholder="Deskripsi pelaksanaan, kendala, hasil..." style="resize:vertical"></textarea></div>
+      <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Nama Pelapor</label><input type="text" id="pkLapPelapor" class="form-control" placeholder="Nama guru pelapor..."></div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">📸 Foto Kegiatan</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button onclick="pkAmbilFoto()" class="btn btn-outline" style="flex:1;font-size:12px;padding:8px">📷 Kamera</button>
+          <button onclick="document.getElementById('pkFotoFile').click()" class="btn btn-outline" style="flex:1;font-size:12px;padding:8px">🖼️ Galeri</button>
+        </div>
+        <input type="file" id="pkFotoFile" accept="image/*" style="display:none" onchange="pkHandleFoto(this)">
+        <input type="file" id="pkFotoCamera" accept="image/*" capture="environment" style="display:none" onchange="pkHandleFoto(this)">
+        <div id="pkFotoPreview" style="display:none;margin-top:8px;position:relative">
+          <img id="pkFotoImg" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">
+          <button onclick="pkHapusFoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px">✕</button>
+          <div id="pkFotoInfo" style="font-size:10px;color:var(--text-light);margin-top:4px;text-align:center"></div>
+        </div>
+        <input type="hidden" id="pkFotoBase64">
+      </div>
+    </div>
+    <input type="hidden" id="pkLapProgramId">
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="pkCloseModal('pkModalLaporan')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+      <button onclick="pkSimpanLaporan()" class="btn btn-primary" style="flex:2">💾 Simpan Laporan</button>
+    </div>
+  </div>
+</div>
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- PAGE: TRACKING SISWA ═══════════════════════════════════ -->
 <div id="page-trackingSiswa" class="page">
   <div class="section-header" style="margin-bottom:12px">
     <div>
@@ -13580,6 +13733,297 @@ async function adminForceSyncAll() {
   }
 }
 // ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// PROGKOL — Program Sekolah Wakasek
+// ════════════════════════════════════════════════════════════
+let pkCurrentWaka = 'kurikulum';
+let pkCurrentJangka = 'pendek';
+let pkCurrentProgramId = null;
+
+const PK_WAKA_CFG = {
+  kurikulum: { ico:'📚', bg:'#eff6ff', color:'#2563eb', label:'Kurikulum' },
+  kesiswaan: { ico:'👥', bg:'#f0fdf4', color:'#16a34a', label:'Kesiswaan' },
+  humas:     { ico:'🤝', bg:'#fff7ed', color:'#ea580c', label:'Humas'     }
+};
+const PK_STATUS_CFG = {
+  rencana:  { label:'📋 Rencana',          cls:'pk-status-rencana'  },
+  berjalan: { label:'🔄 Sedang Berjalan',  cls:'pk-status-berjalan' },
+  selesai:  { label:'✅ Selesai',           cls:'pk-status-selesai'  }
+};
+
+function pkBukaWaka(waka) {
+  pkCurrentWaka = waka; pkCurrentJangka = 'pendek';
+  const cfg = PK_WAKA_CFG[waka];
+  const icoEl = document.getElementById('pkDetailIco');
+  const namaEl = document.getElementById('pkDetailNama');
+  if (icoEl) { icoEl.textContent = cfg.ico; icoEl.style.background = cfg.bg; icoEl.style.color = cfg.color; }
+  if (namaEl) namaEl.textContent = cfg.label;
+  document.querySelectorAll('.pk-tab-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  goPage('progkol-detail');
+}
+
+function pkSwitchJangka(jangka, btn) {
+  pkCurrentJangka = jangka;
+  document.querySelectorAll('.pk-tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  pkLoadProgram();
+}
+
+async function pkLoadProgram() {
+  if (!db) return;
+  const listEl = document.getElementById('pkProgramList');
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  try {
+    const { data, error } = await db.from('program_sekolah').select('*')
+      .eq('waka', pkCurrentWaka).eq('jangka', pkCurrentJangka)
+      .order('tanggal_mulai', { ascending: true });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-weight:700;margin-bottom:6px">Belum ada program</div><div style="font-size:12px">Klik "Tambah Program" untuk mulai mencatat</div></div>`;
+      return;
+    }
+    listEl.innerHTML = data.map(p => {
+      const cfg = PK_STATUS_CFG[p.status] || PK_STATUS_CFG.rencana;
+      const tglMulai = p.tanggal_mulai ? new Date(p.tanggal_mulai).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
+      const tglSelesai = p.tanggal_selesai ? ' → ' + new Date(p.tanggal_selesai).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '';
+      const borderColor = p.status==='selesai'?'#16a34a':p.status==='berjalan'?'#d97706':'#94a3b8';
+      return `<div class="pk-program-card" style="border-left-color:${borderColor}" onclick="pkBukaProgram('${p.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:6px">${p.nama_program}</div>
+            <span class="pk-status-badge ${cfg.cls}">${cfg.label}</span>
+            <div style="font-size:11px;color:var(--text-light);margin-top:6px">📅 ${tglMulai}${tglSelesai}</div>
+            ${p.penanggung_jawab?`<div style="font-size:11px;color:var(--text-light);margin-top:3px">👤 ${p.penanggung_jawab}</div>`:''}
+          </div>
+          <div style="font-size:20px;flex-shrink:0;color:var(--text-light)">›</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger)">❌ Gagal: ${e.message}<br><small>Pastikan tabel program_sekolah sudah dibuat di Supabase</small></div>`;
+  }
+}
+
+async function pkBukaProgram(id) {
+  if (!db) return;
+  pkCurrentProgramId = id;
+  const el = document.getElementById('pkProgramDetailContent');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Memuat...</div>';
+  goPage('progkol-program');
+  try {
+    const { data: p, error } = await db.from('program_sekolah').select('*').eq('id', id).single();
+    if (error) throw error;
+    const { data: laporan } = await db.from('laporan_program').select('*').eq('program_id', id).order('tanggal_laporan', {ascending:false});
+    const cfg = PK_STATUS_CFG[p.status] || PK_STATUS_CFG.rencana;
+    const tglMulai = p.tanggal_mulai ? new Date(p.tanggal_mulai).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '-';
+    const tglSelesai = p.tanggal_selesai ? new Date(p.tanggal_selesai).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '-';
+    const wakaLabel = PK_WAKA_CFG[p.waka]?.label || p.waka;
+    const jangkaLabel = {pendek:'Jangka Pendek',menengah:'Jangka Menengah',panjang:'Jangka Panjang'}[p.jangka] || p.jangka;
+    el.innerHTML = `<div style="padding:0 0 100px">
+      <div style="background:var(--card);border-radius:14px;padding:18px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--primary);font-weight:700;margin-bottom:6px">${wakaLabel} · ${jangkaLabel}</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px">${p.nama_program}</div>
+            <span class="pk-status-badge ${cfg.cls}">${cfg.label}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button onclick="pkEditProgram('${p.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>
+            <button onclick="pkHapusProgram('${p.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">🗑️ Hapus</button>
+          </div>
+        </div>
+        ${p.deskripsi?`<div style="font-size:12px;color:var(--text-light);margin-bottom:10px;line-height:1.6">${p.deskripsi}</div>`:''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+          <div style="background:var(--bg);border-radius:8px;padding:8px"><div style="color:var(--text-light);margin-bottom:2px">Mulai</div><div style="font-weight:700;color:var(--text)">${tglMulai}</div></div>
+          <div style="background:var(--bg);border-radius:8px;padding:8px"><div style="color:var(--text-light);margin-bottom:2px">Selesai</div><div style="font-weight:700;color:var(--text)">${tglSelesai}</div></div>
+          ${p.target?`<div style="background:var(--bg);border-radius:8px;padding:8px;grid-column:1/-1"><div style="color:var(--text-light);margin-bottom:2px">Target / Sasaran</div><div style="font-weight:700;color:var(--text)">${p.target}</div></div>`:''}
+          ${p.penanggung_jawab?`<div style="background:var(--bg);border-radius:8px;padding:8px;grid-column:1/-1"><div style="color:var(--text-light);margin-bottom:2px">Penanggung Jawab</div><div style="font-weight:700;color:var(--text)">${p.penanggung_jawab}</div></div>`:''}
+        </div>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:10px">🔄 UBAH STATUS</div>
+        <div style="display:flex;gap:8px">
+          ${Object.entries(PK_STATUS_CFG).map(([k,v])=>`<button onclick="pkUbahStatus('${p.id}','${k}',this)" class="pk-tab-btn ${p.status===k?'active':''}" style="flex:1;font-size:11px">${v.label}</button>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:800;color:var(--text)">📝 Laporan Pelaksanaan</div>
+        <button onclick="pkBukaModalLaporan('${p.id}','${p.nama_program}')" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">+ Tambah</button>
+      </div>
+      ${laporan && laporan.length > 0 ? laporan.map(lap=>`
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+            <div style="font-size:12px;font-weight:700;color:var(--primary)">${new Date(lap.tanggal_laporan).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+            <button onclick="pkHapusLaporan('${lap.id}','${p.id}')" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer">🗑️</button>
+          </div>
+          <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">${lap.catatan}</div>
+          ${lap.foto_base64?`<img src="${lap.foto_base64}" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;margin-bottom:8px">`:''}
+          ${lap.nama_pelapor?`<div style="font-size:10px;color:#94a3b8">✍️ ${lap.nama_pelapor}</div>`:''}
+        </div>`).join('')
+      : `<div style="text-align:center;padding:30px;color:var(--text-light);background:var(--card);border-radius:12px;border:1px solid var(--border)"><div style="font-size:28px;margin-bottom:8px">📝</div><div style="font-size:12px">Belum ada laporan pelaksanaan</div></div>`}
+    </div>`;
+  } catch(e) {
+    if (el) el.innerHTML = `<div style="padding:30px;text-align:center;color:var(--danger)">❌ ${e.message}</div>`;
+  }
+}
+
+function pkTambahProgram() {
+  document.getElementById('pkModalTitle').textContent = '➕ Tambah Program';
+  document.getElementById('pkEditId').value = '';
+  ['pkNamaProgram','pkDeskripsi','pkTanggalMulai','pkTanggalSelesai','pkTarget'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pkStatus').value = 'rencana';
+  document.getElementById('pkPenanggungJawab').value = CONFIG.guru || '';
+  document.getElementById('pkSimpanBtn').textContent = '💾 Simpan';
+  document.getElementById('pkModalProgram').style.display = 'block';
+}
+
+async function pkEditProgram(id) {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('program_sekolah').select('*').eq('id', id).single();
+    if (error) throw error;
+    document.getElementById('pkModalTitle').textContent = '✏️ Edit Program';
+    document.getElementById('pkEditId').value = id;
+    document.getElementById('pkNamaProgram').value = data.nama_program || '';
+    document.getElementById('pkDeskripsi').value = data.deskripsi || '';
+    document.getElementById('pkTanggalMulai').value = data.tanggal_mulai || '';
+    document.getElementById('pkTanggalSelesai').value = data.tanggal_selesai || '';
+    document.getElementById('pkTarget').value = data.target || '';
+    document.getElementById('pkStatus').value = data.status || 'rencana';
+    document.getElementById('pkPenanggungJawab').value = data.penanggung_jawab || '';
+    document.getElementById('pkSimpanBtn').textContent = '💾 Perbarui';
+    document.getElementById('pkModalProgram').style.display = 'block';
+  } catch(e) { toast('Gagal memuat data: ' + e.message, 'error'); }
+}
+
+async function pkSimpanProgram() {
+  const nama = document.getElementById('pkNamaProgram').value.trim();
+  const tglMulai = document.getElementById('pkTanggalMulai').value;
+  if (!nama) return toast('Nama program wajib diisi', 'error');
+  if (!tglMulai) return toast('Tanggal mulai wajib diisi', 'error');
+  if (!db) return toast('Supabase belum tersambung', 'error');
+  const editId = document.getElementById('pkEditId').value;
+  const payload = {
+    waka: pkCurrentWaka, jangka: pkCurrentJangka, nama_program: nama,
+    deskripsi: document.getElementById('pkDeskripsi').value.trim() || null,
+    tanggal_mulai: tglMulai,
+    tanggal_selesai: document.getElementById('pkTanggalSelesai').value || null,
+    target: document.getElementById('pkTarget').value.trim() || null,
+    status: document.getElementById('pkStatus').value,
+    penanggung_jawab: document.getElementById('pkPenanggungJawab').value.trim() || null,
+    user_id: currentUser?.id || null
+  };
+  const btn = document.getElementById('pkSimpanBtn');
+  btn.disabled = true; btn.textContent = '⏳...';
+  try {
+    const { error } = editId
+      ? await db.from('program_sekolah').update(payload).eq('id', editId)
+      : await db.from('program_sekolah').insert(payload);
+    if (error) throw error;
+    toast(editId ? '✅ Program diperbarui!' : '✅ Program ditambahkan!', 'success');
+    pkCloseModal('pkModalProgram');
+    pkLoadProgram();
+    if (editId) pkBukaProgram(editId);
+  } catch(e) { toast('Gagal: ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '💾 Simpan'; }
+}
+
+async function pkHapusProgram(id) {
+  if (!confirm('Hapus program ini? Semua laporan terkait juga akan dihapus.')) return;
+  try {
+    await db.from('laporan_program').delete().eq('program_id', id);
+    await db.from('program_sekolah').delete().eq('id', id);
+    toast('Program berhasil dihapus', 'success');
+    goPage('progkol-detail');
+  } catch(e) { toast('Gagal hapus: ' + e.message, 'error'); }
+}
+
+async function pkUbahStatus(id, status, btn) {
+  if (!db) return;
+  try {
+    const { error } = await db.from('program_sekolah').update({ status }).eq('id', id);
+    if (error) throw error;
+    document.querySelectorAll('#pkProgramDetailContent .pk-tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const badge = document.querySelector('#pkProgramDetailContent .pk-status-badge');
+    if (badge) { const c = PK_STATUS_CFG[status]; badge.className=`pk-status-badge ${c.cls}`; badge.textContent=c.label; }
+    toast('✅ Status diperbarui', 'success');
+  } catch(e) { toast('Gagal: ' + e.message, 'error'); }
+}
+
+function pkBukaModalLaporan(programId, namaProg) {
+  document.getElementById('pkLapProgramId').value = programId;
+  document.getElementById('pkLaporanNamaProgram').textContent = '📋 ' + namaProg;
+  document.getElementById('pkLapTanggal').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pkLapCatatan').value = '';
+  document.getElementById('pkLapPelapor').value = CONFIG.guru || '';
+  pkHapusFoto();
+  document.getElementById('pkModalLaporan').style.display = 'block';
+}
+
+async function pkSimpanLaporan() {
+  const programId = document.getElementById('pkLapProgramId').value;
+  const tanggal = document.getElementById('pkLapTanggal').value;
+  const catatan = document.getElementById('pkLapCatatan').value.trim();
+  if (!tanggal) return toast('Tanggal wajib diisi', 'error');
+  if (!catatan) return toast('Catatan pelaksanaan wajib diisi', 'error');
+  if (!db) return toast('Supabase belum tersambung', 'error');
+  const payload = {
+    program_id: programId, tanggal_laporan: tanggal, catatan,
+    nama_pelapor: document.getElementById('pkLapPelapor').value.trim() || null,
+    foto_base64: document.getElementById('pkFotoBase64').value || null,
+    user_id: currentUser?.id || null
+  };
+  try {
+    const { error } = await db.from('laporan_program').insert(payload);
+    if (error) throw error;
+    toast('✅ Laporan berhasil disimpan!', 'success');
+    pkCloseModal('pkModalLaporan');
+    pkBukaProgram(programId);
+  } catch(e) { toast('Gagal: ' + e.message, 'error'); }
+}
+
+async function pkHapusLaporan(lapId, programId) {
+  if (!confirm('Hapus laporan ini?')) return;
+  try {
+    await db.from('laporan_program').delete().eq('id', lapId);
+    toast('Laporan dihapus', 'success');
+    pkBukaProgram(programId);
+  } catch(e) { toast('Gagal: ' + e.message, 'error'); }
+}
+
+function pkAmbilFoto() { document.getElementById('pkFotoCamera').click(); }
+function pkHandleFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height, maxPx = 1200;
+      if (w > maxPx || h > maxPx) { if (w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;} }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      let q = 0.8, b64 = canvas.toDataURL('image/jpeg', q);
+      while (b64.length > 400*1024*1.37 && q > 0.3) { q-=0.1; b64=canvas.toDataURL('image/jpeg',q); }
+      document.getElementById('pkFotoImg').src = b64;
+      document.getElementById('pkFotoBase64').value = b64;
+      document.getElementById('pkFotoPreview').style.display = 'block';
+      document.getElementById('pkFotoInfo').textContent = `📦 ~${Math.round(b64.length*0.75/1024)} KB (q=${Math.round(q*100)}%)`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function pkHapusFoto() {
+  document.getElementById('pkFotoBase64').value = '';
+  document.getElementById('pkFotoPreview').style.display = 'none';
+  document.getElementById('pkFotoImg').src = '';
+}
+function pkCloseModal(id) { document.getElementById(id).style.display = 'none'; }
+// ════════════════════ END PROGKOL ════════════════════
+
 let mgmpEditingId = null;
 
 async function loadJadwalMGMP() {
