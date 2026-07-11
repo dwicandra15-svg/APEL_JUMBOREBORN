@@ -265,6 +265,23 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 .pk-status-selesai { background:#dcfce7; color:#16a34a; }
 /* ═══════════ END PROGKOL CSS ═══════════ */
 
+/* ═══════════ MODUL CSS ═══════════ */
+.md-jenis-card { background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:20px 16px; cursor:pointer; transition:all 0.18s; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; }
+.md-jenis-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:0 4px 16px rgba(59,130,246,0.12); }
+.md-jenis-ico { width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; }
+.md-jenis-nama { font-size:13px; font-weight:800; color:var(--text); }
+.md-jenis-sub { font-size:10px; color:var(--text-light); }
+.md-item-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; border-left:4px solid var(--primary); }
+.md-upload-area { border:2px dashed var(--border); border-radius:12px; padding:28px 16px; text-align:center; cursor:pointer; transition:all 0.15s; }
+.md-upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
+/* Print styles untuk laporan */
+@media print {
+  body > *:not(#printArea) { display: none !important; }
+  #printArea { display: block !important; padding: 0; margin: 0; }
+  .no-print { display: none !important; }
+}
+/* ═══════════ END MODUL CSS ═══════════ */
+
 /* ADMIN-ONLY FIELDS — hanya muncul jika akun admin login */
 .admin-only-field { display: none !important; }
 body.is-admin .admin-only-field { display: block !important; }
@@ -2464,6 +2481,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mh-card" data-id="trackingSiswa" onclick="goPage('trackingSiswa')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'trackingSiswa')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-trackingSiswa">📍</div><div class="mh-card-lbl" id="lbl-trackingSiswa">Tracking Siswa</div></div>
             <div class="mh-card" data-id="jadwalMGMP" onclick="goPage('jadwalMGMP')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwalMGMP')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jadwalMGMP">🏫</div><div class="mh-card-lbl" id="lbl-jadwalMGMP">Jadwal MGMP</div></div>
             <div class="mh-card" data-id="progkol" onclick="goPage('progkol')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'progkol')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-progkol">📋</div><div class="mh-card-lbl" id="lbl-progkol">Progkol</div></div>
+            <div class="mh-card" data-id="modul" onclick="goPage('modul')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'modul')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-modul">📖</div><div class="mh-card-lbl" id="lbl-modul">Modul</div></div>
           </div>
 
           <div class="mh-sec-title">Administrasi</div>
@@ -7090,6 +7108,10 @@ function showPage(name) {
     'progkol':'Program Sekolah',
     'progkol-detail':'Program Sekolah',
     'progkol-program':'Detail Program',
+    'modul':'Modul',
+    'modul-list':'Modul',
+    'modul-form':'Tambah Modul',
+    'modul-detail':'Detail Modul',
     'absensiku':'AbsensiKu',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
@@ -7121,6 +7143,7 @@ function showPage(name) {
   if (name==='rfidLog') { initRfidLogPage(); }
   if (name==='jadwalMGMP') { loadJadwalMGMP(); }
   if (name==='progkol-detail') { pkLoadProgram(); }
+  if (name==='modul-list') { mdLoadList(); }
   if (name==='absenRekap') {
     // Populate mapel filter
     const rmp = document.getElementById('rekapAbsenMapel');
@@ -8255,6 +8278,14 @@ function goPage(name) {
     return;
   }
   if (name === 'progkol' || name === 'progkol-detail' || name === 'progkol-program') {
+    showPage(name);
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    return;
+  }
+  if (['modul','modul-list','modul-form','modul-detail'].includes(name)) {
     showPage(name);
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
@@ -11605,7 +11636,63 @@ function chatAutoResize(el){
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<!-- PAGE: PROGKOL — Program Sekolah Wakasek              -->
+<!-- PAGE: MODUL — Pilih Jenis                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="page-modul" class="page">
+  <div style="padding:0 0 100px">
+    <div style="margin-bottom:20px"><div class="section-title">📖 Modul</div><div class="section-sub">Pilih jenis perangkat pembelajaran</div></div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+      <div class="md-jenis-card" onclick="mdBukaJenis('co_kurikuler')">
+        <div class="md-jenis-ico" style="background:#eff6ff;color:#2563eb">🌟</div>
+        <div class="md-jenis-nama">Co Kurikuler</div>
+        <div class="md-jenis-sub">Kegiatan P5 & ekstrakurikuler</div>
+      </div>
+      <div class="md-jenis-card" onclick="mdBukaJenis('atp')">
+        <div class="md-jenis-ico" style="background:#f0fdf4;color:#16a34a">🗺️</div>
+        <div class="md-jenis-nama">ATP</div>
+        <div class="md-jenis-sub">Alur Tujuan Pembelajaran</div>
+      </div>
+      <div class="md-jenis-card" onclick="mdBukaJenis('pembelajaran')">
+        <div class="md-jenis-ico" style="background:#fff7ed;color:#ea580c">📚</div>
+        <div class="md-jenis-nama">Pembelajaran</div>
+        <div class="md-jenis-sub">Modul Ajar Kurikulum Merdeka</div>
+      </div>
+      <div class="md-jenis-card" onclick="mdBukaJenis('lkpd')">
+        <div class="md-jenis-ico" style="background:#fdf4ff;color:#9333ea">📝</div>
+        <div class="md-jenis-nama">LKPD</div>
+        <div class="md-jenis-sub">Lembar Kerja Peserta Didik</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: MODUL LIST -->
+<div id="page-modul-list" class="page">
+  <div style="padding:0 0 100px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div id="mdListIco" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#eff6ff">📚</div>
+      <div><div id="mdListNama" class="section-title" style="margin:0">Pembelajaran</div><div class="section-sub" style="margin:0">Daftar modul tersimpan</div></div>
+    </div>
+    <button onclick="mdBukaForm()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">➕ Tambah Modul Baru</button>
+    <div id="mdListContent"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+  </div>
+</div>
+
+<!-- PAGE: MODUL FORM -->
+<div id="page-modul-form" class="page">
+  <div id="mdFormContent" style="padding:0 0 100px"></div>
+</div>
+
+<!-- PAGE: MODUL DETAIL -->
+<div id="page-modul-detail" class="page">
+  <div id="mdDetailContent" style="padding:0 0 100px"></div>
+</div>
+
+<!-- PRINT AREA (tersembunyi, hanya muncul saat print) -->
+<div id="printArea" style="display:none"></div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- PAGE: PROGKOL                                        -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div id="page-progkol" class="page">
   <div style="padding:0 0 100px">
@@ -11647,7 +11734,8 @@ function chatAutoResize(el){
       <button class="pk-tab-btn" onclick="pkSwitchJangka('menengah',this)">📆 Menengah</button>
       <button class="pk-tab-btn" onclick="pkSwitchJangka('panjang',this)">🎯 Panjang</button>
     </div>
-    <button onclick="pkTambahProgram()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">➕ Tambah Program</button>
+    <button onclick="pkTambahProgram()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">➕ Tambah Program</button>
+    <button onclick="pkGenerateLaporan()" style="width:100%;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">📄 Generate Laporan Program</button>
     <div id="pkProgramList"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Memuat...</div></div>
   </div>
 </div>
@@ -14231,6 +14319,724 @@ async function hapusJadwalMGMP(id) {
     toast('Gagal menghapus: ' + e.message, 'error');
   }
 }
+// ════════════════════════════════════════════════════════════
+// MODUL — Perangkat Pembelajaran
+// ════════════════════════════════════════════════════════════
+let mdCurrentJenis = 'pembelajaran';
+let mdCurrentId = null;
+
+const MD_JENIS_CFG = {
+  co_kurikuler: { ico:'🌟', bg:'#eff6ff', color:'#2563eb', label:'Co Kurikuler' },
+  atp:          { ico:'🗺️', bg:'#f0fdf4', color:'#16a34a', label:'ATP' },
+  pembelajaran: { ico:'📚', bg:'#fff7ed', color:'#ea580c', label:'Pembelajaran' },
+  lkpd:         { ico:'📝', bg:'#fdf4ff', color:'#9333ea', label:'LKPD' }
+};
+
+function mdBukaJenis(jenis) {
+  mdCurrentJenis = jenis;
+  const cfg = MD_JENIS_CFG[jenis];
+  const ico = document.getElementById('mdListIco');
+  const nama = document.getElementById('mdListNama');
+  if (ico) { ico.textContent = cfg.ico; ico.style.background = cfg.bg; ico.style.color = cfg.color; }
+  if (nama) nama.textContent = cfg.label;
+  goPage('modul-list');
+}
+
+async function mdLoadList() {
+  if (!db) return;
+  const el = document.getElementById('mdListContent');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  try {
+    const { data, error } = await db.from('modul_sekolah').select('id,judul,mata_pelajaran,kelas,file_type,created_at')
+      .eq('jenis', mdCurrentJenis).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📖</div><div style="font-weight:700;margin-bottom:6px">Belum ada modul</div><div style="font-size:12px">Klik "Tambah Modul Baru" untuk mulai</div></div>`;
+      return;
+    }
+    el.innerHTML = data.map(m => `
+      <div class="md-item-card" onclick="mdBukaDetail('${m.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">${m.judul}</div>
+            ${m.mata_pelajaran?`<div style="font-size:11px;color:var(--text-light)">📚 ${m.mata_pelajaran}${m.kelas?' · '+m.kelas:''}</div>`:''}
+            <div style="font-size:10px;color:#94a3b8;margin-top:4px">${m.file_type==='upload'?'📎 File Upload':'📝 Form'} · ${new Date(m.created_at).toLocaleDateString('id-ID')}</div>
+          </div>
+          <div style="font-size:20px;color:var(--text-light);flex-shrink:0">›</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel modul_sekolah sudah dibuat</small></div>`;
+  }
+}
+
+function mdBukaForm() {
+  mdCurrentId = null;
+  const el = document.getElementById('mdFormContent');
+  el.innerHTML = mdBuildForm(mdCurrentJenis, null);
+  goPage('modul-form');
+}
+
+function mdBuildForm(jenis, data) {
+  const d = data || {};
+  const dj = d.data_json || {};
+  const isEdit = !!data;
+  const cfg = MD_JENIS_CFG[jenis];
+
+  let formFields = '';
+
+  // ── IDENTITAS UMUM (semua jenis) ──
+  const identitas = `
+    <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+      <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px;letter-spacing:0.5px">📋 IDENTITAS</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Judul / Nama *</label><input type="text" id="mdJudul" class="form-control" value="${d.judul||''}" placeholder="Judul modul..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="mdMapel" class="form-control" value="${d.mata_pelajaran||''}" placeholder="Informatika..."></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas / Fase</label><input type="text" id="mdKelas" class="form-control" value="${d.kelas||''}" placeholder="SMP/VII - D"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penyusun</label><input type="text" id="mdPenyusun" class="form-control" value="${dj.penyusun||CONFIG.guru||''}" placeholder="Nama guru..."></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="mdTP" class="form-control" value="${dj.tahun_pelajaran||CONFIG.tahunPelajaran||''}" placeholder="2025/2026"></div>
+        </div>
+      </div>
+    </div>`;
+
+  if (jenis === 'pembelajaran') {
+    formFields = `
+      ${identitas}
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">📌 IDENTITAS MODUL</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Elemen</label><input type="text" id="mdElemen" class="form-control" value="${dj.elemen||''}" placeholder="Jaringan Komputer..."></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Alokasi Waktu</label><input type="text" id="mdAlokasi" class="form-control" value="${dj.alokasi||''}" placeholder="6 JP x 40 menit"></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">A. CAPAIAN PEMBELAJARAN</div>
+        <textarea id="mdCapaian" rows="4" class="form-control" placeholder="Pada akhir pembelajaran, peserta didik mampu..." style="resize:vertical">${dj.capaian||''}</textarea>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">B. TUJUAN PEMBELAJARAN</div>
+        <textarea id="mdTujuan" rows="4" class="form-control" placeholder="1. Siswa mampu...\n2. Siswa mampu..." style="resize:vertical">${dj.tujuan||''}</textarea>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">C. TOPIK PEMBELAJARAN</div>
+        <textarea id="mdTopik" rows="3" class="form-control" placeholder="1. Konsep dasar jaringan...\n2. Praktik koneksi..." style="resize:vertical">${dj.topik||''}</textarea>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">D. PRAKTIK PEDAGOGIS</div>
+        <textarea id="mdPedagogis" rows="3" class="form-control" placeholder="Model: Problem Based Learning\nMetode: Diskusi, demonstrasi..." style="resize:vertical">${dj.pedagogis||''}</textarea>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">E. KEGIATAN PEMBELAJARAN</div>
+        <div id="mdPertList">${mdBuildPertList(dj.pertemuan||[])}</div>
+        <button onclick="mdTambahPert()" type="button" style="margin-top:10px;background:var(--primary-light);color:var(--primary);border:1px dashed var(--primary);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;font-family:var(--font)">+ Tambah Pertemuan</button>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">F. PENILAIAN</div>
+        <textarea id="mdPenilaian" rows="3" class="form-control" placeholder="Teknik penilaian: observasi, tes tulis...\nInstrumen: rubrik, soal..." style="resize:vertical">${dj.penilaian||''}</textarea>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">G. LINGKUNGAN & PEMANFAATAN DIGITAL</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Lingkungan Pembelajaran</label><textarea id="mdLingkungan" rows="2" class="form-control" placeholder="Fisik: Laboratorium komputer...\nVirtual: Google Classroom..." style="resize:vertical">${dj.lingkungan||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Pemanfaatan Digital</label><textarea id="mdDigital" rows="2" class="form-control" placeholder="1. Perpustakaan Digital...\n2. Forum Diskusi Daring..." style="resize:vertical">${dj.digital||''}</textarea></div>
+        </div>
+      </div>`;
+  } else if (jenis === 'atp') {
+    formFields = `${identitas}
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">🗺️ ALUR TUJUAN PEMBELAJARAN</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Elemen / Domain</label><input type="text" id="mdElemen" class="form-control" value="${dj.elemen||''}" placeholder="Jaringan Komputer dan Internet"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Capaian Pembelajaran</label><textarea id="mdCapaian" rows="3" class="form-control" style="resize:vertical" placeholder="Peserta didik mampu...">${dj.capaian||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Alur Tujuan Pembelajaran (satu per baris)</label><textarea id="mdTujuan" rows="6" class="form-control" style="resize:vertical" placeholder="1. Siswa mampu menjelaskan...\n2. Siswa mampu mengidentifikasi...\n3. Siswa mampu...">${dj.tujuan||''}</textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Alokasi Waktu</label><input type="text" id="mdAlokasi" class="form-control" value="${dj.alokasi||''}" placeholder="6 JP"></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Profil Pelajar Pancasila</label><input type="text" id="mdProfil" class="form-control" value="${dj.profil||''}" placeholder="Bernalar kritis, Kreatif..."></div>
+          </div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan / Keterangan</label><textarea id="mdCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan tambahan...">${dj.catatan||''}</textarea></div>
+        </div>
+      </div>`;
+  } else if (jenis === 'lkpd') {
+    formFields = `${identitas}
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">📝 ISI LKPD</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Pertemuan ke-</label><input type="text" id="mdPertemuan" class="form-control" value="${dj.pertemuan_ke||''}" placeholder="1"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tujuan Pembelajaran</label><textarea id="mdTujuan" rows="3" class="form-control" style="resize:vertical" placeholder="Setelah mengerjakan LKPD ini, siswa mampu...">${dj.tujuan||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Petunjuk Pengerjaan</label><textarea id="mdPetunjuk" rows="3" class="form-control" style="resize:vertical" placeholder="1. Baca materi terlebih dahulu...\n2. Kerjakan secara berkelompok...">${dj.petunjuk||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Soal / Tugas</label><textarea id="mdSoal" rows="6" class="form-control" style="resize:vertical" placeholder="1. Jelaskan pengertian...\n2. Sebutkan perbedaan...\n3. Gambarkan bagan...">${dj.soal||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kolom Jawaban / Lembar Kerja</label><textarea id="mdJawaban" rows="4" class="form-control" style="resize:vertical" placeholder="Jawaban:\n\n\n(Kosongkan untuk kolom jawaban siswa)">${dj.jawaban||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penilaian / Rubrik</label><textarea id="mdPenilaian" rows="2" class="form-control" style="resize:vertical" placeholder="Skor maks: 100\nKriteria penilaian...">${dj.penilaian||''}</textarea></div>
+        </div>
+      </div>`;
+  } else { // co_kurikuler
+    formFields = `${identitas}
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">🌟 DETAIL KEGIATAN</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jenis Kegiatan</label><select id="mdJenisKeg" class="form-control"><option value="P5" ${dj.jenis_keg==='P5'?'selected':''}>P5</option><option value="Ekstrakurikuler" ${dj.jenis_keg==='Ekstrakurikuler'?'selected':''}>Ekstrakurikuler</option><option value="Pembiasaan" ${dj.jenis_keg==='Pembiasaan'?'selected':''}>Pembiasaan</option><option value="Lainnya" ${dj.jenis_keg==='Lainnya'?'selected':''}>Lainnya</option></select></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas Sasaran</label><input type="text" id="mdSasaran" class="form-control" value="${dj.sasaran||''}" placeholder="Semua kelas / Kelas 7"></div>
+          </div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Waktu Pelaksanaan</label><input type="text" id="mdWaktu" class="form-control" value="${dj.waktu||''}" placeholder="Setiap Jumat, 07.00 - 08.00"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penanggung Jawab</label><input type="text" id="mdPJ" class="form-control" value="${dj.pj||CONFIG.guru||''}" placeholder="Nama guru PJ"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Deskripsi Kegiatan</label><textarea id="mdDeskripsi" rows="3" class="form-control" style="resize:vertical" placeholder="Uraian singkat kegiatan...">${dj.deskripsi||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tujuan</label><textarea id="mdTujuan" rows="3" class="form-control" style="resize:vertical" placeholder="1. Mengembangkan karakter...\n2. Meningkatkan kreativitas...">${dj.tujuan||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Dimensi Profil Pelajar Pancasila</label><input type="text" id="mdProfil" class="form-control" value="${dj.profil||''}" placeholder="Bergotong royong, Kreatif..."></div>
+        </div>
+      </div>`;
+  }
+
+  // Upload area (semua jenis)
+  const uploadArea = `
+    <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+      <div style="font-size:12px;font-weight:800;color:var(--text-light);margin-bottom:10px">📎 ATAU UPLOAD FILE (opsional)</div>
+      <div class="md-upload-area" onclick="document.getElementById('mdFileInput').click()">
+        <div style="font-size:28px;margin-bottom:6px">📁</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">Klik untuk upload file</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px">PDF, DOCX, JPG, PNG (maks 2MB)</div>
+      </div>
+      <input type="file" id="mdFileInput" accept=".pdf,.docx,.jpg,.jpeg,.png" style="display:none" onchange="mdHandleFile(this)">
+      <div id="mdFilePreview" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:12px">
+        <div id="mdFileName" style="font-weight:700;color:var(--text)"></div>
+        <div id="mdFileSize" style="color:var(--text-light);font-size:10px;margin-top:2px"></div>
+        <button onclick="mdClearFile()" style="margin-top:6px;background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">✕ Hapus File</button>
+      </div>
+      <input type="hidden" id="mdFileBase64">
+      <input type="hidden" id="mdFileType">
+      <input type="hidden" id="mdFileNama">
+    </div>`;
+
+  return `<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+    <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:${MD_JENIS_CFG[jenis].bg}">${MD_JENIS_CFG[jenis].ico}</div>
+    <div style="font-size:14px;font-weight:800;color:var(--text)">${isEdit?'✏️ Edit':'➕ Tambah'} ${MD_JENIS_CFG[jenis].label}</div>
+  </div>
+  ${formFields}${uploadArea}
+  <div style="display:flex;gap:10px;margin-top:4px">
+    <button onclick="goPage('modul-list')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="mdSimpan()" class="btn btn-primary" style="flex:2" id="mdSimpanBtn">💾 Simpan</button>
+  </div>`;
+}
+
+function mdBuildPertList(pertemuan) {
+  if (!pertemuan || pertemuan.length === 0) {
+    return `<div id="mdPertItems"></div>`;
+  }
+  const items = pertemuan.map((p,i) => mdPertHTML(i, p)).join('');
+  return `<div id="mdPertItems">${items}</div>`;
+}
+
+function mdPertHTML(idx, data) {
+  const d = data || {};
+  return `<div class="md-pert-item" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px" id="mdPert_${idx}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:800;color:var(--text)">Pertemuan ${idx+1}</div>
+      <button onclick="mdHapusPert(${idx})" type="button" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:13px">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div><label style="font-size:10px;font-weight:600;color:var(--text-light);display:block;margin-bottom:2px">Judul Pertemuan</label><input type="text" class="form-control md-pert-judul" value="${d.judul||''}" placeholder="cth: Konsep Dasar Jaringan Komputer" style="font-size:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div><label style="font-size:10px;font-weight:600;color:var(--text-light);display:block;margin-bottom:2px">Alokasi</label><input type="text" class="form-control md-pert-alokasi" value="${d.alokasi||''}" placeholder="10 Menit" style="font-size:12px"></div>
+      </div>
+      <div><label style="font-size:10px;font-weight:600;color:var(--text-light);display:block;margin-bottom:2px">Kegiatan Pendahuluan</label><textarea class="form-control md-pert-pendahuluan" rows="2" style="resize:vertical;font-size:12px" placeholder="1. Guru membuka dengan salam...\n2. Apersepsi...">${d.pendahuluan||''}</textarea></div>
+      <div><label style="font-size:10px;font-weight:600;color:var(--text-light);display:block;margin-bottom:2px">Kegiatan Inti</label><textarea class="form-control md-pert-inti" rows="3" style="resize:vertical;font-size:12px" placeholder="1. Memahami: Guru menjelaskan...\n2. Mengaplikasi: Siswa membuat...">${d.inti||''}</textarea></div>
+      <div><label style="font-size:10px;font-weight:600;color:var(--text-light);display:block;margin-bottom:2px">Kegiatan Penutup</label><textarea class="form-control md-pert-penutup" rows="2" style="resize:vertical;font-size:12px" placeholder="1. Guru dan siswa menyimpulkan...\n2. Refleksi singkat...">${d.penutup||''}</textarea></div>
+    </div>
+  </div>`;
+}
+
+let mdPertCount = 0;
+function mdTambahPert() {
+  const el = document.getElementById('mdPertItems');
+  if (!el) return;
+  const idx = el.children.length;
+  el.insertAdjacentHTML('beforeend', mdPertHTML(idx, {}));
+  mdPertCount = idx + 1;
+}
+function mdHapusPert(idx) {
+  const el = document.getElementById(`mdPert_${idx}`);
+  if (el) el.remove();
+  // Re-number
+  document.querySelectorAll('.md-pert-item').forEach((el,i) => {
+    el.id = `mdPert_${i}`;
+    el.querySelector('div>div').textContent = `Pertemuan ${i+1}`;
+    el.querySelector('button[onclick]').setAttribute('onclick', `mdHapusPert(${i})`);
+  });
+}
+
+function mdHandleFile(input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 2*1024*1024) { toast('File terlalu besar. Maks 2MB', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('mdFileBase64').value = e.target.result;
+    document.getElementById('mdFileType').value = file.type;
+    document.getElementById('mdFileNama').value = file.name;
+    document.getElementById('mdFilePreview').style.display = 'block';
+    document.getElementById('mdFileName').textContent = '📎 ' + file.name;
+    document.getElementById('mdFileSize').textContent = `Ukuran: ${Math.round(file.size/1024)} KB`;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function mdClearFile() {
+  ['mdFileBase64','mdFileType','mdFileNama'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('mdFilePreview').style.display='none';
+}
+
+function mdCollectData() {
+  const jenis = mdCurrentJenis;
+  const judul = document.getElementById('mdJudul')?.value.trim();
+  if (!judul) { toast('Judul wajib diisi', 'error'); return null; }
+  const base = {
+    jenis, judul,
+    mata_pelajaran: document.getElementById('mdMapel')?.value.trim()||null,
+    kelas: document.getElementById('mdKelas')?.value.trim()||null,
+    file_base64: document.getElementById('mdFileBase64')?.value||null,
+    file_type_mime: document.getElementById('mdFileType')?.value||null,
+    file_nama: document.getElementById('mdFileNama')?.value||null,
+    file_type: document.getElementById('mdFileBase64')?.value ? 'upload' : 'form',
+    user_id: currentUser?.id||null
+  };
+  let dj = { penyusun: document.getElementById('mdPenyusun')?.value.trim()||null, tahun_pelajaran: document.getElementById('mdTP')?.value.trim()||null };
+
+  if (jenis==='pembelajaran') {
+    dj = {...dj,
+      elemen: document.getElementById('mdElemen')?.value.trim()||null,
+      alokasi: document.getElementById('mdAlokasi')?.value.trim()||null,
+      capaian: document.getElementById('mdCapaian')?.value.trim()||null,
+      tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
+      topik: document.getElementById('mdTopik')?.value.trim()||null,
+      pedagogis: document.getElementById('mdPedagogis')?.value.trim()||null,
+      penilaian: document.getElementById('mdPenilaian')?.value.trim()||null,
+      lingkungan: document.getElementById('mdLingkungan')?.value.trim()||null,
+      digital: document.getElementById('mdDigital')?.value.trim()||null,
+      pertemuan: [...document.querySelectorAll('.md-pert-item')].map(el => ({
+        judul: el.querySelector('.md-pert-judul')?.value.trim()||'',
+        alokasi: el.querySelector('.md-pert-alokasi')?.value.trim()||'',
+        pendahuluan: el.querySelector('.md-pert-pendahuluan')?.value.trim()||'',
+        inti: el.querySelector('.md-pert-inti')?.value.trim()||'',
+        penutup: el.querySelector('.md-pert-penutup')?.value.trim()||''
+      }))
+    };
+  } else if (jenis==='atp') {
+    dj = {...dj,
+      elemen: document.getElementById('mdElemen')?.value.trim()||null,
+      capaian: document.getElementById('mdCapaian')?.value.trim()||null,
+      tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
+      alokasi: document.getElementById('mdAlokasi')?.value.trim()||null,
+      profil: document.getElementById('mdProfil')?.value.trim()||null,
+      catatan: document.getElementById('mdCatatan')?.value.trim()||null
+    };
+  } else if (jenis==='lkpd') {
+    dj = {...dj,
+      pertemuan_ke: document.getElementById('mdPertemuan')?.value.trim()||null,
+      tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
+      petunjuk: document.getElementById('mdPetunjuk')?.value.trim()||null,
+      soal: document.getElementById('mdSoal')?.value.trim()||null,
+      jawaban: document.getElementById('mdJawaban')?.value.trim()||null,
+      penilaian: document.getElementById('mdPenilaian')?.value.trim()||null
+    };
+  } else {
+    dj = {...dj,
+      jenis_keg: document.getElementById('mdJenisKeg')?.value||null,
+      sasaran: document.getElementById('mdSasaran')?.value.trim()||null,
+      waktu: document.getElementById('mdWaktu')?.value.trim()||null,
+      pj: document.getElementById('mdPJ')?.value.trim()||null,
+      deskripsi: document.getElementById('mdDeskripsi')?.value.trim()||null,
+      tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
+      profil: document.getElementById('mdProfil')?.value.trim()||null
+    };
+  }
+  base.data_json = dj;
+  return base;
+}
+
+async function mdSimpan() {
+  const payload = mdCollectData();
+  if (!payload) return;
+  if (!db) return toast('Supabase belum tersambung','error');
+  const btn = document.getElementById('mdSimpanBtn');
+  btn.disabled=true; btn.textContent='⏳...';
+  try {
+    const { error } = mdCurrentId
+      ? await db.from('modul_sekolah').update(payload).eq('id', mdCurrentId)
+      : await db.from('modul_sekolah').insert(payload);
+    if (error) throw error;
+    toast(mdCurrentId?'✅ Modul diperbarui!':'✅ Modul berhasil disimpan!','success');
+    mdCurrentId = null;
+    goPage('modul-list');
+  } catch(e) { toast('Gagal: '+e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='💾 Simpan'; }
+}
+
+async function mdBukaDetail(id) {
+  mdCurrentId = id;
+  const el = document.getElementById('mdDetailContent');
+  if (el) el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Memuat...</div>';
+  goPage('modul-detail');
+  try {
+    const { data, error } = await db.from('modul_sekolah').select('*').eq('id',id).single();
+    if (error) throw error;
+    const cfg = MD_JENIS_CFG[data.jenis];
+    const dj = data.data_json || {};
+    el.innerHTML = `<div style="padding:0 0 100px">
+      <div style="background:var(--card);border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:${cfg.bg}">${cfg.ico}</div>
+              <span style="font-size:11px;font-weight:700;color:${cfg.color}">${cfg.label}</span>
+            </div>
+            <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px">${data.judul}</div>
+            ${data.mata_pelajaran?`<div style="font-size:12px;color:var(--text-light)">📚 ${data.mata_pelajaran}${data.kelas?' · '+data.kelas:''}</div>`:''}
+            ${dj.penyusun?`<div style="font-size:11px;color:var(--text-light);margin-top:3px">✍️ ${dj.penyusun}</div>`:''}
+            ${dj.tahun_pelajaran?`<div style="font-size:11px;color:var(--text-light)">📅 ${dj.tahun_pelajaran}</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button onclick="mdEditModul('${id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>
+            <button onclick="mdHapusModul('${id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">🗑️</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="mdGenerateDoc('${id}','pdf')" style="flex:1;background:#ef4444;color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">📄 Download PDF</button>
+        <button onclick="mdGenerateDoc('${id}','word')" style="flex:1;background:#2563eb;color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">📝 Download Word</button>
+      </div>
+      ${data.file_base64&&data.file_type_mime?.startsWith('image')?`<img src="${data.file_base64}" style="width:100%;border-radius:12px;margin-bottom:14px">`:data.file_base64?`<div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:14px;display:flex;align-items:center;gap:10px"><span style="font-size:24px">📎</span><div><div style="font-size:12px;font-weight:700">${data.file_nama||'File terlampir'}</div><button onclick="mdDownloadFile('${id}')" style="margin-top:4px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">⬇️ Download</button></div></div>`:''}
+      ${mdRenderDetail(data.jenis, dj)}
+    </div>`;
+  } catch(e) {
+    if(el) el.innerHTML=`<div style="padding:30px;text-align:center;color:var(--danger)">❌ ${e.message}</div>`;
+  }
+}
+
+function mdRenderDetail(jenis, dj) {
+  const sec = (label, val) => val ? `<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:6px;letter-spacing:0.5px">${label}</div><div style="font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap">${val}</div></div>` : '';
+  if (jenis==='pembelajaran') {
+    const pert = (dj.pertemuan||[]).map((p,i)=>`
+      <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid var(--primary)">
+        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px">Pertemuan ${i+1}: ${p.judul||''}</div>
+        ${p.pendahuluan?`<div style="font-size:11px;margin-bottom:4px"><span style="font-weight:700;color:var(--text-light)">Pendahuluan:</span><br>${p.pendahuluan}</div>`:''}
+        ${p.inti?`<div style="font-size:11px;margin-bottom:4px"><span style="font-weight:700;color:var(--text-light)">Inti:</span><br>${p.inti}</div>`:''}
+        ${p.penutup?`<div style="font-size:11px"><span style="font-weight:700;color:var(--text-light)">Penutup:</span><br>${p.penutup}</div>`:''}
+      </div>`).join('');
+    return sec('A. CAPAIAN PEMBELAJARAN', dj.capaian) + sec('B. TUJUAN PEMBELAJARAN', dj.tujuan) + sec('C. TOPIK', dj.topik) + sec('D. PRAKTIK PEDAGOGIS', dj.pedagogis) + (pert?`<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:8px">E. KEGIATAN PEMBELAJARAN</div>${pert}</div>`:'') + sec('F. PENILAIAN', dj.penilaian) + sec('G. LINGKUNGAN', dj.lingkungan) + sec('H. PEMANFAATAN DIGITAL', dj.digital);
+  } else if (jenis==='atp') {
+    return sec('ELEMEN / DOMAIN', dj.elemen) + sec('CAPAIAN PEMBELAJARAN', dj.capaian) + sec('ALUR TUJUAN PEMBELAJARAN', dj.tujuan) + sec('ALOKASI WAKTU', dj.alokasi) + sec('PROFIL PELAJAR PANCASILA', dj.profil) + sec('CATATAN', dj.catatan);
+  } else if (jenis==='lkpd') {
+    return sec('TUJUAN PEMBELAJARAN', dj.tujuan) + sec('PETUNJUK PENGERJAAN', dj.petunjuk) + sec('SOAL / TUGAS', dj.soal) + (dj.jawaban?sec('KOLOM JAWABAN',dj.jawaban):'') + sec('PENILAIAN / RUBRIK', dj.penilaian);
+  } else {
+    return sec('JENIS KEGIATAN', dj.jenis_keg) + sec('KELAS SASARAN', dj.sasaran) + sec('WAKTU PELAKSANAAN', dj.waktu) + sec('PENANGGUNG JAWAB', dj.pj) + sec('DESKRIPSI', dj.deskripsi) + sec('TUJUAN', dj.tujuan) + sec('PROFIL PELAJAR PANCASILA', dj.profil);
+  }
+}
+
+async function mdEditModul(id) {
+  try {
+    const { data } = await db.from('modul_sekolah').select('*').eq('id',id).single();
+    mdCurrentId = id;
+    mdCurrentJenis = data.jenis;
+    const el = document.getElementById('mdFormContent');
+    el.innerHTML = mdBuildForm(data.jenis, data);
+    goPage('modul-form');
+  } catch(e) { toast('Gagal: '+e.message,'error'); }
+}
+
+async function mdHapusModul(id) {
+  if (!confirm('Hapus modul ini?')) return;
+  try {
+    await db.from('modul_sekolah').delete().eq('id',id);
+    toast('Modul dihapus','success');
+    goPage('modul-list');
+  } catch(e) { toast('Gagal: '+e.message,'error'); }
+}
+
+async function mdDownloadFile(id) {
+  try {
+    const { data } = await db.from('modul_sekolah').select('file_base64,file_type_mime,file_nama').eq('id',id).single();
+    if (!data?.file_base64) return toast('File tidak ditemukan','error');
+    const a = document.createElement('a');
+    a.href = data.file_base64;
+    a.download = data.file_nama || 'modul_file';
+    a.click();
+  } catch(e) { toast('Gagal download: '+e.message,'error'); }
+}
+
+async function mdGenerateDoc(id, format) {
+  if (!db) return;
+  try {
+    const { data, error } = await db.from('modul_sekolah').select('*').eq('id',id).single();
+    if (error) throw error;
+    const dj = data.data_json || {};
+    const cfg = MD_JENIS_CFG[data.jenis];
+    const html = mdBuildDocHTML(data, dj, cfg);
+    if (format === 'pdf') {
+      mdPrintAsPDF(html, data.judul);
+    } else {
+      mdDownloadAsWord(html, data.judul);
+    }
+  } catch(e) { toast('Gagal generate: '+e.message,'error'); }
+}
+
+function mdBuildDocHTML(data, dj, cfg) {
+  const school = CONFIG.school || 'NAMA SEKOLAH';
+  const npsn = CONFIG.npsn || '-';
+  const address = CONFIG.address || '-';
+  const sec = (label, val) => val ? `<div style="margin-bottom:16px"><div style="background:#1e3a8a;color:#fff;padding:6px 12px;font-size:11px;font-weight:bold;letter-spacing:0.5px">${label}</div><div style="border:1px solid #ddd;border-top:none;padding:10px 12px;font-size:11px;line-height:1.7;white-space:pre-wrap">${val}</div></div>` : '';
+
+  let body = '';
+  if (data.jenis === 'pembelajaran') {
+    const pertHTML = (dj.pertemuan||[]).map((p,i) => `
+      <tr><td colspan="2" style="background:#f97316;color:#fff;font-weight:bold;padding:8px 12px;font-size:11px">Pertemuan ${i+1}: ${p.judul||''} ${p.alokasi?'('+p.alokasi+')':''}</td></tr>
+      ${p.pendahuluan?`<tr><td style="font-weight:bold;font-size:11px;padding:6px 12px;width:30%;border:1px solid #ddd">Kegiatan Pendahuluan</td><td style="font-size:11px;padding:6px 12px;border:1px solid #ddd;white-space:pre-wrap">${p.pendahuluan}</td></tr>`:''}
+      ${p.inti?`<tr><td style="font-weight:bold;font-size:11px;padding:6px 12px;border:1px solid #ddd">Kegiatan Inti</td><td style="font-size:11px;padding:6px 12px;border:1px solid #ddd;white-space:pre-wrap">${p.inti}</td></tr>`:''}
+      ${p.penutup?`<tr><td style="font-weight:bold;font-size:11px;padding:6px 12px;border:1px solid #ddd">Kegiatan Penutup</td><td style="font-size:11px;padding:6px 12px;border:1px solid #ddd;white-space:pre-wrap">${p.penutup}</td></tr>`:''}
+    `).join('');
+    body = `
+      <div style="margin-bottom:16px"><div style="background:#1e3a8a;color:#fff;padding:6px 12px;font-size:11px;font-weight:bold">A. IDENTITAS MODUL</div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #ddd">
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;width:30%;font-weight:bold">Satuan Pendidikan</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${school}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Nama Penyusun</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.penyusun||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Jenjang Kelas</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${data.kelas||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Mata Pelajaran</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${data.mata_pelajaran||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Elemen</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.elemen||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Alokasi Waktu</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.alokasi||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Tahun Pelajaran</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.tahun_pelajaran||'-'}</td></tr>
+      </table></div>
+      ${sec('B. CAPAIAN PEMBELAJARAN', dj.capaian)}
+      ${sec('C. TUJUAN PEMBELAJARAN', dj.tujuan)}
+      ${sec('D. TOPIK PEMBELAJARAN', dj.topik)}
+      ${sec('E. PRAKTIK PEDAGOGIS', dj.pedagogis)}
+      ${pertHTML?`<div style="margin-bottom:16px"><div style="background:#1e3a8a;color:#fff;padding:6px 12px;font-size:11px;font-weight:bold">F. PENGALAMAN BELAJAR / KEGIATAN PEMBELAJARAN</div><table style="width:100%;border-collapse:collapse">${pertHTML}</table></div>`:''}
+      ${sec('G. PENILAIAN', dj.penilaian)}
+      ${sec('H. LINGKUNGAN PEMBELAJARAN', dj.lingkungan)}
+      ${sec('I. PEMANFAATAN DIGITAL', dj.digital)}`;
+  } else {
+    body = mdRenderDetail(data.jenis, dj).replace(/<div style="background:var\(--card\)/g,'<div style="background:#fff').replace(/var\(--border\)/g,'#ddd').replace(/var\(--text\)/g,'#1e293b').replace(/var\(--primary\)/g,'#1e3a8a').replace(/var\(--text-light\)/g,'#64748b').replace(/var\(--bg\)/g,'#f8fafc');
+  }
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body { font-family: 'Times New Roman', serif; margin: 0; padding: 0; color: #1e293b; }
+    .kop { display:flex; align-items:center; gap:16px; padding:12px 20px; border-bottom:3px double #1e3a8a; margin-bottom:16px; }
+    .kop-text { flex:1; text-align:center; }
+    .kop-logo { width:70px; height:70px; object-fit:cover; }
+    h1 { font-size:14px; font-weight:bold; margin:0 0 2px; text-transform:uppercase; letter-spacing:0.5px; }
+    h2 { font-size:12px; font-weight:bold; margin:0 0 2px; }
+    h3 { font-size:11px; margin:0; font-weight:normal; }
+    .judul-doc { text-align:center; margin:16px 0; }
+    .judul-doc h2 { font-size:13px; text-transform:uppercase; border-bottom:2px solid #1e3a8a; display:inline-block; padding-bottom:4px; }
+    @page { margin: 2cm; }
+  </style></head><body>
+  <div class="kop">
+    ${CONFIG.logo?`<img src="${CONFIG.logo}" class="kop-logo">`:''}
+    <div class="kop-text">
+      <h1>${school}</h1>
+      <h3>${address}</h3>
+      <h3>NPSN: ${npsn}</h3>
+    </div>
+  </div>
+  <div class="judul-doc"><h2>${cfg.label}</h2></div>
+  <div style="padding:0 4px">${body}</div>
+  </body></html>`;
+}
+
+function mdPrintAsPDF(html, judul) {
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 800);
+}
+
+function mdDownloadAsWord(html, judul) {
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (judul||'modul').replace(/[^a-zA-Z0-9 _-]/g,'_') + '.doc';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('⬇️ File Word sedang diunduh...','success');
+}
+
+// ════════════════════════════════════════════════════════════
+// LAPORAN PROGKOL — Generate & Download
+// ════════════════════════════════════════════════════════════
+async function pkGenerateLaporan() {
+  if (!db) return;
+  const cfg = PK_WAKA_CFG[pkCurrentWaka];
+  const jangkaLabel = {pendek:'Jangka Pendek',menengah:'Jangka Menengah',panjang:'Jangka Panjang'}[pkCurrentJangka];
+  toast('⏳ Menyiapkan laporan...','info');
+  try {
+    const { data: programs } = await db.from('program_sekolah').select('*')
+      .eq('waka', pkCurrentWaka).eq('jangka', pkCurrentJangka).order('tanggal_mulai');
+    if (!programs || programs.length === 0) { toast('Belum ada program untuk dibuat laporan','error'); return; }
+
+    // Ambil semua laporan untuk programs ini
+    const ids = programs.map(p=>p.id);
+    const { data: laporans } = await db.from('laporan_program').select('*').in('program_id', ids).order('tanggal_laporan');
+
+    const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel);
+    // Tampilkan pilihan format
+    pkShowLaporanModal(html, programs.length, cfg.label + ' - ' + jangkaLabel);
+  } catch(e) { toast('Gagal: '+e.message,'error'); }
+}
+
+function pkShowLaporanModal(html, total, label) {
+  // Simpan html ke window untuk diakses tombol download
+  window._pkLaporanHTML = html;
+  window._pkLaporanLabel = label;
+
+  // Tampilkan dialog sederhana
+  const modal = document.createElement('div');
+  modal.id = 'pkLaporanDlg';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `<div style="background:var(--card);border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">📄</div>
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Laporan ${label}</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px">${total} program ditemukan. Pilih format unduhan:</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="pkDownloadLaporan('pdf')" style="background:#ef4444;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📄 Cetak / Download PDF</button>
+      <button onclick="pkDownloadLaporan('word')" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📝 Download Word (.doc)</button>
+      <button onclick="document.getElementById('pkLaporanDlg').remove()" style="background:var(--border);color:var(--text);border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Batal</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function pkDownloadLaporan(format) {
+  document.getElementById('pkLaporanDlg')?.remove();
+  const html = window._pkLaporanHTML;
+  const label = window._pkLaporanLabel || 'laporan_progkol';
+  if (format==='pdf') {
+    const win = window.open('','_blank','width=800,height=900');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(()=>win.print(), 800);
+  } else {
+    const blob = new Blob(['\ufeff', html], { type:'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=label.replace(/[^a-zA-Z0-9 _-]/g,'_')+'.doc'; a.click();
+    URL.revokeObjectURL(url);
+    toast('⬇️ File Word sedang diunduh...','success');
+  }
+}
+
+function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel) {
+  const school = CONFIG.school||'NAMA SEKOLAH';
+  const address = CONFIG.address||'-';
+  const npsn = CONFIG.npsn||'-';
+  const now = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const tp = CONFIG.tahunPelajaran||'-';
+
+  const tabelProgram = programs.map((p,i) => {
+    const lap = laporans.filter(l=>l.program_id===p.id);
+    const statusLabel = {rencana:'Rencana',berjalan:'Sedang Berjalan',selesai:'Selesai'}[p.status]||p.status;
+    const tglMulai = p.tanggal_mulai?new Date(p.tanggal_mulai).toLocaleDateString('id-ID'):'-';
+    const tglSelesai = p.tanggal_selesai?new Date(p.tanggal_selesai).toLocaleDateString('id-ID'):'-';
+    return `<tr>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;text-align:center;vertical-align:top">${i+1}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;vertical-align:top"><strong>${p.nama_program}</strong>${p.deskripsi?'<br><span style="color:#64748b;font-size:10px">'+p.deskripsi+'</span>':''}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;text-align:center;vertical-align:top">${tglMulai}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;text-align:center;vertical-align:top">${tglSelesai}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;text-align:center;vertical-align:top">${p.penanggung_jawab||'-'}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;text-align:center;vertical-align:top;color:${p.status==='selesai'?'#16a34a':p.status==='berjalan'?'#d97706':'#64748b'};font-weight:bold">${statusLabel}</td>
+      <td style="border:1px solid #ddd;padding:6px 8px;font-size:11px;vertical-align:top">${lap.length>0?lap.map(l=>new Date(l.tanggal_laporan).toLocaleDateString('id-ID')).join('<br>'):'Belum ada laporan'}</td>
+    </tr>`;
+  }).join('');
+
+  const terlaksana = programs.filter(p=>p.status==='selesai').length;
+  const berjalan = programs.filter(p=>p.status==='berjalan').length;
+  const rencana = programs.filter(p=>p.status==='rencana').length;
+
+  const narasi = `Berdasarkan program kerja Wakil Kepala Sekolah Bidang <strong>${cfg.label}</strong> untuk ${jangkaLabel} Tahun Pelajaran ${tp}, 
+    telah ditetapkan sebanyak <strong>${programs.length} program</strong> kegiatan. Dari jumlah tersebut, sebanyak 
+    <strong>${terlaksana} program</strong> telah terlaksana, <strong>${berjalan} program</strong> sedang dalam pelaksanaan, 
+    dan <strong>${rencana} program</strong> masih dalam tahap perencanaan.
+    <br><br>
+    Pelaksanaan program kerja ini mengacu pada rencana yang telah disusun di awal tahun pelajaran dan dilaksanakan 
+    secara bertahap sesuai dengan jadwal yang telah ditetapkan. Setiap program yang telah terlaksana didokumentasikan 
+    dalam bentuk laporan pelaksanaan sebagai bentuk pertanggungjawaban kegiatan.`;
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body { font-family: 'Times New Roman', serif; margin: 0; padding: 0; font-size:12px; color:#1e293b; }
+    .kop { display:flex; align-items:center; gap:16px; padding:14px 24px; border-bottom:4px double #1e3a8a; margin-bottom:0; }
+    .kop-text { flex:1; text-align:center; }
+    h1.school { font-size:16px; font-weight:900; margin:0 0 3px; text-transform:uppercase; }
+    h2.school { font-size:12px; font-weight:bold; margin:0 0 2px; }
+    h3.school { font-size:11px; margin:0; font-weight:normal; }
+    .judul-lap { text-align:center; padding:16px 24px 10px; }
+    .judul-lap h2 { font-size:14px; font-weight:900; text-transform:uppercase; margin:0 0 4px; }
+    .judul-lap p { font-size:12px; margin:2px 0; }
+    .section { padding:10px 24px; margin-bottom:8px; }
+    .section-title { font-size:13px; font-weight:bold; margin-bottom:6px; background:#1e3a8a; color:#fff; padding:6px 12px; }
+    table { border-collapse:collapse; width:100%; }
+    th { background:#1e3a8a; color:#fff; padding:7px 8px; font-size:11px; text-align:center; border:1px solid #ddd; }
+    .footer { padding:16px 24px; font-size:11px; }
+    @page { margin:2cm; }
+  </style></head><body>
+  <div class="kop">
+    ${CONFIG.logo?`<img src="${CONFIG.logo}" style="width:70px;height:70px;object-fit:cover">`:'<div style="width:70px;height:70px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px">🏫</div>'}
+    <div class="kop-text">
+      <h1 class="school">${school}</h1>
+      <h2 class="school">Naskah Laporan Program Kerja Wakasek</h2>
+      <h3 class="school">${address} &nbsp;|&nbsp; NPSN: ${npsn}</h3>
+    </div>
+  </div>
+  <div class="judul-lap">
+    <h2>LAPORAN PROGRAM KERJA</h2>
+    <p>Wakil Kepala Sekolah Bidang <strong>${cfg.label}</strong></p>
+    <p>${jangkaLabel} &nbsp;|&nbsp; Tahun Pelajaran ${tp}</p>
+    <p style="font-size:11px;color:#64748b">Dicetak pada: ${now}</p>
+  </div>
+  <div class="section">
+    <div class="section-title">I. PENDAHULUAN</div>
+    <p style="text-align:justify;line-height:1.8;font-size:12px">${narasi}</p>
+  </div>
+  <div class="section">
+    <div class="section-title">II. REKAPITULASI PROGRAM</div>
+    <table>
+      <tr>
+        <th style="width:4%">No</th>
+        <th style="width:28%">Nama Program</th>
+        <th style="width:12%">Tgl Mulai</th>
+        <th style="width:12%">Tgl Selesai</th>
+        <th style="width:16%">Penanggung Jawab</th>
+        <th style="width:12%">Status</th>
+        <th style="width:16%">Tgl Pelaksanaan</th>
+      </tr>
+      ${tabelProgram}
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title">III. KESIMPULAN</div>
+    <p style="text-align:justify;line-height:1.8;font-size:12px">
+      Secara keseluruhan, program kerja Wakasek Bidang ${cfg.label} ${jangkaLabel} Tahun Pelajaran ${tp} 
+      berjalan dengan baik. Dari ${programs.length} program yang direncanakan, 
+      ${terlaksana>0?`<strong>${terlaksana} program telah berhasil terlaksana</strong> sesuai rencana`:'program belum ada yang selesai'}. 
+      Diharapkan seluruh program dapat diselesaikan dengan baik demi peningkatan kualitas layanan pendidikan.
+    </p>
+  </div>
+  <div class="footer">
+    <div style="float:right;text-align:center;margin-top:10px">
+      <p style="margin:0">${CONFIG.address||'Sampang'}, ${now}</p>
+      <p style="margin:4px 0">Wakil Kepala Sekolah Bidang ${cfg.label}</p>
+      <br><br><br>
+      <p style="margin:0"><u>${CONFIG.guru||'.................................'}</u></p>
+    </div>
+    <div style="clear:both"></div>
+  </div>
+  </body></html>`;
+}
+// ════════════════════ END LAPORAN PROGKOL ════════════════════
 // ════════════════════ END JADWAL MGMP ════════════════════
 </script>
 </body>
