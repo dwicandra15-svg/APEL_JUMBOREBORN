@@ -14383,17 +14383,49 @@ function mdBuildForm(jenis, data) {
   const isEdit = !!data;
   const cfg = MD_JENIS_CFG[jenis];
 
+  const MAPEL_SMP = ['Pendidikan Agama Islam & Budi Pekerti','Pendidikan Agama Kristen & Budi Pekerti','Pendidikan Agama Katolik & Budi Pekerti','Pendidikan Agama Hindu & Budi Pekerti','Pendidikan Agama Buddha & Budi Pekerti','Pendidikan Pancasila','Bahasa Indonesia','Matematika','IPA','IPS','Bahasa Inggris','Seni Budaya','PJOK','Informatika','Bahasa Daerah','BK / Konseling','Mulok'];
+  const KELAS_SMP = ['VII (Kelas 7)','VIII (Kelas 8)','IX (Kelas 9)','VII-VIII (Kelas 7-8)','VII-IX (Semua Kelas)'];
+  const FASE_MAP = {'VII (Kelas 7)':'Fase D','VIII (Kelas 8)':'Fase D','IX (Kelas 9)':'Fase D','VII-VIII (Kelas 7-8)':'Fase D','VII-IX (Semua Kelas)':'Fase D'};
+  const DL_KRITERIA = [
+    {id:'mindful', label:'🧘 Mindful (Penuh Kesadaran)', desc:'Siswa sadar akan proses belajarnya'},
+    {id:'meaningful', label:'💡 Meaningful (Bermakna)', desc:'Terhubung dengan pengalaman nyata'},
+    {id:'joyful', label:'🎉 Joyful (Menyenangkan)', desc:'Atmosfer belajar positif & antusias'},
+    {id:'kolaboratif', label:'🤝 Kolaboratif', desc:'Belajar bersama, diskusi, presentasi'},
+    {id:'reflektif', label:'🔍 Reflektif', desc:'Siswa merefleksi proses & hasil belajar'},
+    {id:'hots', label:'🧠 HOTS', desc:'Berpikir tingkat tinggi (analisis, evaluasi, kreasi)'},
+    {id:'pbl', label:'🔧 Problem Based Learning', desc:'Belajar dari permasalahan nyata'},
+    {id:'pjbl', label:'📦 Project Based Learning', desc:'Produk/proyek sebagai hasil belajar'},
+    {id:'inkuiri', label:'🔬 Inkuiri', desc:'Siswa menemukan sendiri melalui eksplorasi'},
+    {id:'discovery', label:'🌟 Discovery Learning', desc:'Penemuan konsep melalui pengalaman'},
+    {id:'diferensiasi', label:'🎯 Diferensiasi', desc:'Pembelajaran sesuai kebutuhan individual'},
+    {id:'kontekstual', label:'🌍 Kontekstual', desc:'Materi dikaitkan dengan kehidupan nyata'},
+    {id:'stem', label:'⚙️ STEM Terintegrasi', desc:'Sains, Teknologi, Teknik, Matematika'},
+    {id:'formatif', label:'📊 Asesmen Formatif', desc:'Penilaian berkelanjutan selama proses'},
+  ];
+
+  const savedDL = dj.deep_learning || [];
+  const dlCheckboxes = DL_KRITERIA.map(k => `
+    <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid ${savedDL.includes(k.id)?'var(--primary)':'var(--border)'};background:${savedDL.includes(k.id)?'var(--primary-light)':'var(--card)'};cursor:pointer;transition:all 0.15s" onclick="mdToggleDL(this,'${k.id}')">
+      <input type="checkbox" id="mdDL_${k.id}" ${savedDL.includes(k.id)?'checked':''} style="margin-top:2px;accent-color:var(--primary);flex-shrink:0">
+      <div><div style="font-size:11px;font-weight:700;color:var(--text)">${k.label}</div><div style="font-size:10px;color:var(--text-light)">${k.desc}</div></div>
+    </label>`).join('');
+
+  const mapelOpts = MAPEL_SMP.map(m=>`<option value="${m}" ${(d.mata_pelajaran||''===m)||d.mata_pelajaran===m?'selected':''}>${m}</option>`).join('');
+  const kelasOpts = KELAS_SMP.map(k=>`<option value="${k}" ${d.kelas===k?'selected':''}>${k}</option>`).join('');
+
   let formFields = '';
 
-  // ── IDENTITAS UMUM (semua jenis) ──
+  // ── IDENTITAS UMUM ──
   const identitas = `
     <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
       <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px;letter-spacing:0.5px">📋 IDENTITAS</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Judul / Nama *</label><input type="text" id="mdJudul" class="form-control" value="${d.judul||''}" placeholder="Judul modul..."></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="mdMapel" class="form-control" value="${d.mata_pelajaran||''}" placeholder="Informatika..."></div>
-          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas / Fase</label><input type="text" id="mdKelas" class="form-control" value="${d.kelas||''}" placeholder="SMP/VII - D"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label>
+            <select id="mdMapel" class="form-control" style="font-size:12px"><option value="">-- Pilih Mapel --</option>${mapelOpts}</select></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas</label>
+            <select id="mdKelas" class="form-control" style="font-size:12px"><option value="">-- Pilih Kelas --</option>${kelasOpts}</select></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penyusun</label><input type="text" id="mdPenyusun" class="form-control" value="${dj.penyusun||CONFIG.guru||''}" placeholder="Nama guru..."></div>
@@ -14409,38 +14441,59 @@ function mdBuildForm(jenis, data) {
         <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">📌 IDENTITAS MODUL</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Elemen</label><input type="text" id="mdElemen" class="form-control" value="${dj.elemen||''}" placeholder="Jaringan Komputer..."></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Elemen / Topik</label><input type="text" id="mdElemen" class="form-control" value="${dj.elemen||''}" placeholder="Jaringan Komputer..."></div>
             <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Alokasi Waktu</label><input type="text" id="mdAlokasi" class="form-control" value="${dj.alokasi||''}" placeholder="6 JP x 40 menit"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Fase</label><input type="text" id="mdFase" class="form-control" value="${dj.fase||'Fase D'}" placeholder="Fase D"></div>
+            <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jumlah Pertemuan</label><input type="number" id="mdJmlPert" class="form-control" value="${dj.jumlah_pertemuan||3}" min="1" max="20"></div>
           </div>
         </div>
       </div>
+      <!-- DEEP LEARNING CRITERIA -->
+      <div style="background:var(--card);border-radius:12px;padding:16px;border:1.5px solid #6366f1;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:800;color:#6366f1">🧠 KRITERIA DEEP LEARNING <span style="font-size:10px;font-weight:400;color:var(--text-light)">(pilih lebih dari satu)</span></div>
+          <span id="mdDLCount" style="background:#6366f1;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">${savedDL.length}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">${dlCheckboxes}</div>
+      </div>
+      <!-- AI GENERATE BUTTON -->
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate Isi Modul dengan AI</div>
+        <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas, Elemen, Jumlah Pertemuan & pilih kriteria Deep Learning terlebih dahulu, lalu klik Generate. AI akan mengisi semua bagian modul secara otomatis.</div>
+        <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">
+          ✨ Generate dengan Claude AI
+        </button>
+        <div id="mdGenStatus" style="display:none;margin-top:10px;color:#c7d2fe;font-size:11px;text-align:center">⏳ AI sedang membuat konten modul...</div>
+      </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">A. CAPAIAN PEMBELAJARAN</div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">A. CAPAIAN PEMBELAJARAN</div>
         <textarea id="mdCapaian" rows="4" class="form-control" placeholder="Pada akhir pembelajaran, peserta didik mampu..." style="resize:vertical">${dj.capaian||''}</textarea>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">B. TUJUAN PEMBELAJARAN</div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">B. TUJUAN PEMBELAJARAN</div>
         <textarea id="mdTujuan" rows="4" class="form-control" placeholder="1. Siswa mampu...\n2. Siswa mampu..." style="resize:vertical">${dj.tujuan||''}</textarea>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">C. TOPIK PEMBELAJARAN</div>
-        <textarea id="mdTopik" rows="3" class="form-control" placeholder="1. Konsep dasar jaringan...\n2. Praktik koneksi..." style="resize:vertical">${dj.topik||''}</textarea>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">C. TOPIK PEMBELAJARAN</div>
+        <textarea id="mdTopik" rows="3" class="form-control" placeholder="1. Konsep dasar...\n2. Praktik..." style="resize:vertical">${dj.topik||''}</textarea>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">D. PRAKTIK PEDAGOGIS</div>
-        <textarea id="mdPedagogis" rows="3" class="form-control" placeholder="Model: Problem Based Learning\nMetode: Diskusi, demonstrasi..." style="resize:vertical">${dj.pedagogis||''}</textarea>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">D. PRAKTIK PEDAGOGIS & DEEP LEARNING</div>
+        <textarea id="mdPedagogis" rows="4" class="form-control" placeholder="Model pembelajaran, metode, strategi..." style="resize:vertical">${dj.pedagogis||''}</textarea>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">E. KEGIATAN PEMBELAJARAN</div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">E. KEGIATAN PEMBELAJARAN</div>
         <div id="mdPertList">${mdBuildPertList(dj.pertemuan||[])}</div>
         <button onclick="mdTambahPert()" type="button" style="margin-top:10px;background:var(--primary-light);color:var(--primary);border:1px dashed var(--primary);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;font-family:var(--font)">+ Tambah Pertemuan</button>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">F. PENILAIAN</div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">F. PENILAIAN</div>
         <textarea id="mdPenilaian" rows="3" class="form-control" placeholder="Teknik penilaian: observasi, tes tulis...\nInstrumen: rubrik, soal..." style="resize:vertical">${dj.penilaian||''}</textarea>
       </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">G. LINGKUNGAN & PEMANFAATAN DIGITAL</div>
+        <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:8px">G. LINGKUNGAN & PEMANFAATAN DIGITAL</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Lingkungan Pembelajaran</label><textarea id="mdLingkungan" rows="2" class="form-control" placeholder="Fisik: Laboratorium komputer...\nVirtual: Google Classroom..." style="resize:vertical">${dj.lingkungan||''}</textarea></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Pemanfaatan Digital</label><textarea id="mdDigital" rows="2" class="form-control" placeholder="1. Perpustakaan Digital...\n2. Forum Diskusi Daring..." style="resize:vertical">${dj.digital||''}</textarea></div>
@@ -14569,6 +14622,131 @@ function mdHapusPert(idx) {
   });
 }
 
+function mdToggleDL(label, id) {
+  const cb = label.querySelector('input[type=checkbox]');
+  const checked = !cb.checked;
+  cb.checked = checked;
+  label.style.borderColor = checked ? 'var(--primary)' : 'var(--border)';
+  label.style.background = checked ? 'var(--primary-light)' : 'var(--card)';
+  // update count badge
+  const count = document.querySelectorAll('#mdDL_' + id.split('_')[0] ? document.querySelectorAll('[id^="mdDL_"]:checked').length : 0);
+  const countEl = document.getElementById('mdDLCount');
+  if (countEl) countEl.textContent = document.querySelectorAll('[id^="mdDL_"]:checked').length;
+}
+
+async function mdGenerateWithAI() {
+  const mapel = document.getElementById('mdMapel')?.value;
+  const kelas = document.getElementById('mdKelas')?.value;
+  const elemen = document.getElementById('mdElemen')?.value?.trim();
+  const alokasi = document.getElementById('mdAlokasi')?.value?.trim();
+  const jumlahPert = parseInt(document.getElementById('mdJmlPert')?.value) || 3;
+  const penyusun = document.getElementById('mdPenyusun')?.value?.trim();
+  const tp = document.getElementById('mdTP')?.value?.trim();
+
+  if (!mapel || !kelas) return toast('Pilih Mata Pelajaran dan Kelas terlebih dahulu', 'error');
+  if (!elemen) return toast('Isi Elemen / Topik terlebih dahulu', 'error');
+
+  const dlChecked = [...document.querySelectorAll('[id^="mdDL_"]:checked')].map(cb => {
+    const id = cb.id.replace('mdDL_','');
+    const dlMap = {mindful:'Mindful',meaningful:'Meaningful',joyful:'Joyful',kolaboratif:'Kolaboratif',reflektif:'Reflektif',hots:'HOTS',pbl:'Problem Based Learning',pjbl:'Project Based Learning',inkuiri:'Inkuiri',discovery:'Discovery Learning',diferensiasi:'Diferensiasi',kontekstual:'Kontekstual',stem:'STEM',formatif:'Asesmen Formatif'};
+    return dlMap[id] || id;
+  });
+
+  const btn = document.getElementById('mdGenBtn');
+  const status = document.getElementById('mdGenStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ AI sedang bekerja...';
+  if (status) status.style.display = 'block';
+
+  const prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten Modul Ajar (RPP) lengkap berbasis Deep Learning dengan detail berikut:
+
+Mata Pelajaran: ${mapel}
+Kelas/Fase: ${kelas} - Fase D (SMP)
+Elemen/Topik: ${elemen}
+Alokasi Waktu: ${alokasi || '6 JP x 40 menit'}
+Jumlah Pertemuan: ${jumlahPert}
+Penyusun: ${penyusun || '-'}
+Tahun Pelajaran: ${tp || '2025/2026'}
+Kriteria Deep Learning yang digunakan: ${dlChecked.length > 0 ? dlChecked.join(', ') : 'Meaningful, Joyful, Kolaboratif'}
+
+Buat response dalam JSON dengan format TEPAT ini (tanpa backtick, hanya JSON murni):
+{
+  "capaian": "...",
+  "tujuan": "1. ...\n2. ...\n3. ...",
+  "topik": "1. ...\n2. ...",
+  "pedagogis": "Model Pembelajaran: Deep Learning berbasis ...\nMetode: ...\nStrategi:\na. ...\nb. ...",
+  "pertemuan": [
+    {
+      "judul": "Pertemuan 1: ...",
+      "alokasi": "2 JP x 40 menit",
+      "pendahuluan": "1. ...\n2. ...\n3. ...",
+      "inti": "1. Memahami: ...\n2. Mengaplikasi: ...\n3. Mencipta/Refleksi: ...",
+      "penutup": "1. ...\n2. ...\n3. ..."
+    }
+  ],
+  "penilaian": "Teknik Penilaian:\n1. ...\nInstrumen:\n1. ...",
+  "lingkungan": "Fisik: ...\nVirtual: ...",
+  "digital": "1. ...\n2. ...\n3. ..."
+}
+
+Pastikan:
+- Jumlah item pertemuan = ${jumlahPert}
+- Setiap kegiatan mencerminkan prinsip Deep Learning yang dipilih
+- Konten sesuai Kurikulum Merdeka Indonesia, kontekstual dan praktis
+- Kegiatan Inti mencakup tahap Memahami-Mengaplikasi-Mencipta sesuai Deep Learning
+- Bahasa Indonesia formal`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    // Parse JSON dari response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AI tidak mengembalikan JSON yang valid');
+    const result = JSON.parse(jsonMatch[0]);
+
+    // Isi form dengan hasil AI
+    if (result.capaian) document.getElementById('mdCapaian').value = result.capaian;
+    if (result.tujuan) document.getElementById('mdTujuan').value = result.tujuan;
+    if (result.topik) document.getElementById('mdTopik').value = result.topik;
+    if (result.pedagogis) document.getElementById('mdPedagogis').value = result.pedagogis;
+    if (result.penilaian) document.getElementById('mdPenilaian').value = result.penilaian;
+    if (result.lingkungan) document.getElementById('mdLingkungan').value = result.lingkungan;
+    if (result.digital) document.getElementById('mdDigital').value = result.digital;
+
+    // Isi pertemuan
+    if (result.pertemuan && result.pertemuan.length > 0) {
+      const pertEl = document.getElementById('mdPertItems');
+      if (pertEl) pertEl.innerHTML = '';
+      result.pertemuan.forEach((p, i) => {
+        const pertList = document.getElementById('mdPertItems');
+        if (pertList) pertList.insertAdjacentHTML('beforeend', mdPertHTML(i, p));
+      });
+    }
+
+    // Update judul otomatis jika kosong
+    const judulEl = document.getElementById('mdJudul');
+    if (judulEl && !judulEl.value) judulEl.value = `Modul Ajar ${mapel} - ${elemen}`;
+
+    toast('✅ Konten modul berhasil di-generate oleh AI! Silakan review dan sesuaikan.', 'success');
+  } catch(e) {
+    toast('Gagal generate: ' + e.message, 'error');
+    console.error('[mdGenerateWithAI]', e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate dengan Claude AI';
+    if (status) status.style.display = 'none';
+  }
+}
+
 function mdHandleFile(input) {
   const file = input.files[0]; if (!file) return;
   if (file.size > 2*1024*1024) { toast('File terlalu besar. Maks 2MB', 'error'); return; }
@@ -14608,7 +14786,10 @@ function mdCollectData() {
   if (jenis==='pembelajaran') {
     dj = {...dj,
       elemen: document.getElementById('mdElemen')?.value.trim()||null,
+      fase: document.getElementById('mdFase')?.value.trim()||null,
       alokasi: document.getElementById('mdAlokasi')?.value.trim()||null,
+      jumlah_pertemuan: parseInt(document.getElementById('mdJmlPert')?.value)||3,
+      deep_learning: [...document.querySelectorAll('[id^="mdDL_"]:checked')].map(cb=>cb.id.replace('mdDL_','')),
       capaian: document.getElementById('mdCapaian')?.value.trim()||null,
       tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
       topik: document.getElementById('mdTopik')?.value.trim()||null,
@@ -14718,15 +14899,21 @@ async function mdBukaDetail(id) {
 
 function mdRenderDetail(jenis, dj) {
   const sec = (label, val) => val ? `<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:6px;letter-spacing:0.5px">${label}</div><div style="font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap">${val}</div></div>` : '';
+
+  // Deep Learning badges
+  const DL_LABELS = {mindful:'🧘 Mindful',meaningful:'💡 Meaningful',joyful:'🎉 Joyful',kolaboratif:'🤝 Kolaboratif',reflektif:'🔍 Reflektif',hots:'🧠 HOTS',pbl:'🔧 PBL',pjbl:'📦 PjBL',inkuiri:'🔬 Inkuiri',discovery:'🌟 Discovery',diferensiasi:'🎯 Diferensiasi',kontekstual:'🌍 Kontekstual',stem:'⚙️ STEM',formatif:'📊 Asesmen Formatif'};
+  const dlBadges = (dj.deep_learning||[]).length > 0
+    ? `<div style="background:var(--card);border-radius:10px;padding:12px;border:1.5px solid #6366f1;margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#6366f1;margin-bottom:8px">🧠 KRITERIA DEEP LEARNING</div><div style="display:flex;flex-wrap:wrap;gap:6px">${(dj.deep_learning||[]).map(id=>`<span style="background:#ede9fe;color:#6366f1;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">${DL_LABELS[id]||id}</span>`).join('')}</div></div>` : '';
+
   if (jenis==='pembelajaran') {
     const pert = (dj.pertemuan||[]).map((p,i)=>`
       <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid var(--primary)">
-        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px">Pertemuan ${i+1}: ${p.judul||''}</div>
+        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px">Pertemuan ${i+1}: ${p.judul||''} ${p.alokasi?'('+p.alokasi+')':''}</div>
         ${p.pendahuluan?`<div style="font-size:11px;margin-bottom:4px"><span style="font-weight:700;color:var(--text-light)">Pendahuluan:</span><br>${p.pendahuluan}</div>`:''}
         ${p.inti?`<div style="font-size:11px;margin-bottom:4px"><span style="font-weight:700;color:var(--text-light)">Inti:</span><br>${p.inti}</div>`:''}
         ${p.penutup?`<div style="font-size:11px"><span style="font-weight:700;color:var(--text-light)">Penutup:</span><br>${p.penutup}</div>`:''}
       </div>`).join('');
-    return sec('A. CAPAIAN PEMBELAJARAN', dj.capaian) + sec('B. TUJUAN PEMBELAJARAN', dj.tujuan) + sec('C. TOPIK', dj.topik) + sec('D. PRAKTIK PEDAGOGIS', dj.pedagogis) + (pert?`<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:8px">E. KEGIATAN PEMBELAJARAN</div>${pert}</div>`:'') + sec('F. PENILAIAN', dj.penilaian) + sec('G. LINGKUNGAN', dj.lingkungan) + sec('H. PEMANFAATAN DIGITAL', dj.digital);
+    return dlBadges + sec('ELEMEN / TOPIK', dj.elemen) + sec('FASE & ALOKASI', [dj.fase, dj.alokasi].filter(Boolean).join(' | ')) + sec('A. CAPAIAN PEMBELAJARAN', dj.capaian) + sec('B. TUJUAN PEMBELAJARAN', dj.tujuan) + sec('C. TOPIK', dj.topik) + sec('D. PRAKTIK PEDAGOGIS & DEEP LEARNING', dj.pedagogis) + (pert?`<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:8px">E. KEGIATAN PEMBELAJARAN</div>${pert}</div>`:'') + sec('F. PENILAIAN', dj.penilaian) + sec('G. LINGKUNGAN', dj.lingkungan) + sec('H. PEMANFAATAN DIGITAL', dj.digital);
   } else if (jenis==='atp') {
     return sec('ELEMEN / DOMAIN', dj.elemen) + sec('CAPAIAN PEMBELAJARAN', dj.capaian) + sec('ALUR TUJUAN PEMBELAJARAN', dj.tujuan) + sec('ALOKASI WAKTU', dj.alokasi) + sec('PROFIL PELAJAR PANCASILA', dj.profil) + sec('CATATAN', dj.catatan);
   } else if (jenis==='lkpd') {
@@ -14802,11 +14989,13 @@ function mdBuildDocHTML(data, dj, cfg) {
       <table style="width:100%;border-collapse:collapse;border:1px solid #ddd">
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;width:30%;font-weight:bold">Satuan Pendidikan</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${school}</td></tr>
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Nama Penyusun</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.penyusun||'-'}</td></tr>
-        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Jenjang Kelas</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${data.kelas||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Jenjang / Kelas</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: SMP / ${data.kelas||'-'}</td></tr>
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Mata Pelajaran</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${data.mata_pelajaran||'-'}</td></tr>
+        <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Fase / Kelas</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.fase||'Fase D'} – ${data.kelas||'-'}</td></tr>
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Elemen</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.elemen||'-'}</td></tr>
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Alokasi Waktu</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.alokasi||'-'}</td></tr>
         <tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Tahun Pelajaran</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${dj.tahun_pelajaran||'-'}</td></tr>
+        ${(dj.deep_learning||[]).length>0?`<tr><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd;font-weight:bold">Kriteria Deep Learning</td><td style="font-size:11px;padding:5px 12px;border:1px solid #ddd">: ${(dj.deep_learning||[]).map(id=>({mindful:'Mindful',meaningful:'Meaningful',joyful:'Joyful',kolaboratif:'Kolaboratif',reflektif:'Reflektif',hots:'HOTS',pbl:'Problem Based Learning',pjbl:'Project Based Learning',inkuiri:'Inkuiri',discovery:'Discovery Learning',diferensiasi:'Diferensiasi',kontekstual:'Kontekstual',stem:'STEM',formatif:'Asesmen Formatif'}[id]||id)).join(', ')}</td></tr>`:''}
       </table></div>
       ${sec('B. CAPAIAN PEMBELAJARAN', dj.capaian)}
       ${sec('C. TUJUAN PEMBELAJARAN', dj.tujuan)}
