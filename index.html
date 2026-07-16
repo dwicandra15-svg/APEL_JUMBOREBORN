@@ -281,6 +281,17 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
   .no-print { display: none !important; }
 }
 /* ═══════════ END MODUL CSS ═══════════ */
+/* ═══════════ KURIKULUM CSS ═══════════ */
+.ic-teal { background:linear-gradient(135deg,#ccfbf1,#99f6e4); color:#0f766e; }
+.kur-nav-card { background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:16px; cursor:pointer; transition:all 0.18s; display:flex; align-items:center; gap:12px; }
+.kur-nav-card:hover { border-color:var(--primary); transform:translateX(3px); }
+.kur-nav-ico { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.kur-nav-text .title { font-size:13px; font-weight:800; color:var(--text); }
+.kur-nav-text .sub { font-size:11px; color:var(--text-light); margin-top:2px; }
+.jam-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; font-size:11px; font-weight:800; flex-shrink:0; }
+.kur-jadwal-row { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+.kur-jadwal-row:hover { border-color:var(--primary); }
+/* ═══════════ END KURIKULUM CSS ═══════════ */
 
 /* ADMIN-ONLY FIELDS — hanya muncul jika akun admin login */
 .admin-only-field { display: none !important; }
@@ -2482,6 +2493,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mh-card" data-id="jadwalMGMP" onclick="goPage('jadwalMGMP')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'jadwalMGMP')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-purple" id="ico-jadwalMGMP">🏫</div><div class="mh-card-lbl" id="lbl-jadwalMGMP">Jadwal MGMP</div></div>
             <div class="mh-card" data-id="progkol" onclick="goPage('progkol')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'progkol')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-progkol">📋</div><div class="mh-card-lbl" id="lbl-progkol">Progkol</div></div>
             <div class="mh-card" data-id="modul" onclick="goPage('modul')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'modul')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-modul">📖</div><div class="mh-card-lbl" id="lbl-modul">Modul</div></div>
+            <div class="mh-card" data-id="kurikulum" onclick="goPage('kurikulum')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'kurikulum')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-kurikulum">📐</div><div class="mh-card-lbl" id="lbl-kurikulum">Kurikulum</div></div>
           </div>
 
           <div class="mh-sec-title">Administrasi</div>
@@ -2707,6 +2719,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           </label>
           <button class="btn btn-primary" onclick="showAddSiswa()">+ Tambah Siswa</button>
           <button class="btn btn-print" onclick="cetakSiswa()">🖨️ Cetak</button>
+          <button class="btn btn-danger" onclick="hapusSemuaSiswa()" title="Hapus semua data siswa" style="background:#ef4444;color:#fff;border-color:#ef4444">🗑️ Hapus Semua</button>
         </div>
       </div>
       <!-- Progress upload -->
@@ -4746,6 +4759,50 @@ async function deleteSiswa(id) {
   const _fe2 = document.getElementById('filterKelasS');
   if (_fe2 && _cf) _fe2.value = _cf;
   loadSiswa();
+}
+
+async function hapusSemuaSiswa() {
+  // Ambil filter kelas aktif
+  const kelasId = document.getElementById('filterKelasS')?.value || '';
+  const kelasNama = kelasId
+    ? (APP_DATA.kelas.find(k => String(k.id) === String(kelasId))?.nama || 'kelas ini')
+    : 'SEMUA KELAS';
+
+  // Konfirmasi berlapis
+  const pesan1 = kelasId
+    ? `⚠️ Anda akan menghapus SEMUA siswa di ${kelasNama}.\n\nLanjutkan?`
+    : `⚠️ PERINGATAN!\n\nAnda akan menghapus SELURUH data siswa dari semua kelas.\n\nTindakan ini TIDAK DAPAT DIBATALKAN!\n\nLanjutkan?`;
+  if (!confirm(pesan1)) return;
+
+  // Konfirmasi kedua untuk hapus semua
+  if (!kelasId) {
+    const pesan2 = confirm('Ketik OK untuk konfirmasi hapus semua data siswa.');
+    if (!pesan2) return;
+  }
+
+  const btn = document.querySelector('[onclick="hapusSemuaSiswa()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menghapus...'; }
+
+  try {
+    let query = db.from('siswa').delete();
+    if (kelasId) {
+      query = query.eq('kelas_id', kelasId);
+    } else {
+      // Hapus semua: gunakan filter yang selalu true
+      query = query.neq('id', 0); // semua row
+    }
+    const { error } = await query;
+    if (error) throw error;
+
+    toast(`✅ Semua siswa ${kelasId ? 'di ' + kelasNama : ''} berhasil dihapus`, 'success');
+    await loadSiswaAll();
+    await populateAllSelects();
+    loadSiswa();
+  } catch(e) {
+    toast('Gagal menghapus: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Hapus Semua'; }
+  }
 }
 
 // ===================== JADWAL =====================
@@ -7108,10 +7165,10 @@ function showPage(name) {
     'progkol':'Program Sekolah',
     'progkol-detail':'Program Sekolah',
     'progkol-program':'Detail Program',
-    'modul':'Modul',
-    'modul-list':'Modul',
-    'modul-form':'Tambah Modul',
-    'modul-detail':'Detail Modul',
+    'modul':'Modul', 'modul-list':'Modul', 'modul-form':'Tambah Modul', 'modul-detail':'Detail Modul',
+    'kurikulum':'Kurikulum', 'kurikulum-jadwal':'Jadwal Mengajar',
+    'kurikulum-supervisi':'Supervisi Kelas', 'kurikulum-pkg':'PKG Guru',
+    'kurikulum-kkm':'KKM', 'kurikulum-kalender':'Kalender Akademik',
     'absensiku':'AbsensiKu',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
@@ -7144,6 +7201,12 @@ function showPage(name) {
   if (name==='jadwalMGMP') { loadJadwalMGMP(); }
   if (name==='progkol-detail') { pkLoadProgram(); }
   if (name==='modul-list') { mdLoadList(); }
+  if (name==='kurikulum') { kurLoadDashboard(); }
+  if (name==='kurikulum-jadwal') { kurLoadJadwal(); }
+  if (name==='kurikulum-supervisi') { kurLoadSupervisi(); }
+  if (name==='kurikulum-pkg') { kurLoadPKG(); }
+  if (name==='kurikulum-kkm') { kurLoadKKM(); }
+  if (name==='kurikulum-kalender') { kurLoadKalender(); }
   if (name==='absenRekap') {
     // Populate mapel filter
     const rmp = document.getElementById('rekapAbsenMapel');
@@ -8286,6 +8349,14 @@ function goPage(name) {
     return;
   }
   if (['modul','modul-list','modul-form','modul-detail'].includes(name)) {
+    showPage(name);
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    return;
+  }
+  if (name === 'kurikulum' || name.startsWith('kurikulum-')) {
     showPage(name);
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
@@ -11636,7 +11707,337 @@ function chatAutoResize(el){
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<!-- PAGE: MODUL — Pilih Jenis                           -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE: KURIKULUM — Dashboard Utama                       -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="page-kurikulum" class="page">
+<div style="padding:0 0 100px">
+  <!-- Header info hari -->
+  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:16px;margin-bottom:18px;color:#fff">
+    <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:4px">📐 MODUL KURIKULUM</div>
+    <div style="font-size:18px;font-weight:800" id="kurHariIni">Senin, 16 Juli 2026</div>
+    <div style="font-size:12px;opacity:0.85;margin-top:4px" id="kurInfoJam">Hari ini: maksimal 9 jam pelajaran</div>
+  </div>
+  <!-- Dashboard Jadwal Hari Ini -->
+  <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📋 Jadwal Mengajar Hari Ini</div>
+  <div id="kurDashJadwal" style="margin-bottom:20px">
+    <div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat jadwal...</div>
+  </div>
+  <!-- Nav sub-fitur -->
+  <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📂 Sub-Fitur Kurikulum</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="kur-nav-card" onclick="goPage('kurikulum-jadwal')">
+      <div class="kur-nav-ico" style="background:#dbeafe;color:#1d4ed8">📅</div>
+      <div class="kur-nav-text"><div class="title">Jadwal Mengajar</div><div class="sub">Kelola jadwal per guru, kelas, dan hari</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('kurikulum-supervisi')">
+      <div class="kur-nav-ico" style="background:#d1fae5;color:#065f46">🔍</div>
+      <div class="kur-nav-text"><div class="title">Supervisi Kelas</div><div class="sub">Jadwal & hasil observasi mengajar guru</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('kurikulum-pkg')">
+      <div class="kur-nav-ico" style="background:#fef3c7;color:#92400e">⭐</div>
+      <div class="kur-nav-text"><div class="title">PKG Guru</div><div class="sub">Penilaian Kinerja Guru per semester</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('kurikulum-kkm')">
+      <div class="kur-nav-ico" style="background:#ede9fe;color:#5b21b6">📊</div>
+      <div class="kur-nav-text"><div class="title">KKM</div><div class="sub">Kriteria Ketuntasan Minimal per mapel</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('kurikulum-kalender')">
+      <div class="kur-nav-ico" style="background:#fce7f3;color:#9d174d">🗓️</div>
+      <div class="kur-nav-text"><div class="title">Kalender Akademik</div><div class="sub">Agenda kegiatan sekolah tahunan</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- PAGE: JADWAL MENGAJAR -->
+<div id="page-kurikulum-jadwal" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
+    <div><div class="section-title">📅 Jadwal Mengajar</div><div class="section-sub">Kelola jadwal per guru, mapel, dan kelas</div></div>
+    <button onclick="kurShowModalJadwal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <!-- Filter -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="kurJadwalFilterHari" onchange="kurLoadJadwal()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Hari</option>
+      <option>Senin</option><option>Selasa</option><option>Rabu</option>
+      <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+    </select>
+    <select id="kurJadwalFilterGuru" onchange="kurLoadJadwal()" style="flex:1;min-width:140px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Guru</option>
+    </select>
+  </div>
+  <div id="kurJadwalList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+<!-- PAGE: SUPERVISI -->
+<div id="page-kurikulum-supervisi" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
+    <div><div class="section-title">🔍 Supervisi Kelas</div><div class="section-sub">Observasi dan penilaian kegiatan belajar mengajar</div></div>
+    <button onclick="kurShowModalSupervisi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="kurSupervisiFilterStatus" onchange="kurLoadSupervisi()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Status</option><option value="rencana">Rencana</option><option value="terlaksana">Terlaksana</option>
+    </select>
+    <select id="kurSupervisiFilterSmt" onchange="kurLoadSupervisi()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Semester</option><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option>
+    </select>
+  </div>
+  <div id="kurSupervisiList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+<!-- PAGE: PKG -->
+<div id="page-kurikulum-pkg" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
+    <div><div class="section-title">⭐ PKG Guru</div><div class="section-sub">Penilaian Kinerja Guru per semester</div></div>
+    <button onclick="kurShowModalPKG()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="kurPKGFilterSmt" onchange="kurLoadPKG()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Semester</option><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option>
+    </select>
+  </div>
+  <div id="kurPKGList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+<!-- PAGE: KKM -->
+<div id="page-kurikulum-kkm" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
+    <div><div class="section-title">📊 KKM</div><div class="section-sub">Kriteria Ketuntasan Minimal per mata pelajaran</div></div>
+    <button onclick="kurShowModalKKM()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div id="kurKKMList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+<!-- PAGE: KALENDER AKADEMIK -->
+<div id="page-kurikulum-kalender" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
+    <div><div class="section-title">🗓️ Kalender Akademik</div><div class="section-sub">Agenda kegiatan & jadwal sekolah</div></div>
+    <button onclick="kurShowModalKalender()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="kurKalenderFilterKat" onchange="kurLoadKalender()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Kategori</option>
+      <option value="libur">🏖️ Libur</option><option value="ujian">📝 Ujian</option>
+      <option value="kegiatan">🎯 Kegiatan</option><option value="rapat">🤝 Rapat</option>
+      <option value="penerimaan">📋 Penerimaan</option>
+    </select>
+    <select id="kurKalenderFilterBulan" onchange="kurLoadKalender()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Bulan</option>
+      <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option>
+      <option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option>
+      <option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option>
+      <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+    </select>
+  </div>
+  <div id="kurKalenderList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- ══ MODAL JADWAL ══ -->
+<div id="kurModalJadwal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:480px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurJadwalModalTitle">➕ Tambah Jadwal</div>
+    <button onclick="kurCloseModal('kurModalJadwal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurJGuru" class="form-control" placeholder="Nama lengkap guru..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran *</label>
+        <input type="text" id="kurJMapel" class="form-control" list="kurMapelList" placeholder="Pilih/ketik mapel...">
+        <datalist id="kurMapelList"></datalist>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+        <select id="kurJKelas" class="form-control"><option value="">-- Pilih Kelas --</option></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Hari *</label>
+        <select id="kurJHari" class="form-control" onchange="kurUpdateJamOptions()">
+          <option value="">-- Pilih Hari --</option>
+          <option>Senin</option><option>Selasa</option><option>Rabu</option>
+          <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jam Ke *</label>
+        <select id="kurJJam" class="form-control"><option value="">-- Pilih Jam --</option></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="kurJTP" class="form-control" placeholder="2025/2026"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label>
+        <select id="kurJSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select>
+      </div>
+    </div>
+  </div>
+  <input type="hidden" id="kurJEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalJadwal')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanJadwal()" class="btn btn-primary" style="flex:2" id="kurJSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL SUPERVISI ══ -->
+<div id="kurModalSupervisi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:480px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurSpvModalTitle">➕ Tambah Supervisi</div>
+    <button onclick="kurCloseModal('kurModalSupervisi')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurSpvGuru" class="form-control" placeholder="Nama guru..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurSpvMapel" class="form-control" placeholder="Mapel..."></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas</label><input type="text" id="kurSpvKelas" class="form-control" placeholder="cth: 7A"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal *</label><input type="date" id="kurSpvTanggal" class="form-control"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jam Ke</label><input type="number" id="kurSpvJam" class="form-control" min="1" max="9" placeholder="1-9"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Supervisor</label><input type="text" id="kurSpvSupervisor" class="form-control" placeholder="Nama supervisor"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Aspek Persiapan (RPP, media, dll.)</label><textarea id="kurSpvPersiapan" rows="2" class="form-control" style="resize:vertical" placeholder="Keterangan aspek persiapan..."></textarea></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Aspek Pelaksanaan KBM</label><textarea id="kurSpvPelaksanaan" rows="2" class="form-control" style="resize:vertical" placeholder="Keterangan pelaksanaan..."></textarea></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Aspek Penilaian</label><textarea id="kurSpvPenilaian" rows="2" class="form-control" style="resize:vertical" placeholder="Teknik penilaian yang digunakan..."></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nilai (0-100)</label><input type="number" id="kurSpvNilai" class="form-control" min="0" max="100" placeholder="85"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label><select id="kurSpvSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Status</label><select id="kurSpvStatus" class="form-control"><option value="rencana">Rencana</option><option value="terlaksana">Terlaksana</option></select></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan & Rekomendasi</label><textarea id="kurSpvCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan untuk guru..."></textarea></div>
+  </div>
+  <input type="hidden" id="kurSpvEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalSupervisi')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanSupervisi()" class="btn btn-primary" style="flex:2" id="kurSpvSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL PKG ══ -->
+<div id="kurModalPKG" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:480px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurPKGModalTitle">➕ PKG Guru</div>
+    <button onclick="kurCloseModal('kurModalPKG')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--text-light);background:var(--bg);border-radius:8px;padding:8px 12px;margin-bottom:12px">Nilai akhir dihitung otomatis: rata-rata 4 kompetensi</div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurPKGGuru" class="form-control" placeholder="Nama guru..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NIP</label><input type="text" id="kurPKGNip" class="form-control" placeholder="NIP..."></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurPKGMapel" class="form-control" placeholder="Mapel..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="kurPKGTP" class="form-control" placeholder="2025/2026"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label><select id="kurPKGSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></div>
+    <div style="background:var(--bg);border-radius:10px;padding:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px">NILAI 4 KOMPETENSI (0-100)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Pedagogik</label><input type="number" id="kurPKGPed" class="form-control" min="0" max="100" oninput="kurHitungPKG()"></div>
+        <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kepribadian</label><input type="number" id="kurPKGKep" class="form-control" min="0" max="100" oninput="kurHitungPKG()"></div>
+        <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Sosial</label><input type="number" id="kurPKGSos" class="form-control" min="0" max="100" oninput="kurHitungPKG()"></div>
+        <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Profesional</label><input type="number" id="kurPKGPro" class="form-control" min="0" max="100" oninput="kurHitungPKG()"></div>
+      </div>
+      <div id="kurPKGHasil" style="margin-top:10px;text-align:center;font-size:12px;color:var(--text-light)">Isi semua nilai untuk melihat hasil</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penilai</label><input type="text" id="kurPKGPenilai" class="form-control" placeholder="Nama penilai"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal</label><input type="date" id="kurPKGTanggal" class="form-control"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="kurPKGCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan penilaian..."></textarea></div>
+  </div>
+  <input type="hidden" id="kurPKGEditId">
+  <input type="hidden" id="kurPKGNilaiAkhir">
+  <input type="hidden" id="kurPKGPredikat">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalPKG')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanPKG()" class="btn btn-primary" style="flex:2" id="kurPKGSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL KKM ══ -->
+<div id="kurModalKKM" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurKKMModalTitle">➕ Tambah KKM</div>
+    <button onclick="kurCloseModal('kurModalKKM')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran *</label>
+      <input type="text" id="kurKKMMapel" class="form-control" list="kurKKMMapelList" placeholder="Pilih/ketik mapel...">
+      <datalist id="kurKKMMapelList"></datalist>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+        <select id="kurKKMKelas" class="form-control"><option value="">-- Pilih Kelas --</option>
+          <option>VII</option><option>VIII</option><option>IX</option><option>Semua Kelas</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nilai KKM *</label><input type="number" id="kurKKMNilai" class="form-control" min="0" max="100" placeholder="75"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="kurKKMTP" class="form-control" placeholder="2025/2026"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label><select id="kurKKMSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="kurKKMCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan penetapan KKM..."></textarea></div>
+  </div>
+  <input type="hidden" id="kurKKMEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalKKM')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanKKM()" class="btn btn-primary" style="flex:2" id="kurKKMSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL KALENDER ══ -->
+<div id="kurModalKalender" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurKalModalTitle">➕ Tambah Agenda</div>
+    <button onclick="kurCloseModal('kurModalKalender')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Judul Kegiatan *</label><input type="text" id="kurKalJudul" class="form-control" placeholder="cth: Ujian Tengah Semester"></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kategori</label>
+      <select id="kurKalKategori" class="form-control">
+        <option value="kegiatan">🎯 Kegiatan</option><option value="ujian">📝 Ujian</option>
+        <option value="libur">🏖️ Libur</option><option value="rapat">🤝 Rapat</option>
+        <option value="penerimaan">📋 Penerimaan Siswa</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal Mulai *</label><input type="date" id="kurKalMulai" class="form-control"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal Selesai</label><input type="date" id="kurKalSelesai" class="form-control"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Deskripsi</label><textarea id="kurKalDeskripsi" rows="2" class="form-control" style="resize:vertical" placeholder="Keterangan kegiatan..."></textarea></div>
+  </div>
+  <input type="hidden" id="kurKalEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalKalender')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanKalender()" class="btn btn-primary" style="flex:2" id="kurKalSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE: MODUL — Pilih Jenis                               -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div id="page-modul" class="page">
   <div style="padding:0 0 100px">
@@ -15225,8 +15626,563 @@ function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel) {
   </div>
   </body></html>`;
 }
-// ════════════════════ END LAPORAN PROGKOL ════════════════════
-// ════════════════════ END JADWAL MGMP ════════════════════
+// ════════════════════════════════════════════════════════════
+// KURIKULUM — Jadwal, Supervisi, PKG, KKM, Kalender Akademik
+// ════════════════════════════════════════════════════════════
+const KUR_JAM = {
+  1:{s:'07.00',e:'07.40'}, 2:{s:'07.40',e:'08.20'}, 3:{s:'08.20',e:'09.00'},
+  4:{s:'09.15',e:'09.55'}, 5:{s:'09.55',e:'10.35'}, 6:{s:'10.45',e:'11.25'},
+  7:{s:'11.25',e:'12.05'}, 8:{s:'12.45',e:'13.25'}, 9:{s:'13.25',e:'14.05'}
+};
+const KUR_MAX_JAM = {Senin:9,Selasa:9,Rabu:9,Kamis:9,Jumat:5,Sabtu:7};
+const KUR_HARI_IDX = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const KUR_KAT_CFG = {
+  libur:{ico:'🏖️',color:'#0369a1',bg:'#e0f2fe'},
+  ujian:{ico:'📝',color:'#7c3aed',bg:'#ede9fe'},
+  kegiatan:{ico:'🎯',color:'#065f46',bg:'#d1fae5'},
+  rapat:{ico:'🤝',color:'#9d174d',bg:'#fce7f3'},
+  penerimaan:{ico:'📋',color:'#92400e',bg:'#fef3c7'}
+};
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function kurLoadDashboard() {
+  // Update header hari
+  const now = new Date();
+  const hariNow = KUR_HARI_IDX[now.getDay()];
+  const maxJam = KUR_MAX_JAM[hariNow] || 0;
+  const tglStr = now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const hi = document.getElementById('kurHariIni');
+  const ij = document.getElementById('kurInfoJam');
+  if (hi) hi.textContent = tglStr;
+  if (ij) ij.textContent = `${hariNow} — maksimal ${maxJam} jam pelajaran`;
+
+  const el = document.getElementById('kurDashJadwal');
+  if (!el) return;
+  if (!db) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-light)">⚙️ Supabase belum tersambung</div>'; return; }
+  if (hariNow === 'Minggu') {
+    el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-light);background:var(--card);border-radius:12px;border:1px solid var(--border)"><div style="font-size:32px;margin-bottom:8px">🏖️</div><div style="font-weight:700">Hari Minggu — Libur!</div><div style="font-size:12px;margin-top:4px">Tidak ada jadwal mengajar</div></div>';
+    return;
+  }
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-light)">⏳ Memuat...</div>';
+  try {
+    const { data, error } = await db.from('jadwal_mengajar').select('*').eq('hari', hariNow).order('jam_ke');
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-light);background:var(--card);border-radius:12px;border:1px solid var(--border)"><div style="font-size:28px;margin-bottom:8px">📋</div><div style="font-weight:700">Belum ada jadwal untuk ${hariNow}</div><div style="font-size:12px;margin-top:4px">Tambah jadwal di menu "Jadwal Mengajar"</div></div>`;
+      return;
+    }
+    // Group by jam_ke
+    const byJam = {};
+    data.forEach(j => { if (!byJam[j.jam_ke]) byJam[j.jam_ke] = []; byJam[j.jam_ke].push(j); });
+    let html = '<div style="display:flex;flex-direction:column;gap:6px">';
+    for (let jam = 1; jam <= maxJam; jam++) {
+      const rows = byJam[jam] || [];
+      const jamInfo = KUR_JAM[jam];
+      // Istirahat indicators
+      if (jam === 4) html += `<div style="font-size:10px;color:var(--text-light);text-align:center;padding:4px;background:var(--bg);border-radius:6px">☕ Istirahat 09.00 – 09.15</div>`;
+      if (jam === 6) html += `<div style="font-size:10px;color:var(--text-light);text-align:center;padding:4px;background:var(--bg);border-radius:6px">☕ Istirahat 10.35 – 10.45</div>`;
+      if (jam === 8) html += `<div style="font-size:10px;color:var(--text-light);text-align:center;padding:4px;background:var(--bg);border-radius:6px">🕌 Istirahat 12.05 – 12.45</div>`;
+      if (rows.length === 0) {
+        html += `<div class="kur-jadwal-row" style="opacity:0.5">
+          <div class="jam-badge" style="background:#94a3b8">${jam}</div>
+          <div style="font-size:11px;color:var(--text-light)">${jamInfo.s} – ${jamInfo.e}</div>
+          <div style="flex:1;font-size:11px;color:var(--text-light);text-align:right;font-style:italic">— kosong —</div>
+        </div>`;
+      } else {
+        rows.forEach(r => {
+          html += `<div class="kur-jadwal-row">
+            <div class="jam-badge">${jam}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:800;color:var(--text)">${r.guru_nama}</div>
+              <div style="font-size:11px;color:var(--primary)">${r.mapel} · ${r.kelas_nama}</div>
+              <div style="font-size:10px;color:var(--text-light)">${jamInfo.s} – ${jamInfo.e}</div>
+            </div>
+          </div>`;
+        });
+      }
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--danger)">❌ ${e.message}<br><small>Buat tabel jadwal_mengajar terlebih dahulu</small></div>`;
+  }
+}
+
+// ── JADWAL MENGAJAR ──────────────────────────────────────────
+async function kurLoadJadwal() {
+  if (!db) return;
+  const el = document.getElementById('kurJadwalList');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fHari = document.getElementById('kurJadwalFilterHari')?.value || '';
+  const fGuru = document.getElementById('kurJadwalFilterGuru')?.value || '';
+  try {
+    let q = db.from('jadwal_mengajar').select('*').order('hari').order('jam_ke');
+    if (fHari) q = q.eq('hari', fHari);
+    if (fGuru) q = q.ilike('guru_nama', `%${fGuru}%`);
+    const { data, error } = await q;
+    if (error) throw error;
+    // Populate guru filter
+    const gurus = [...new Set((data||[]).map(d=>d.guru_nama).filter(Boolean))].sort();
+    const gsel = document.getElementById('kurJadwalFilterGuru');
+    if (gsel) {
+      const prev = gsel.value;
+      gsel.innerHTML = '<option value="">Semua Guru</option>' + gurus.map(g=>`<option ${g===prev?'selected':''}>${g}</option>`).join('');
+    }
+    if (!data || data.length === 0) {
+      el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📅</div><div style="font-weight:700;margin-bottom:6px">Belum ada jadwal</div><div style="font-size:12px">Klik "Tambah" untuk mulai memasukkan jadwal mengajar</div></div>`;
+      return;
+    }
+    // Group by hari
+    const HARI_ORDER = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const byHari = {};
+    data.forEach(j => { if (!byHari[j.hari]) byHari[j.hari] = []; byHari[j.hari].push(j); });
+    let html = '';
+    HARI_ORDER.forEach(hari => {
+      if (!byHari[hari]) return;
+      html += `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:800;color:#0f766e;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="background:#ccfbf1;border-radius:6px;padding:2px 8px">${hari}</span><span style="font-weight:400;color:var(--text-light)">${byHari[hari].length} jadwal · maks ${KUR_MAX_JAM[hari]} jam</span></div>`;
+      byHari[hari].forEach(j => {
+        const jamInfo = KUR_JAM[j.jam_ke] || {};
+        html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+          <div class="jam-badge">${j.jam_ke}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:800;color:var(--text)">${j.guru_nama}</div>
+            <div style="font-size:11px;color:var(--primary)">${j.mapel} · ${j.kelas_nama}</div>
+            <div style="font-size:10px;color:var(--text-light)">${jamInfo.s||''}${jamInfo.e?' – '+jamInfo.e:''} · ${j.semester||''} ${j.tahun_pelajaran||''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button onclick="kurEditJadwal('${j.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer">✏️</button>
+            <button onclick="kurHapusJadwal('${j.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer">🗑️</button>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel jadwal_mengajar sudah dibuat</small></div>`;
+  }
+}
+
+function kurUpdateJamOptions() {
+  const hari = document.getElementById('kurJHari')?.value;
+  const sel = document.getElementById('kurJJam');
+  if (!sel) return;
+  const max = KUR_MAX_JAM[hari] || 9;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Jam --</option>';
+  for (let i = 1; i <= max; i++) {
+    const j = KUR_JAM[i];
+    sel.innerHTML += `<option value="${i}" ${String(i)===String(prev)?'selected':''}>${i} (${j.s} – ${j.e})</option>`;
+  }
+}
+
+function kurShowModalJadwal(data) {
+  // populate kelas dan mapel datalist
+  const kelSel = document.getElementById('kurJKelas');
+  if (kelSel) kelSel.innerHTML = '<option value="">-- Pilih Kelas --</option>' + APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+  const dl = document.getElementById('kurMapelList');
+  if (dl) dl.innerHTML = APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
+  // Prefill TP
+  const tp = document.getElementById('kurJTP');
+  if (tp && !tp.value) tp.value = CONFIG.tahunPelajaran || '';
+  if (!data) {
+    document.getElementById('kurJadwalModalTitle').textContent = '➕ Tambah Jadwal';
+    document.getElementById('kurJEditId').value = '';
+    ['kurJGuru','kurJMapel','kurJJam'].forEach(id => { const e = document.getElementById(id); if(e) e.value=''; });
+    document.getElementById('kurJHari').value = '';
+    document.getElementById('kurJSmt').value = 'Ganjil';
+    document.getElementById('kurJJam').innerHTML = '<option value="">-- Pilih Hari dulu --</option>';
+  } else {
+    document.getElementById('kurJadwalModalTitle').textContent = '✏️ Edit Jadwal';
+    document.getElementById('kurJEditId').value = data.id;
+    document.getElementById('kurJGuru').value = data.guru_nama||'';
+    document.getElementById('kurJMapel').value = data.mapel||'';
+    document.getElementById('kurJHari').value = data.hari||'';
+    kurUpdateJamOptions();
+    document.getElementById('kurJJam').value = data.jam_ke||'';
+    document.getElementById('kurJKelas').value = data.kelas_id||'';
+    document.getElementById('kurJTP').value = data.tahun_pelajaran||'';
+    document.getElementById('kurJSmt').value = data.semester||'Ganjil';
+  }
+  document.getElementById('kurModalJadwal').style.display = 'block';
+}
+
+async function kurEditJadwal(id) {
+  const { data } = await db.from('jadwal_mengajar').select('*').eq('id',id).single();
+  if (data) kurShowModalJadwal(data);
+}
+
+async function kurSimpanJadwal() {
+  const guru = document.getElementById('kurJGuru')?.value.trim();
+  const mapel = document.getElementById('kurJMapel')?.value.trim();
+  const hari = document.getElementById('kurJHari')?.value;
+  const jam = document.getElementById('kurJJam')?.value;
+  const kelasId = document.getElementById('kurJKelas')?.value;
+  const kelasNama = document.getElementById('kurJKelas')?.options[document.getElementById('kurJKelas').selectedIndex]?.text || '';
+  if (!guru) return toast('Nama guru wajib diisi','error');
+  if (!mapel) return toast('Mapel wajib diisi','error');
+  if (!hari) return toast('Hari wajib dipilih','error');
+  if (!jam) return toast('Jam ke wajib dipilih','error');
+  if (!db) return toast('Supabase belum tersambung','error');
+  const editId = document.getElementById('kurJEditId').value;
+  const payload = { guru_nama:guru, mapel, hari, jam_ke:parseInt(jam),
+    kelas_id:kelasId||null, kelas_nama:kelasNama,
+    tahun_pelajaran:document.getElementById('kurJTP')?.value.trim()||null,
+    semester:document.getElementById('kurJSmt')?.value||'Ganjil',
+    user_id:currentUser?.id||null };
+  const btn = document.getElementById('kurJSimpanBtn');
+  btn.disabled=true; btn.textContent='⏳...';
+  try {
+    const {error} = editId ? await db.from('jadwal_mengajar').update(payload).eq('id',editId) : await db.from('jadwal_mengajar').insert(payload);
+    if (error) throw error;
+    toast(editId?'✅ Jadwal diperbarui!':'✅ Jadwal ditambahkan!','success');
+    kurCloseModal('kurModalJadwal'); kurLoadJadwal();
+  } catch(e){ toast('Gagal: '+e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='💾 Simpan'; }
+}
+
+async function kurHapusJadwal(id) {
+  if (!confirm('Hapus jadwal ini?')) return;
+  try { await db.from('jadwal_mengajar').delete().eq('id',id); toast('Jadwal dihapus','success'); kurLoadJadwal(); }
+  catch(e){ toast('Gagal: '+e.message,'error'); }
+}
+
+// ── SUPERVISI ────────────────────────────────────────────────
+async function kurLoadSupervisi() {
+  if (!db) return;
+  const el = document.getElementById('kurSupervisiList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fStatus = document.getElementById('kurSupervisiFilterStatus')?.value||'';
+  const fSmt = document.getElementById('kurSupervisiFilterSmt')?.value||'';
+  try {
+    let q = db.from('supervisi_kelas').select('*').order('tanggal',{ascending:false});
+    if (fStatus) q = q.eq('status',fStatus);
+    if (fSmt) q = q.eq('semester',fSmt);
+    const {data,error} = await q;
+    if (error) throw error;
+    if (!data||data.length===0) { el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">🔍</div><div style="font-weight:700">Belum ada data supervisi</div></div>`; return; }
+    const html = data.map(s => {
+      const tgl = s.tanggal ? new Date(s.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
+      const statusCls = s.status==='terlaksana' ? 'background:#d1fae5;color:#065f46' : 'background:#fef3c7;color:#92400e';
+      const nilaiColor = s.nilai>=85?'#16a34a':s.nilai>=70?'#d97706':'#dc2626';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-size:13px;font-weight:800;color:var(--text)">${s.guru_nama}</span>
+              <span style="font-size:10px;font-weight:700;border-radius:6px;padding:2px 8px;${statusCls}">${s.status==='terlaksana'?'✅ Terlaksana':'📋 Rencana'}</span>
+            </div>
+            <div style="font-size:11px;color:var(--primary);margin-bottom:4px">${s.mapel||''} · ${s.kelas_nama||''} ${s.jam_ke?'· Jam ke-'+s.jam_ke:''}</div>
+            <div style="font-size:11px;color:var(--text-light)">📅 ${tgl} · Supervisor: ${s.supervisor||'-'}</div>
+            ${s.nilai?`<div style="font-size:11px;font-weight:700;color:${nilaiColor};margin-top:4px">Nilai: ${s.nilai}/100</div>`:''}
+            ${s.catatan?`<div style="font-size:11px;color:var(--text-light);margin-top:4px;font-style:italic">"${s.catatan}"</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button onclick="kurEditSupervisi('${s.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer">✏️</button>
+            <button onclick="kurHapusSupervisi('${s.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    el.innerHTML = html;
+  } catch(e){ el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}</div>`; }
+}
+
+function kurShowModalSupervisi(data) {
+  if (!data) {
+    document.getElementById('kurSpvModalTitle').textContent='➕ Tambah Supervisi';
+    document.getElementById('kurSpvEditId').value='';
+    ['kurSpvGuru','kurSpvMapel','kurSpvKelas','kurSpvJam','kurSpvSupervisor','kurSpvPersiapan','kurSpvPelaksanaan','kurSpvPenilaian','kurSpvNilai','kurSpvCatatan'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('kurSpvTanggal').value=new Date().toISOString().slice(0,10);
+    document.getElementById('kurSpvStatus').value='rencana';
+    document.getElementById('kurSpvSmt').value='Ganjil';
+  } else {
+    document.getElementById('kurSpvModalTitle').textContent='✏️ Edit Supervisi';
+    document.getElementById('kurSpvEditId').value=data.id;
+    document.getElementById('kurSpvGuru').value=data.guru_nama||'';
+    document.getElementById('kurSpvMapel').value=data.mapel||'';
+    document.getElementById('kurSpvKelas').value=data.kelas_nama||'';
+    document.getElementById('kurSpvTanggal').value=data.tanggal||'';
+    document.getElementById('kurSpvJam').value=data.jam_ke||'';
+    document.getElementById('kurSpvSupervisor').value=data.supervisor||'';
+    document.getElementById('kurSpvPersiapan').value=data.aspek_persiapan||'';
+    document.getElementById('kurSpvPelaksanaan').value=data.aspek_pelaksanaan||'';
+    document.getElementById('kurSpvPenilaian').value=data.aspek_penilaian||'';
+    document.getElementById('kurSpvNilai').value=data.nilai||'';
+    document.getElementById('kurSpvStatus').value=data.status||'rencana';
+    document.getElementById('kurSpvSmt').value=data.semester||'Ganjil';
+    document.getElementById('kurSpvCatatan').value=data.catatan||'';
+  }
+  document.getElementById('kurModalSupervisi').style.display='block';
+}
+
+async function kurEditSupervisi(id) {
+  const {data}=await db.from('supervisi_kelas').select('*').eq('id',id).single();
+  if (data) kurShowModalSupervisi(data);
+}
+async function kurSimpanSupervisi() {
+  const guru=document.getElementById('kurSpvGuru')?.value.trim();
+  if (!guru) return toast('Nama guru wajib diisi','error');
+  const tanggal=document.getElementById('kurSpvTanggal')?.value;
+  if (!tanggal) return toast('Tanggal wajib diisi','error');
+  const editId=document.getElementById('kurSpvEditId').value;
+  const payload={guru_nama:guru,mapel:document.getElementById('kurSpvMapel')?.value.trim()||null,kelas_nama:document.getElementById('kurSpvKelas')?.value.trim()||null,tanggal,jam_ke:parseInt(document.getElementById('kurSpvJam')?.value)||null,supervisor:document.getElementById('kurSpvSupervisor')?.value.trim()||null,aspek_persiapan:document.getElementById('kurSpvPersiapan')?.value.trim()||null,aspek_pelaksanaan:document.getElementById('kurSpvPelaksanaan')?.value.trim()||null,aspek_penilaian:document.getElementById('kurSpvPenilaian')?.value.trim()||null,nilai:parseInt(document.getElementById('kurSpvNilai')?.value)||null,status:document.getElementById('kurSpvStatus')?.value||'rencana',semester:document.getElementById('kurSpvSmt')?.value||'Ganjil',catatan:document.getElementById('kurSpvCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('kurSpvSimpanBtn');
+  btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('supervisi_kelas').update(payload).eq('id',editId):await db.from('supervisi_kelas').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Ditambahkan!','success');kurCloseModal('kurModalSupervisi');kurLoadSupervisi();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function kurHapusSupervisi(id){if(!confirm('Hapus data supervisi ini?'))return;try{await db.from('supervisi_kelas').delete().eq('id',id);toast('Dihapus','success');kurLoadSupervisi();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── PKG ──────────────────────────────────────────────────────
+function kurHitungPKG() {
+  const vals=[document.getElementById('kurPKGPed')?.value,document.getElementById('kurPKGKep')?.value,document.getElementById('kurPKGSos')?.value,document.getElementById('kurPKGPro')?.value].map(Number);
+  if (vals.some(v=>isNaN(v)||v===0)) return;
+  const avg = vals.reduce((a,b)=>a+b,0)/4;
+  const predikat = avg>=91?'Amat Baik':avg>=76?'Baik':avg>=61?'Cukup':'Kurang';
+  const color = avg>=91?'#16a34a':avg>=76?'#2563eb':avg>=61?'#d97706':'#dc2626';
+  document.getElementById('kurPKGNilaiAkhir').value=avg.toFixed(1);
+  document.getElementById('kurPKGPredikat').value=predikat;
+  document.getElementById('kurPKGHasil').innerHTML=`<span style="font-size:16px;font-weight:800;color:${color}">${avg.toFixed(1)}</span> <span style="font-size:12px;color:${color};font-weight:700">— ${predikat}</span>`;
+}
+
+async function kurLoadPKG() {
+  if (!db) return;
+  const el=document.getElementById('kurPKGList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fSmt=document.getElementById('kurPKGFilterSmt')?.value||'';
+  try{
+    let q=db.from('pkg_guru').select('*').order('created_at',{ascending:false});
+    if(fSmt) q=q.eq('semester',fSmt);
+    const{data,error}=await q;
+    if(error)throw error;
+    if(!data||data.length===0){el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">⭐</div><div style="font-weight:700">Belum ada data PKG</div></div>`;return;}
+    el.innerHTML=data.map(p=>{
+      const color=p.nilai_akhir>=91?'#16a34a':p.nilai_akhir>=76?'#2563eb':p.nilai_akhir>=61?'#d97706':'#dc2626';
+      const tgl=p.tanggal?new Date(p.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">${p.guru_nama} ${p.nip?`<span style="font-size:10px;color:var(--text-light);font-weight:400">NIP: ${p.nip}</span>`:''}</div>
+            <div style="font-size:11px;color:var(--primary);margin-bottom:4px">${p.mapel||''} · ${p.semester||''} ${p.tahun_pelajaran||''}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+              ${[['Ped',p.nilai_pedagogik],['Kep',p.nilai_kepribadian],['Sos',p.nilai_sosial],['Pro',p.nilai_profesional]].map(([l,v])=>`<span style="background:var(--bg);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:600">${l}: ${v||'-'}</span>`).join('')}
+            </div>
+            ${p.nilai_akhir?`<div style="font-size:12px;font-weight:800;color:${color}">Nilai Akhir: ${p.nilai_akhir} — ${p.predikat||''}</div>`:''}
+            <div style="font-size:10px;color:var(--text-light);margin-top:4px">Penilai: ${p.penilai||'-'} · ${tgl}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button onclick="kurEditPKG('${p.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer">✏️</button>
+            <button onclick="kurHapusPKG('${p.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}</div>`;}
+}
+
+function kurShowModalPKG(data) {
+  if (!data) {
+    document.getElementById('kurPKGModalTitle').textContent='➕ PKG Guru';
+    document.getElementById('kurPKGEditId').value='';
+    ['kurPKGGuru','kurPKGNip','kurPKGMapel','kurPKGTP','kurPKGPed','kurPKGKep','kurPKGSos','kurPKGPro','kurPKGPenilai','kurPKGCatatan'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('kurPKGTanggal').value=new Date().toISOString().slice(0,10);
+    document.getElementById('kurPKGSmt').value='Ganjil';
+    document.getElementById('kurPKGHasil').innerHTML='Isi semua nilai untuk melihat hasil';
+    document.getElementById('kurPKGTP').value=CONFIG.tahunPelajaran||'';
+  } else {
+    document.getElementById('kurPKGModalTitle').textContent='✏️ Edit PKG';
+    document.getElementById('kurPKGEditId').value=data.id;
+    document.getElementById('kurPKGGuru').value=data.guru_nama||'';
+    document.getElementById('kurPKGNip').value=data.nip||'';
+    document.getElementById('kurPKGMapel').value=data.mapel||'';
+    document.getElementById('kurPKGTP').value=data.tahun_pelajaran||'';
+    document.getElementById('kurPKGSmt').value=data.semester||'Ganjil';
+    document.getElementById('kurPKGPed').value=data.nilai_pedagogik||'';
+    document.getElementById('kurPKGKep').value=data.nilai_kepribadian||'';
+    document.getElementById('kurPKGSos').value=data.nilai_sosial||'';
+    document.getElementById('kurPKGPro').value=data.nilai_profesional||'';
+    document.getElementById('kurPKGPenilai').value=data.penilai||'';
+    document.getElementById('kurPKGTanggal').value=data.tanggal||'';
+    document.getElementById('kurPKGCatatan').value=data.catatan||'';
+    kurHitungPKG();
+  }
+  document.getElementById('kurModalPKG').style.display='block';
+}
+async function kurEditPKG(id){const{data}=await db.from('pkg_guru').select('*').eq('id',id).single();if(data)kurShowModalPKG(data);}
+async function kurSimpanPKG(){
+  const guru=document.getElementById('kurPKGGuru')?.value.trim();
+  if(!guru)return toast('Nama guru wajib diisi','error');
+  const editId=document.getElementById('kurPKGEditId').value;
+  const payload={guru_nama:guru,nip:document.getElementById('kurPKGNip')?.value.trim()||null,mapel:document.getElementById('kurPKGMapel')?.value.trim()||null,tahun_pelajaran:document.getElementById('kurPKGTP')?.value.trim()||null,semester:document.getElementById('kurPKGSmt')?.value||'Ganjil',nilai_pedagogik:parseInt(document.getElementById('kurPKGPed')?.value)||null,nilai_kepribadian:parseInt(document.getElementById('kurPKGKep')?.value)||null,nilai_sosial:parseInt(document.getElementById('kurPKGSos')?.value)||null,nilai_profesional:parseInt(document.getElementById('kurPKGPro')?.value)||null,nilai_akhir:parseFloat(document.getElementById('kurPKGNilaiAkhir')?.value)||null,predikat:document.getElementById('kurPKGPredikat')?.value||null,penilai:document.getElementById('kurPKGPenilai')?.value.trim()||null,tanggal:document.getElementById('kurPKGTanggal')?.value||null,catatan:document.getElementById('kurPKGCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('kurPKGSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('pkg_guru').update(payload).eq('id',editId):await db.from('pkg_guru').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');kurCloseModal('kurModalPKG');kurLoadPKG();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function kurHapusPKG(id){if(!confirm('Hapus data PKG ini?'))return;try{await db.from('pkg_guru').delete().eq('id',id);toast('Dihapus','success');kurLoadPKG();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── KKM ──────────────────────────────────────────────────────
+async function kurLoadKKM() {
+  if (!db) return;
+  const el=document.getElementById('kurKKMList');
+  if(el)el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  // Populate datalist
+  const dl=document.getElementById('kurKKMMapelList');
+  if(dl)dl.innerHTML=APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
+  try{
+    const{data,error}=await db.from('kkm_mapel').select('*').order('mapel').order('kelas');
+    if(error)throw error;
+    if(!data||data.length===0){el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📊</div><div style="font-weight:700">Belum ada data KKM</div></div>`;return;}
+    // Group by mapel
+    const byMapel={};data.forEach(k=>{if(!byMapel[k.mapel])byMapel[k.mapel]=[];byMapel[k.mapel].push(k);});
+    el.innerHTML=Object.entries(byMapel).map(([mapel,kkms])=>`
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">📚 ${mapel}</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          ${kkms.map(k=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:8px">
+            <div style="flex:1">
+              <span style="font-size:12px;font-weight:700;color:var(--text)">${k.kelas}</span>
+              <span style="font-size:11px;color:var(--text-light);margin-left:8px">${k.semester||''} ${k.tahun_pelajaran||''}</span>
+              ${k.catatan?`<div style="font-size:10px;color:var(--text-light)">${k.catatan}</div>`:''}
+            </div>
+            <div style="font-size:16px;font-weight:900;color:${k.kkm>=75?'#16a34a':'#d97706'}">${k.kkm}</div>
+            <button onclick="kurEditKKM('${k.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">✏️</button>
+            <button onclick="kurHapusKKM('${k.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🗑️</button>
+          </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }catch(e){el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}</div>`;}
+}
+
+function kurShowModalKKM(data) {
+  if (!data) {
+    document.getElementById('kurKKMModalTitle').textContent='➕ Tambah KKM';
+    document.getElementById('kurKKMEditId').value='';
+    ['kurKKMMapel','kurKKMNilai','kurKKMCatatan'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('kurKKMKelas').value='';
+    document.getElementById('kurKKMTP').value=CONFIG.tahunPelajaran||'';
+    document.getElementById('kurKKMSmt').value='Ganjil';
+  } else {
+    document.getElementById('kurKKMModalTitle').textContent='✏️ Edit KKM';
+    document.getElementById('kurKKMEditId').value=data.id;
+    document.getElementById('kurKKMMapel').value=data.mapel||'';
+    document.getElementById('kurKKMKelas').value=data.kelas||'';
+    document.getElementById('kurKKMNilai').value=data.kkm||'';
+    document.getElementById('kurKKMTP').value=data.tahun_pelajaran||'';
+    document.getElementById('kurKKMSmt').value=data.semester||'Ganjil';
+    document.getElementById('kurKKMCatatan').value=data.catatan||'';
+  }
+  document.getElementById('kurModalKKM').style.display='block';
+}
+async function kurEditKKM(id){const{data}=await db.from('kkm_mapel').select('*').eq('id',id).single();if(data)kurShowModalKKM(data);}
+async function kurSimpanKKM(){
+  const mapel=document.getElementById('kurKKMMapel')?.value.trim();
+  const kelas=document.getElementById('kurKKMKelas')?.value;
+  const nilai=parseInt(document.getElementById('kurKKMNilai')?.value);
+  if(!mapel)return toast('Mapel wajib diisi','error');
+  if(!kelas)return toast('Kelas wajib dipilih','error');
+  if(!nilai||nilai<0||nilai>100)return toast('Nilai KKM 0-100','error');
+  const editId=document.getElementById('kurKKMEditId').value;
+  const payload={mapel,kelas,kkm:nilai,tahun_pelajaran:document.getElementById('kurKKMTP')?.value.trim()||null,semester:document.getElementById('kurKKMSmt')?.value||'Ganjil',catatan:document.getElementById('kurKKMCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('kurKKMSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('kkm_mapel').update(payload).eq('id',editId):await db.from('kkm_mapel').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');kurCloseModal('kurModalKKM');kurLoadKKM();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function kurHapusKKM(id){if(!confirm('Hapus data KKM ini?'))return;try{await db.from('kkm_mapel').delete().eq('id',id);toast('Dihapus','success');kurLoadKKM();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── KALENDER AKADEMIK ─────────────────────────────────────────
+async function kurLoadKalender() {
+  if(!db)return;
+  const el=document.getElementById('kurKalenderList');
+  if(el)el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fKat=document.getElementById('kurKalenderFilterKat')?.value||'';
+  const fBln=document.getElementById('kurKalenderFilterBulan')?.value||'';
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    let q=db.from('kalender_akademik').select('*').order('tanggal_mulai');
+    if(fKat)q=q.eq('kategori',fKat);
+    if(fBln)q=q.gte('tanggal_mulai',`2000-${fBln}-01`).lte('tanggal_mulai',`2099-${fBln}-31`);
+    const{data,error}=await q;
+    if(error)throw error;
+    if(!data||data.length===0){el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">🗓️</div><div style="font-weight:700">Belum ada agenda</div></div>`;return;}
+    // Group by month
+    const byMonth={};
+    data.forEach(k=>{const m=k.tanggal_mulai?k.tanggal_mulai.slice(0,7):'lainnya';if(!byMonth[m])byMonth[m]=[];byMonth[m].push(k);});
+    const BULAN=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    el.innerHTML=Object.entries(byMonth).map(([ym,items])=>{
+      const [yr,mn]=ym.split('-');
+      const mnLabel=BULAN[parseInt(mn)]||mn;
+      return `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:800;color:#9d174d;margin-bottom:8px"><span style="background:#fce7f3;border-radius:6px;padding:2px 8px">${mnLabel} ${yr}</span></div>
+        ${items.map(k=>{
+          const cfg=KUR_KAT_CFG[k.kategori]||{ico:'📌',color:'#374151',bg:'#f3f4f6'};
+          const tglMulai=k.tanggal_mulai?new Date(k.tanggal_mulai+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'-';
+          const tglSel=k.tanggal_selesai&&k.tanggal_selesai!==k.tanggal_mulai?` – ${new Date(k.tanggal_selesai+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})}`:' ';
+          const isToday=k.tanggal_mulai===today;
+          const isComing=k.tanggal_mulai>today;
+          return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px;border-left:4px solid ${cfg.color}${isToday?';box-shadow:0 0 0 2px '+cfg.color+' inset':''}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                  <span style="font-size:10px;font-weight:700;border-radius:6px;padding:2px 8px;background:${cfg.bg};color:${cfg.color}">${cfg.ico} ${k.kategori||''}</span>
+                  ${isToday?'<span style="background:#16a34a;color:#fff;font-size:9px;font-weight:700;border-radius:6px;padding:1px 6px">HARI INI</span>':''}
+                  ${isComing?'<span style="background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;border-radius:6px;padding:1px 6px">AKAN DATANG</span>':''}
+                </div>
+                <div style="font-size:13px;font-weight:800;color:var(--text)">${k.judul}</div>
+                <div style="font-size:11px;color:var(--text-light);margin-top:3px">📅 ${tglMulai}${tglSel}</div>
+                ${k.deskripsi?`<div style="font-size:11px;color:var(--text-light);margin-top:3px;font-style:italic">${k.deskripsi}</div>`:''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+                <button onclick="kurEditKalender('${k.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">✏️</button>
+                <button onclick="kurHapusKalender('${k.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}</div>`;}
+}
+
+function kurShowModalKalender(data) {
+  if (!data) {
+    document.getElementById('kurKalModalTitle').textContent='➕ Tambah Agenda';
+    document.getElementById('kurKalEditId').value='';
+    document.getElementById('kurKalJudul').value='';
+    document.getElementById('kurKalDeskripsi').value='';
+    document.getElementById('kurKalMulai').value='';
+    document.getElementById('kurKalSelesai').value='';
+    document.getElementById('kurKalKategori').value='kegiatan';
+  } else {
+    document.getElementById('kurKalModalTitle').textContent='✏️ Edit Agenda';
+    document.getElementById('kurKalEditId').value=data.id;
+    document.getElementById('kurKalJudul').value=data.judul||'';
+    document.getElementById('kurKalDeskripsi').value=data.deskripsi||'';
+    document.getElementById('kurKalMulai').value=data.tanggal_mulai||'';
+    document.getElementById('kurKalSelesai').value=data.tanggal_selesai||'';
+    document.getElementById('kurKalKategori').value=data.kategori||'kegiatan';
+  }
+  document.getElementById('kurModalKalender').style.display='block';
+}
+async function kurEditKalender(id){const{data}=await db.from('kalender_akademik').select('*').eq('id',id).single();if(data)kurShowModalKalender(data);}
+async function kurSimpanKalender(){
+  const judul=document.getElementById('kurKalJudul')?.value.trim();
+  const mulai=document.getElementById('kurKalMulai')?.value;
+  if(!judul)return toast('Judul wajib diisi','error');
+  if(!mulai)return toast('Tanggal mulai wajib diisi','error');
+  const editId=document.getElementById('kurKalEditId').value;
+  const payload={judul,tanggal_mulai:mulai,tanggal_selesai:document.getElementById('kurKalSelesai')?.value||null,kategori:document.getElementById('kurKalKategori')?.value||'kegiatan',deskripsi:document.getElementById('kurKalDeskripsi')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('kurKalSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('kalender_akademik').update(payload).eq('id',editId):await db.from('kalender_akademik').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');kurCloseModal('kurModalKalender');kurLoadKalender();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function kurHapusKalender(id){if(!confirm('Hapus agenda ini?'))return;try{await db.from('kalender_akademik').delete().eq('id',id);toast('Dihapus','success');kurLoadKalender();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+function kurCloseModal(id){document.getElementById(id).style.display='none';}
+// ════════════════════ END KURIKULUM ════════════════════
 </script>
 </body>
 </html>
