@@ -292,14 +292,33 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 .kur-jadwal-row { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
 .kur-jadwal-row:hover { border-color:var(--primary); }
 /* ═══════════ END KURIKULUM CSS ═══════════ */
-/* Safeguard: pastikan semua sub-halaman Kurikulum tidak tertutup topbar */
+/* Safeguard: pastikan semua sub-halaman fitur baru punya jarak dari topbar
+   DAN punya padding kiri-kanan agar tidak mepet ke tepi layar */
 #page-kurikulum.active > div,
 #page-kurikulum-jadwal.active > div,
 #page-kurikulum-supervisi.active > div,
 #page-kurikulum-pkg.active > div,
 #page-kurikulum-kkm.active > div,
-#page-kurikulum-kalender.active > div {
+#page-kurikulum-kalender.active > div,
+#page-progkol.active > div,
+#page-progkol-detail.active > div,
+#page-modul.active > div,
+#page-modul-list.active > div,
+#page-jadwalMGMP.active > div,
+#page-trackingSiswa.active > div,
+#page-absensiku.active > div {
   padding-top: 56px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
+}
+#page-progkol-program.active > div,
+#page-modul-form.active > div,
+#page-modul-detail.active > div {
+  padding-top: 56px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
 }
 
 /* ADMIN-ONLY FIELDS — hanya muncul jika akun admin login */
