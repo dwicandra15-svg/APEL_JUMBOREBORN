@@ -296,6 +296,7 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
    DAN punya padding kiri-kanan agar tidak mepet ke tepi layar */
 #page-kurikulum.active > div,
 #page-kurikulum-jadwal.active > div,
+#page-kurikulum-guru.active > div,
 #page-kurikulum-supervisi.active > div,
 #page-kurikulum-pkg.active > div,
 #page-kurikulum-kkm.active > div,
@@ -7194,6 +7195,7 @@ function showPage(name) {
     'progkol-program':'Detail Program',
     'modul':'Modul', 'modul-list':'Modul', 'modul-form':'Tambah Modul', 'modul-detail':'Detail Modul',
     'kurikulum':'Kurikulum', 'kurikulum-jadwal':'Jadwal Mengajar',
+    'kurikulum-guru':'Data Guru',
     'kurikulum-supervisi':'Supervisi Kelas', 'kurikulum-pkg':'PKG Guru',
     'kurikulum-kkm':'KKM', 'kurikulum-kalender':'Kalender Akademik',
     'absensiku':'AbsensiKu',
@@ -7230,6 +7232,7 @@ function showPage(name) {
   if (name==='modul-list') { mdLoadList(); }
   if (name==='kurikulum') { kurLoadDashboard(); }
   if (name==='kurikulum-jadwal') { kurLoadJadwal(); }
+  if (name==='kurikulum-guru') { kurLoadGuru(); }
   if (name==='kurikulum-supervisi') { kurLoadSupervisi(); }
   if (name==='kurikulum-pkg') { kurLoadPKG(); }
   if (name==='kurikulum-kkm') { kurLoadKKM(); }
@@ -11758,6 +11761,11 @@ function chatAutoResize(el){
       <div class="kur-nav-text"><div class="title">Jadwal Mengajar</div><div class="sub">Kelola jadwal per guru, kelas, dan hari</div></div>
       <div style="margin-left:auto;color:var(--text-light)">›</div>
     </div>
+    <div class="kur-nav-card" onclick="goPage('kurikulum-guru')">
+      <div class="kur-nav-ico" style="background:#e0e7ff;color:#4338ca">👨‍🏫</div>
+      <div class="kur-nav-text"><div class="title">Data Guru</div><div class="sub">Master data guru — nama, NIP, mapel</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
     <div class="kur-nav-card" onclick="goPage('kurikulum-supervisi')">
       <div class="kur-nav-ico" style="background:#d1fae5;color:#065f46">🔍</div>
       <div class="kur-nav-text"><div class="title">Supervisi Kelas</div><div class="sub">Jadwal & hasil observasi mengajar guru</div></div>
@@ -11781,6 +11789,45 @@ function chatAutoResize(el){
   </div>
 </div>
 </div>
+<!-- PAGE: DATA GURU -->
+<div id="page-kurikulum-guru" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+    <div><div class="section-title">👨‍🏫 Data Guru</div><div class="section-sub">Master data guru untuk semua fitur Kurikulum</div></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <button onclick="kurShowModalGuru()" style="flex:1;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">➕ Tambah Guru</button>
+    <button onclick="kurDownloadTemplateGuru()" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">📥 Template Excel</button>
+  </div>
+  <button onclick="document.getElementById('kurGuruUploadFile').click()" style="width:100%;background:var(--card);color:var(--primary);border:1.5px dashed var(--primary);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font)">📤 Import dari Excel</button>
+  <input type="file" id="kurGuruUploadFile" accept=".xlsx,.xls" style="display:none" onchange="kurImportGuru(this)">
+  <div id="kurGuruList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- ══ MODAL DATA GURU ══ -->
+<div id="kurModalGuru" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:420px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurGuruModalTitle">➕ Tambah Guru</div>
+    <button onclick="kurCloseModal('kurModalGuru')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurGNama" class="form-control" placeholder="Nama lengkap guru..."></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NIP</label><input type="text" id="kurGNip" class="form-control" placeholder="NIP (opsional)..."></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label>
+      <input type="text" id="kurGMapel" class="form-control" list="kurGuruMapelList" placeholder="Pilih/ketik mapel...">
+      <datalist id="kurGuruMapelList"></datalist>
+    </div>
+  </div>
+  <input type="hidden" id="kurGEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="kurCloseModal('kurModalGuru')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="kurSimpanGuru()" class="btn btn-primary" style="flex:2" id="kurGSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
 <!-- PAGE: JADWAL MENGAJAR -->
 <div id="page-kurikulum-jadwal" class="page">
 <div style="padding:16px 0 100px">
@@ -11879,10 +11926,12 @@ function chatAutoResize(el){
     <button onclick="kurCloseModal('kurModalJadwal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
-    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurJGuru" class="form-control" placeholder="Nama lengkap guru..."></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label>
+      <select id="kurJGuru" class="form-control" onchange="kurAutoFillGuru('kurJGuru','kurJMapel',null)"><option value="">-- Pilih Guru --</option></select>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran *</label>
-        <input type="text" id="kurJMapel" class="form-control" list="kurMapelList" placeholder="Pilih/ketik mapel...">
+        <input type="text" id="kurJMapel" class="form-control" list="kurMapelList" placeholder="Otomatis terisi / bisa diubah...">
         <datalist id="kurMapelList"></datalist>
       </div>
       <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
@@ -11925,8 +11974,10 @@ function chatAutoResize(el){
   </div>
   <div style="display:flex;flex-direction:column;gap:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurSpvGuru" class="form-control" placeholder="Nama guru..."></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurSpvMapel" class="form-control" placeholder="Mapel..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label>
+        <select id="kurSpvGuru" class="form-control" onchange="kurAutoFillGuru('kurSpvGuru','kurSpvMapel',null)"><option value="">-- Pilih Guru --</option></select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurSpvMapel" class="form-control" placeholder="Otomatis terisi..."></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas</label><input type="text" id="kurSpvKelas" class="form-control" placeholder="cth: 7A"></div>
@@ -11964,11 +12015,13 @@ function chatAutoResize(el){
   <div style="font-size:11px;color:var(--text-light);background:var(--bg);border-radius:8px;padding:8px 12px;margin-bottom:12px">Nilai akhir dihitung otomatis: rata-rata 4 kompetensi</div>
   <div style="display:flex;flex-direction:column;gap:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label><input type="text" id="kurPKGGuru" class="form-control" placeholder="Nama guru..."></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NIP</label><input type="text" id="kurPKGNip" class="form-control" placeholder="NIP..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Guru *</label>
+        <select id="kurPKGGuru" class="form-control" onchange="kurAutoFillGuru('kurPKGGuru','kurPKGMapel','kurPKGNip')"><option value="">-- Pilih Guru --</option></select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NIP</label><input type="text" id="kurPKGNip" class="form-control" placeholder="Otomatis terisi..."></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurPKGMapel" class="form-control" placeholder="Mapel..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran</label><input type="text" id="kurPKGMapel" class="form-control" placeholder="Otomatis terisi..."></div>
       <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="kurPKGTP" class="form-control" placeholder="2025/2026"></div>
     </div>
     <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label><select id="kurPKGSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></div>
@@ -15673,6 +15726,11 @@ const KUR_KAT_CFG = {
 
 // ── DASHBOARD ────────────────────────────────────────────────
 async function kurLoadDashboard() {
+  // Preload data guru untuk dropdown di semua modal
+  try {
+    const { data } = await db.from('data_guru').select('*').order('nama');
+    if (data) KUR_GURU_CACHE = data;
+  } catch(e) {}
   // Update header hari
   const now = new Date();
   const hariNow = KUR_HARI_IDX[now.getDay()];
@@ -15809,6 +15867,7 @@ function kurShowModalJadwal(data) {
   if (kelSel) kelSel.innerHTML = '<option value="">-- Pilih Kelas --</option>' + APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
   const dl = document.getElementById('kurMapelList');
   if (dl) dl.innerHTML = APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
+  kurPopulateGuruDropdown('kurJGuru');
   // Prefill TP
   const tp = document.getElementById('kurJTP');
   if (tp && !tp.value) tp.value = CONFIG.tahunPelajaran || '';
@@ -15916,6 +15975,7 @@ async function kurLoadSupervisi() {
 }
 
 function kurShowModalSupervisi(data) {
+  kurPopulateGuruDropdown('kurSpvGuru');
   if (!data) {
     document.getElementById('kurSpvModalTitle').textContent='➕ Tambah Supervisi';
     document.getElementById('kurSpvEditId').value='';
@@ -16010,6 +16070,7 @@ async function kurLoadPKG() {
 }
 
 function kurShowModalPKG(data) {
+  kurPopulateGuruDropdown('kurPKGGuru');
   if (!data) {
     document.getElementById('kurPKGModalTitle').textContent='➕ PKG Guru';
     document.getElementById('kurPKGEditId').value='';
@@ -16207,6 +16268,137 @@ async function kurSimpanKalender(){
   finally{btn.disabled=false;btn.textContent='💾 Simpan';}
 }
 async function kurHapusKalender(id){if(!confirm('Hapus agenda ini?'))return;try{await db.from('kalender_akademik').delete().eq('id',id);toast('Dihapus','success');kurLoadKalender();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── DATA GURU (Master) ──────────────────────────────────────
+let KUR_GURU_CACHE = [];
+
+async function kurLoadGuru() {
+  if (!db) return;
+  const el = document.getElementById('kurGuruList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const dl = document.getElementById('kurGuruMapelList');
+  if (dl) dl.innerHTML = APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
+  try {
+    const {data,error} = await db.from('data_guru').select('*').order('nama');
+    if (error) throw error;
+    KUR_GURU_CACHE = data || [];
+    if (!data || data.length===0) {
+      el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">👨‍🏫</div><div style="font-weight:700;margin-bottom:6px">Belum ada data guru</div><div style="font-size:12px">Tambah manual atau import dari Excel</div></div>`;
+      return;
+    }
+    el.innerHTML = data.map(g => `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#e0e7ff;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;color:var(--text)">${g.nama}</div>
+          <div style="font-size:11px;color:var(--text-light)">${g.nip?'NIP: '+g.nip+' · ':''}${g.mapel||'-'}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button onclick="kurEditGuru('${g.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">✏️</button>
+          <button onclick="kurHapusGuru('${g.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🗑️</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel data_guru sudah dibuat</small></div>`;
+  }
+}
+
+function kurShowModalGuru(data) {
+  const dl = document.getElementById('kurGuruMapelList');
+  if (dl) dl.innerHTML = APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
+  if (!data) {
+    document.getElementById('kurGuruModalTitle').textContent='➕ Tambah Guru';
+    document.getElementById('kurGEditId').value='';
+    ['kurGNama','kurGNip','kurGMapel'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  } else {
+    document.getElementById('kurGuruModalTitle').textContent='✏️ Edit Guru';
+    document.getElementById('kurGEditId').value=data.id;
+    document.getElementById('kurGNama').value=data.nama||'';
+    document.getElementById('kurGNip').value=data.nip||'';
+    document.getElementById('kurGMapel').value=data.mapel||'';
+  }
+  document.getElementById('kurModalGuru').style.display='block';
+}
+async function kurEditGuru(id){const g=KUR_GURU_CACHE.find(x=>x.id===id);if(g)kurShowModalGuru(g);}
+
+async function kurSimpanGuru() {
+  const nama=document.getElementById('kurGNama')?.value.trim();
+  if(!nama)return toast('Nama guru wajib diisi','error');
+  const editId=document.getElementById('kurGEditId').value;
+  const payload={nama,nip:document.getElementById('kurGNip')?.value.trim()||null,mapel:document.getElementById('kurGMapel')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('kurGSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('data_guru').update(payload).eq('id',editId):await db.from('data_guru').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');kurCloseModal('kurModalGuru');kurLoadGuru();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function kurHapusGuru(id){if(!confirm('Hapus data guru ini?'))return;try{await db.from('data_guru').delete().eq('id',id);toast('Dihapus','success');kurLoadGuru();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+function kurDownloadTemplateGuru() {
+  if (typeof XLSX==='undefined') return toast('Library Excel belum siap, coba lagi','error');
+  const wb = XLSX.utils.book_new();
+  const templateData = [
+    ['Nama Guru','NIP','Mata Pelajaran'],
+    ['Contoh: Ahmad Fauzi, S.Pd','196501011990031001','Matematika'],
+    ['Contoh: Siti Aminah, S.Pd','197203051998022001','Bahasa Indonesia'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(templateData);
+  ws['!cols'] = [{wch:28},{wch:22},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Guru');
+  XLSX.writeFile(wb, 'Template_Data_Guru_APEL_JUMBO.xlsx');
+  toast('📥 Template berhasil diunduh','success');
+}
+
+async function kurImportGuru(input) {
+  const file = input.files[0]; if (!file) return;
+  if (typeof XLSX==='undefined') return toast('Library Excel belum siap, coba lagi','error');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+      // Skip header row (baris 1), skip baris "Contoh:"
+      const dataRows = rows.slice(1).filter(r => r[0] && !String(r[0]).toLowerCase().includes('contoh'));
+      if (dataRows.length===0) { toast('Tidak ada data valid di file Excel','error'); return; }
+      const payload = dataRows.map(r => ({
+        nama: String(r[0]||'').trim(),
+        nip: r[1]?String(r[1]).trim():null,
+        mapel: r[2]?String(r[2]).trim():null,
+        user_id: currentUser?.id||null
+      })).filter(p=>p.nama);
+      if (payload.length===0) { toast('Tidak ada nama guru yang valid','error'); return; }
+      const {error} = await db.from('data_guru').insert(payload);
+      if (error) throw error;
+      toast(`✅ ${payload.length} data guru berhasil diimport!`,'success');
+      kurLoadGuru();
+    } catch(err) {
+      toast('Gagal import: '+err.message,'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+// Auto-fill dropdown guru di modal Jadwal/Supervisi/PKG
+function kurPopulateGuruDropdown(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Guru --</option>' +
+    KUR_GURU_CACHE.map(g => `<option value="${g.nama}" data-mapel="${g.mapel||''}" data-nip="${g.nip||''}">${g.nama}</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+function kurAutoFillGuru(selectId, mapelTargetId, nipTargetId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  const mapel = opt?.dataset?.mapel || '';
+  const nip = opt?.dataset?.nip || '';
+  if (mapelTargetId) { const m=document.getElementById(mapelTargetId); if(m && mapel) m.value=mapel; }
+  if (nipTargetId) { const n=document.getElementById(nipTargetId); if(n && nip) n.value=nip; }
+}
 
 function kurCloseModal(id){document.getElementById(id).style.display='none';}
 // ════════════════════ END KURIKULUM ════════════════════
