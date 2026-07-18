@@ -15971,16 +15971,44 @@ async function pkGenerateLaporan() {
 
 function pkShowSetupModal(total, label) {
   const savedKota = localStorage.getItem('apel_laporan_kota') || '';
+  const savedNama = localStorage.getItem('apel_laporan_nama_ttd') || CONFIG.guru || '';
+  const savedNip = localStorage.getItem('apel_laporan_nip_ttd') || '';
+  const savedLogo = localStorage.getItem('apel_laporan_logo') || CONFIG.logo || '';
   const modal = document.createElement('div');
   modal.id = 'pkSetupDlg';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = `<div style="background:var(--card);border-radius:16px;padding:22px 20px;max-width:360px;width:100%">
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = `<div style="background:var(--card);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">
     <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">📄 Setup Laporan ${label}</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:16px">${total} program ditemukan. Lengkapi info berikut:</div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="pkSetupTP" class="form-control" value="${CONFIG.tahunPelajaran||''}" placeholder="2025/2026"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kota (untuk tanda tangan)</label><input type="text" id="pkSetupKota" class="form-control" value="${savedKota}" placeholder="cth: Sampang"></div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:16px">${total} program ditemukan.</div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--primary);margin:12px 0 8px">🏫 KOP SURAT</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Sekolah</label><input type="text" id="pkSetupSekolah" class="form-control" value="${CONFIG.school||''}" placeholder="SMPN 6 Sampang"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Alamat</label><input type="text" id="pkSetupAlamat" class="form-control" value="${CONFIG.address||''}" placeholder="Alamat sekolah"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NPSN</label><input type="text" id="pkSetupNpsn" class="form-control" value="${CONFIG.npsn||''}" placeholder="NPSN"></div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Logo Kop Surat</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="pkSetupLogoPreview" style="width:44px;height:44px;border-radius:10px;background:#f1f5f9;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">${savedLogo?`<img src="${savedLogo}" style="width:100%;height:100%;object-fit:cover">`:'🏫'}</div>
+          <button onclick="document.getElementById('pkSetupLogoFile').click()" type="button" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">📁 Pilih Logo Sekolah</button>
+        </div>
+        <input type="file" id="pkSetupLogoFile" accept="image/*" style="display:none" onchange="pkSetupHandleLogo(this)">
+        <input type="hidden" id="pkSetupLogoB64" value="${savedLogo}">
+      </div>
     </div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--primary);margin:16px 0 8px">📅 INFO LAPORAN</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="pkSetupTP" class="form-control" value="${CONFIG.tahunPelajaran||''}" placeholder="2025/2026"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kota</label><input type="text" id="pkSetupKota" class="form-control" value="${savedKota}" placeholder="cth: Sampang"></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--primary);margin:16px 0 8px">✍️ TANDA TANGAN</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Penanggung Jawab</label><input type="text" id="pkSetupNamaTTD" class="form-control" value="${savedNama}" placeholder="Nama Wakasek..."></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">NIP</label><input type="text" id="pkSetupNipTTD" class="form-control" value="${savedNip}" placeholder="NIP (opsional)"></div>
+    </div>
+
     <div style="display:flex;gap:10px;margin-top:18px">
       <button onclick="document.getElementById('pkSetupDlg').remove()" style="flex:1;background:var(--border);color:var(--text);border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Batal</button>
       <button onclick="pkLanjutkanLaporan()" style="flex:2;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Lanjutkan →</button>
@@ -15989,10 +16017,42 @@ function pkShowSetupModal(total, label) {
   document.body.appendChild(modal);
 }
 
+function pkSetupHandleLogo(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w=img.width,h=img.height,maxPx=300;
+      if (w>maxPx||h>maxPx){ if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;} }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const b64 = canvas.toDataURL('image/png');
+      document.getElementById('pkSetupLogoB64').value = b64;
+      document.getElementById('pkSetupLogoPreview').innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover">`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
 async function pkLanjutkanLaporan() {
   const tp = document.getElementById('pkSetupTP')?.value.trim() || CONFIG.tahunPelajaran || '-';
   const kota = document.getElementById('pkSetupKota')?.value.trim() || 'Sampang';
+  const sekolah = document.getElementById('pkSetupSekolah')?.value.trim() || CONFIG.school || 'NAMA SEKOLAH';
+  const alamat = document.getElementById('pkSetupAlamat')?.value.trim() || CONFIG.address || '-';
+  const npsn = document.getElementById('pkSetupNpsn')?.value.trim() || CONFIG.npsn || '-';
+  const logo = document.getElementById('pkSetupLogoB64')?.value || '';
+  const namaTTD = document.getElementById('pkSetupNamaTTD')?.value.trim() || CONFIG.guru || '';
+  const nipTTD = document.getElementById('pkSetupNipTTD')?.value.trim() || '';
+
   localStorage.setItem('apel_laporan_kota', kota);
+  localStorage.setItem('apel_laporan_nama_ttd', namaTTD);
+  localStorage.setItem('apel_laporan_nip_ttd', nipTTD);
+  if (logo) localStorage.setItem('apel_laporan_logo', logo);
+
   document.getElementById('pkSetupDlg')?.remove();
   toast('⏳ Menyiapkan laporan...','info');
 
@@ -16002,7 +16062,7 @@ async function pkLanjutkanLaporan() {
   const ids = programs.map(p=>p.id);
   const { data: laporans } = await db.from('laporan_program').select('*').in('program_id', ids).order('tanggal_laporan');
 
-  const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel, tp, kota);
+  const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel, {tp,kota,sekolah,alamat,npsn,logo,namaTTD,nipTTD});
   pkShowLaporanModal(html, programs.length, cfg.label + ' - ' + jangkaLabel);
 }
 
@@ -16047,13 +16107,17 @@ function pkDownloadLaporan(format) {
   }
 }
 
-function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, tpInput, kotaInput) {
-  const school = CONFIG.school||'NAMA SEKOLAH';
-  const address = CONFIG.address||'-';
-  const npsn = CONFIG.npsn||'-';
-  const now = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const tp = tpInput || CONFIG.tahunPelajaran || '-';
-  const kota = kotaInput || 'Sampang';
+function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, setup) {
+  setup = setup || {};
+  const school = setup.sekolah || CONFIG.school||'NAMA SEKOLAH';
+  const address = setup.alamat || CONFIG.address||'-';
+  const npsn = setup.npsn || CONFIG.npsn||'-';
+  const logo = setup.logo || CONFIG.logo || '';
+  const now = new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const tp = setup.tp || CONFIG.tahunPelajaran || '-';
+  const kota = setup.kota || 'Sampang';
+  const namaTTD = setup.namaTTD || CONFIG.guru || '';
+  const nipTTD = setup.nipTTD || '';
 
   const tabelProgram = programs.map((p,i) => {
     const lap = laporans.filter(l=>l.program_id===p.id);
@@ -16103,7 +16167,7 @@ function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, tpInput, kotaI
     @page { margin:2cm; }
   </style></head><body>
   <div class="kop">
-    ${CONFIG.logo?`<img src="${CONFIG.logo}" style="width:70px;height:70px;object-fit:cover">`:'<div style="width:70px;height:70px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px">🏫</div>'}
+    ${logo?`<img src="${logo}" style="width:70px;height:70px;object-fit:cover">`:'<div style="width:70px;height:70px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px">🏫</div>'}
     <div class="kop-text">
       <h1 class="school">${school}</h1>
       <h2 class="school">Naskah Laporan Program Kerja Wakasek</h2>
@@ -16149,7 +16213,8 @@ function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, tpInput, kotaI
       <p style="margin:0">${kota}, ${now}</p>
       <p style="margin:4px 0">Wakil Kepala Sekolah Bidang ${cfg.label}</p>
       <br><br><br>
-      <p style="margin:0"><u>${CONFIG.guru||'.................................'}</u></p>
+      <p style="margin:0;border-bottom:1.5px solid #1e293b;display:inline-block;padding:0 20px 3px;font-weight:700">${namaTTD||'.................................'}</p>
+      <p style="margin:4px 0 0">NIP. ${nipTTD||'.................................'}</p>
     </div>
     <div style="clear:both"></div>
   </div>
