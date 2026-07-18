@@ -15958,20 +15958,52 @@ async function pkGenerateLaporan() {
   if (!db) return;
   const cfg = PK_WAKA_CFG[pkCurrentWaka];
   const jangkaLabel = {pendek:'Jangka Pendek',menengah:'Jangka Menengah',panjang:'Jangka Panjang'}[pkCurrentJangka];
-  toast('⏳ Menyiapkan laporan...','info');
   try {
     const { data: programs } = await db.from('program_sekolah').select('*')
       .eq('waka', pkCurrentWaka).eq('jangka', pkCurrentJangka).order('tanggal_mulai');
     if (!programs || programs.length === 0) { toast('Belum ada program untuk dibuat laporan','error'); return; }
-
-    // Ambil semua laporan untuk programs ini
-    const ids = programs.map(p=>p.id);
-    const { data: laporans } = await db.from('laporan_program').select('*').in('program_id', ids).order('tanggal_laporan');
-
-    const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel);
-    // Tampilkan pilihan format
-    pkShowLaporanModal(html, programs.length, cfg.label + ' - ' + jangkaLabel);
+    window._pkLaporanPrograms = programs;
+    window._pkLaporanCfg = cfg;
+    window._pkLaporanJangkaLabel = jangkaLabel;
+    pkShowSetupModal(programs.length, cfg.label + ' - ' + jangkaLabel);
   } catch(e) { toast('Gagal: '+e.message,'error'); }
+}
+
+function pkShowSetupModal(total, label) {
+  const savedKota = localStorage.getItem('apel_laporan_kota') || '';
+  const modal = document.createElement('div');
+  modal.id = 'pkSetupDlg';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `<div style="background:var(--card);border-radius:16px;padding:22px 20px;max-width:360px;width:100%">
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">📄 Setup Laporan ${label}</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:16px">${total} program ditemukan. Lengkapi info berikut:</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="pkSetupTP" class="form-control" value="${CONFIG.tahunPelajaran||''}" placeholder="2025/2026"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kota (untuk tanda tangan)</label><input type="text" id="pkSetupKota" class="form-control" value="${savedKota}" placeholder="cth: Sampang"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="document.getElementById('pkSetupDlg').remove()" style="flex:1;background:var(--border);color:var(--text);border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Batal</button>
+      <button onclick="pkLanjutkanLaporan()" style="flex:2;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Lanjutkan →</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function pkLanjutkanLaporan() {
+  const tp = document.getElementById('pkSetupTP')?.value.trim() || CONFIG.tahunPelajaran || '-';
+  const kota = document.getElementById('pkSetupKota')?.value.trim() || 'Sampang';
+  localStorage.setItem('apel_laporan_kota', kota);
+  document.getElementById('pkSetupDlg')?.remove();
+  toast('⏳ Menyiapkan laporan...','info');
+
+  const programs = window._pkLaporanPrograms;
+  const cfg = window._pkLaporanCfg;
+  const jangkaLabel = window._pkLaporanJangkaLabel;
+  const ids = programs.map(p=>p.id);
+  const { data: laporans } = await db.from('laporan_program').select('*').in('program_id', ids).order('tanggal_laporan');
+
+  const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel, tp, kota);
+  pkShowLaporanModal(html, programs.length, cfg.label + ' - ' + jangkaLabel);
 }
 
 function pkShowLaporanModal(html, total, label) {
@@ -16015,12 +16047,13 @@ function pkDownloadLaporan(format) {
   }
 }
 
-function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel) {
+function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, tpInput, kotaInput) {
   const school = CONFIG.school||'NAMA SEKOLAH';
   const address = CONFIG.address||'-';
   const npsn = CONFIG.npsn||'-';
   const now = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const tp = CONFIG.tahunPelajaran||'-';
+  const tp = tpInput || CONFIG.tahunPelajaran || '-';
+  const kota = kotaInput || 'Sampang';
 
   const tabelProgram = programs.map((p,i) => {
     const lap = laporans.filter(l=>l.program_id===p.id);
@@ -16113,7 +16146,7 @@ function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel) {
   </div>
   <div class="footer">
     <div style="float:right;text-align:center;margin-top:10px">
-      <p style="margin:0">${CONFIG.address||'Sampang'}, ${now}</p>
+      <p style="margin:0">${kota}, ${now}</p>
       <p style="margin:4px 0">Wakil Kepala Sekolah Bidang ${cfg.label}</p>
       <br><br><br>
       <p style="margin:0"><u>${CONFIG.guru||'.................................'}</u></p>
