@@ -15134,6 +15134,7 @@ async function mdLoadList() {
 
 function mdBukaForm() {
   mdCurrentId = null;
+  mdLkpdGambarList = [];
   const el = document.getElementById('mdFormContent');
   el.innerHTML = mdBuildForm(mdCurrentJenis, null);
   goPage('modul-form');
@@ -15263,6 +15264,12 @@ function mdBuildForm(jenis, data) {
       </div>`;
   } else if (jenis === 'atp') {
     formFields = `${identitas}
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate ATP dengan AI</div>
+        <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas dan Elemen/Domain terlebih dahulu, lalu klik Generate.</div>
+        <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
+        <div id="mdGenStatus" style="display:none;margin-top:10px;color:#c7d2fe;font-size:11px;text-align:center">⏳ AI sedang membuat konten...</div>
+      </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
         <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">🗺️ ALUR TUJUAN PEMBELAJARAN</div>
         <div style="display:flex;flex-direction:column;gap:10px">
@@ -15277,13 +15284,31 @@ function mdBuildForm(jenis, data) {
         </div>
       </div>`;
   } else if (jenis === 'lkpd') {
+    const gambarPreview = mdLkpdGambarList.map((g,i) => `
+      <div style="position:relative;display:inline-block;margin:4px" id="mdLkpdImgWrap_${i}">
+        <img src="${g}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        <button onclick="mdHapusGambarLKPD(${i})" type="button" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button>
+      </div>`).join('');
     formFields = `${identitas}
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate LKPD dengan AI</div>
+        <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas dan Pertemuan ke- terlebih dahulu, lalu klik Generate.</div>
+        <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
+        <div id="mdGenStatus" style="display:none;margin-top:10px;color:#c7d2fe;font-size:11px;text-align:center">⏳ AI sedang membuat konten...</div>
+      </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
         <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">📝 ISI LKPD</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Pertemuan ke-</label><input type="text" id="mdPertemuan" class="form-control" value="${dj.pertemuan_ke||''}" placeholder="1"></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tujuan Pembelajaran</label><textarea id="mdTujuan" rows="3" class="form-control" style="resize:vertical" placeholder="Setelah mengerjakan LKPD ini, siswa mampu...">${dj.tujuan||''}</textarea></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Petunjuk Pengerjaan</label><textarea id="mdPetunjuk" rows="3" class="form-control" style="resize:vertical" placeholder="1. Baca materi terlebih dahulu...\n2. Kerjakan secara berkelompok...">${dj.petunjuk||''}</textarea></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Deskripsi / Wacana Pendukung</label><textarea id="mdDeskripsiLkpd" rows="3" class="form-control" style="resize:vertical" placeholder="Bacaan/wacana/studi kasus sebelum soal (opsional)...">${dj.deskripsi_lkpd||''}</textarea></div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">🖼️ Gambar / Ilustrasi Pendukung (opsional)</label>
+            <button onclick="document.getElementById('mdLkpdImgInput').click()" type="button" style="width:100%;background:var(--bg);border:1.5px dashed var(--border);border-radius:8px;padding:10px;font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:var(--font)">📷 Tambah Gambar (soal bergambar, diagram, dll.)</button>
+            <input type="file" id="mdLkpdImgInput" accept="image/*" multiple style="display:none" onchange="mdTambahGambarLKPD(this)">
+            <div id="mdLkpdImgList" style="margin-top:8px">${gambarPreview}</div>
+          </div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Soal / Tugas</label><textarea id="mdSoal" rows="6" class="form-control" style="resize:vertical" placeholder="1. Jelaskan pengertian...\n2. Sebutkan perbedaan...\n3. Gambarkan bagan...">${dj.soal||''}</textarea></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kolom Jawaban / Lembar Kerja</label><textarea id="mdJawaban" rows="4" class="form-control" style="resize:vertical" placeholder="Jawaban:\n\n\n(Kosongkan untuk kolom jawaban siswa)">${dj.jawaban||''}</textarea></div>
           <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penilaian / Rubrik</label><textarea id="mdPenilaian" rows="2" class="form-control" style="resize:vertical" placeholder="Skor maks: 100\nKriteria penilaian...">${dj.penilaian||''}</textarea></div>
@@ -15291,6 +15316,12 @@ function mdBuildForm(jenis, data) {
       </div>`;
   } else { // co_kurikuler
     formFields = `${identitas}
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate dengan AI</div>
+        <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Judul, Jenis Kegiatan, dan Kelas Sasaran dulu, lalu klik Generate.</div>
+        <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
+        <div id="mdGenStatus" style="display:none;margin-top:10px;color:#c7d2fe;font-size:11px;text-align:center">⏳ AI sedang membuat konten...</div>
+      </div>
       <div style="background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
         <div style="font-size:12px;font-weight:800;color:var(--primary);margin-bottom:12px">🌟 DETAIL KEGIATAN</div>
         <div style="display:flex;flex-direction:column;gap:10px">
@@ -15397,30 +15428,28 @@ function mdToggleDL(label, id) {
 }
 
 async function mdGenerateWithAI() {
+  const jenis = mdCurrentJenis;
   const mapel = document.getElementById('mdMapel')?.value;
   const kelas = document.getElementById('mdKelas')?.value;
-  const elemen = document.getElementById('mdElemen')?.value?.trim();
-  const alokasi = document.getElementById('mdAlokasi')?.value?.trim();
-  const jumlahPert = parseInt(document.getElementById('mdJmlPert')?.value) || 3;
   const penyusun = document.getElementById('mdPenyusun')?.value?.trim();
   const tp = document.getElementById('mdTP')?.value?.trim();
 
-  if (!mapel || !kelas) return toast('Pilih Mata Pelajaran dan Kelas terlebih dahulu', 'error');
-  if (!elemen) return toast('Isi Elemen / Topik terlebih dahulu', 'error');
-
-  const dlChecked = [...document.querySelectorAll('[id^="mdDL_"]:checked')].map(cb => {
-    const id = cb.id.replace('mdDL_','');
-    const dlMap = {mindful:'Mindful',meaningful:'Meaningful',joyful:'Joyful',kolaboratif:'Kolaboratif',reflektif:'Reflektif',hots:'HOTS',pbl:'Problem Based Learning',pjbl:'Project Based Learning',inkuiri:'Inkuiri',discovery:'Discovery Learning',diferensiasi:'Diferensiasi',kontekstual:'Kontekstual',stem:'STEM',formatif:'Asesmen Formatif'};
-    return dlMap[id] || id;
-  });
-
   const btn = document.getElementById('mdGenBtn');
   const status = document.getElementById('mdGenStatus');
-  btn.disabled = true;
-  btn.textContent = '⏳ AI sedang bekerja...';
-  if (status) status.style.display = 'block';
+  let prompt = '';
 
-  const prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten Modul Ajar (RPP) lengkap berbasis Deep Learning dengan detail berikut:
+  if (jenis === 'pembelajaran') {
+    const elemen = document.getElementById('mdElemen')?.value?.trim();
+    const alokasi = document.getElementById('mdAlokasi')?.value?.trim();
+    const jumlahPert = parseInt(document.getElementById('mdJmlPert')?.value) || 3;
+    if (!mapel || !kelas) return toast('Pilih Mata Pelajaran dan Kelas terlebih dahulu', 'error');
+    if (!elemen) return toast('Isi Elemen / Topik terlebih dahulu', 'error');
+    const dlChecked = [...document.querySelectorAll('[id^="mdDL_"]:checked')].map(cb => {
+      const id = cb.id.replace('mdDL_','');
+      const dlMap = {mindful:'Mindful',meaningful:'Meaningful',joyful:'Joyful',kolaboratif:'Kolaboratif',reflektif:'Reflektif',hots:'HOTS',pbl:'Problem Based Learning',pjbl:'Project Based Learning',inkuiri:'Inkuiri',discovery:'Discovery Learning',diferensiasi:'Diferensiasi',kontekstual:'Kontekstual',stem:'STEM',formatif:'Asesmen Formatif'};
+      return dlMap[id] || id;
+    });
+    prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten Modul Ajar (RPP) lengkap berbasis Deep Learning dengan detail berikut:
 
 Mata Pelajaran: ${mapel}
 Kelas/Fase: ${kelas} - Fase D (SMP)
@@ -15434,29 +15463,86 @@ Kriteria Deep Learning yang digunakan: ${dlChecked.length > 0 ? dlChecked.join('
 Buat response dalam JSON dengan format TEPAT ini (tanpa backtick, hanya JSON murni):
 {
   "capaian": "...",
-  "tujuan": "1. ...\n2. ...\n3. ...",
-  "topik": "1. ...\n2. ...",
-  "pedagogis": "Model Pembelajaran: Deep Learning berbasis ...\nMetode: ...\nStrategi:\na. ...\nb. ...",
+  "tujuan": "1. ...\\n2. ...\\n3. ...",
+  "topik": "1. ...\\n2. ...",
+  "pedagogis": "Model Pembelajaran: Deep Learning berbasis ...\\nMetode: ...\\nStrategi:\\na. ...\\nb. ...",
   "pertemuan": [
-    {
-      "judul": "Pertemuan 1: ...",
-      "alokasi": "2 JP x 40 menit",
-      "pendahuluan": "1. ...\n2. ...\n3. ...",
-      "inti": "1. Memahami: ...\n2. Mengaplikasi: ...\n3. Mencipta/Refleksi: ...",
-      "penutup": "1. ...\n2. ...\n3. ..."
-    }
+    {"judul":"Pertemuan 1: ...","alokasi":"2 JP x 40 menit","pendahuluan":"1. ...\\n2. ...","inti":"1. Memahami: ...\\n2. Mengaplikasi: ...\\n3. Mencipta/Refleksi: ...","penutup":"1. ...\\n2. ..."}
   ],
-  "penilaian": "Teknik Penilaian:\n1. ...\nInstrumen:\n1. ...",
-  "lingkungan": "Fisik: ...\nVirtual: ...",
-  "digital": "1. ...\n2. ...\n3. ..."
+  "penilaian": "Teknik Penilaian:\\n1. ...\\nInstrumen:\\n1. ...",
+  "lingkungan": "Fisik: ...\\nVirtual: ...",
+  "digital": "1. ...\\n2. ...\\n3. ..."
 }
+Pastikan jumlah item pertemuan = ${jumlahPert}, kegiatan mencerminkan Deep Learning yang dipilih, Bahasa Indonesia formal.`;
 
-Pastikan:
-- Jumlah item pertemuan = ${jumlahPert}
-- Setiap kegiatan mencerminkan prinsip Deep Learning yang dipilih
-- Konten sesuai Kurikulum Merdeka Indonesia, kontekstual dan praktis
-- Kegiatan Inti mencakup tahap Memahami-Mengaplikasi-Mencipta sesuai Deep Learning
-- Bahasa Indonesia formal`;
+  } else if (jenis === 'atp') {
+    const elemen = document.getElementById('mdElemen')?.value?.trim();
+    if (!mapel || !kelas) return toast('Pilih Mata Pelajaran dan Kelas terlebih dahulu', 'error');
+    if (!elemen) return toast('Isi Elemen / Domain terlebih dahulu', 'error');
+    prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten Alur Tujuan Pembelajaran (ATP) dengan detail:
+
+Mata Pelajaran: ${mapel}
+Kelas/Fase: ${kelas} - Fase D (SMP)
+Elemen/Domain: ${elemen}
+Tahun Pelajaran: ${tp || '2025/2026'}
+
+Buat response dalam JSON dengan format TEPAT ini (tanpa backtick, hanya JSON murni):
+{
+  "capaian": "Capaian Pembelajaran untuk elemen ini sesuai Fase D...",
+  "tujuan": "1. Siswa mampu ...\\n2. Siswa mampu ...\\n3. Siswa mampu ...\\n4. Siswa mampu ...\\n5. Siswa mampu ...",
+  "alokasi": "cth: 12 JP",
+  "profil": "2-3 dimensi Profil Pelajar Pancasila yang relevan, dipisah koma",
+  "catatan": "Catatan urutan pembelajaran, keterkaitan antar tujuan..."
+}
+Alur tujuan harus berurutan dari yang sederhana ke kompleks (5-7 tujuan), Bahasa Indonesia formal.`;
+
+  } else if (jenis === 'lkpd') {
+    const judul = document.getElementById('mdJudul')?.value?.trim();
+    const pertKe = document.getElementById('mdPertemuan')?.value?.trim();
+    if (!mapel || !kelas) return toast('Pilih Mata Pelajaran dan Kelas terlebih dahulu', 'error');
+    if (!judul) return toast('Isi Judul LKPD terlebih dahulu', 'error');
+    prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten Lembar Kerja Peserta Didik (LKPD) dengan detail:
+
+Mata Pelajaran: ${mapel}
+Kelas/Fase: ${kelas} - Fase D (SMP)
+Judul/Topik LKPD: ${judul}
+Pertemuan ke-: ${pertKe || '1'}
+
+Buat response dalam JSON dengan format TEPAT ini (tanpa backtick, hanya JSON murni):
+{
+  "tujuan": "Setelah mengerjakan LKPD ini, siswa mampu ...",
+  "petunjuk": "1. Baca materi/wacana terlebih dahulu\\n2. Kerjakan secara individu/berkelompok\\n3. ...",
+  "deskripsi_lkpd": "Wacana/bacaan singkat/studi kasus sebagai pengantar soal (3-5 kalimat)",
+  "soal": "1. ...\\n2. ...\\n3. ...\\n4. ...\\n5. ... (5 soal essai/analisis, bervariasi tingkat kesulitan)",
+  "penilaian": "Skor maks: 100\\nKriteria:\\n- ...\\n- ..."
+}
+Soal harus kontekstual dan sesuai topik, Bahasa Indonesia formal.`;
+
+  } else { // co_kurikuler
+    const judul = document.getElementById('mdJudul')?.value?.trim();
+    const jenisKeg = document.getElementById('mdJenisKeg')?.value;
+    const sasaran = document.getElementById('mdSasaran')?.value?.trim();
+    if (!judul) return toast('Isi Judul/Nama Kegiatan terlebih dahulu', 'error');
+    prompt = `Kamu adalah pakar kurikulum Kurikulum Merdeka Indonesia. Buat konten kegiatan Co-Kurikuler dengan detail:
+
+Nama Kegiatan: ${judul}
+Jenis Kegiatan: ${jenisKeg || 'P5'}
+Kelas Sasaran: ${sasaran || 'Semua kelas'}
+Tahun Pelajaran: ${tp || '2025/2026'}
+
+Buat response dalam JSON dengan format TEPAT ini (tanpa backtick, hanya JSON murni):
+{
+  "deskripsi": "Uraian singkat kegiatan (3-4 kalimat)",
+  "tujuan": "1. ...\\n2. ...\\n3. ...",
+  "profil": "2-3 dimensi Profil Pelajar Pancasila yang relevan, dipisah koma",
+  "waktu": "Saran jadwal pelaksanaan yang realistis"
+}
+Bahasa Indonesia formal, kontekstual dengan dunia pendidikan SMP Indonesia.`;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ AI sedang bekerja...';
+  if (status) status.style.display = 'block';
 
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -15470,35 +15556,40 @@ Pastikan:
     });
     const data = await resp.json();
     const text = data.content?.[0]?.text || '';
-    // Parse JSON dari response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('AI tidak mengembalikan JSON yang valid');
     const result = JSON.parse(jsonMatch[0]);
 
-    // Isi form dengan hasil AI
-    if (result.capaian) document.getElementById('mdCapaian').value = result.capaian;
-    if (result.tujuan) document.getElementById('mdTujuan').value = result.tujuan;
-    if (result.topik) document.getElementById('mdTopik').value = result.topik;
-    if (result.pedagogis) document.getElementById('mdPedagogis').value = result.pedagogis;
-    if (result.penilaian) document.getElementById('mdPenilaian').value = result.penilaian;
-    if (result.lingkungan) document.getElementById('mdLingkungan').value = result.lingkungan;
-    if (result.digital) document.getElementById('mdDigital').value = result.digital;
+    // Isi field sesuai jenis
+    Object.entries(result).forEach(([key, val]) => {
+      if (key === 'pertemuan') return; // handled separately
+      const fieldMap = {
+        capaian:'mdCapaian', tujuan:'mdTujuan', topik:'mdTopik', pedagogis:'mdPedagogis',
+        penilaian:'mdPenilaian', lingkungan:'mdLingkungan', digital:'mdDigital',
+        alokasi:'mdAlokasi', profil:'mdProfil', catatan:'mdCatatan',
+        petunjuk:'mdPetunjuk', deskripsi_lkpd:'mdDeskripsiLkpd', soal:'mdSoal',
+        deskripsi:'mdDeskripsi', waktu:'mdWaktu'
+      };
+      const fieldId = fieldMap[key];
+      const el = fieldId ? document.getElementById(fieldId) : null;
+      if (el && val) el.value = val;
+    });
 
-    // Isi pertemuan
+    // Isi pertemuan (khusus pembelajaran)
     if (result.pertemuan && result.pertemuan.length > 0) {
       const pertEl = document.getElementById('mdPertItems');
-      if (pertEl) pertEl.innerHTML = '';
-      result.pertemuan.forEach((p, i) => {
-        const pertList = document.getElementById('mdPertItems');
-        if (pertList) pertList.insertAdjacentHTML('beforeend', mdPertHTML(i, p));
-      });
+      if (pertEl) {
+        pertEl.innerHTML = '';
+        result.pertemuan.forEach((p, i) => pertEl.insertAdjacentHTML('beforeend', mdPertHTML(i, p)));
+      }
     }
 
-    // Update judul otomatis jika kosong
+    // Update judul otomatis jika kosong (kecuali LKPD & co_kurikuler yang judulnya jadi input prompt)
     const judulEl = document.getElementById('mdJudul');
-    if (judulEl && !judulEl.value) judulEl.value = `Modul Ajar ${mapel} - ${elemen}`;
+    if (judulEl && !judulEl.value && jenis==='pembelajaran') judulEl.value = `Modul Ajar ${mapel} - ${document.getElementById('mdElemen')?.value||''}`;
+    if (judulEl && !judulEl.value && jenis==='atp') judulEl.value = `ATP ${mapel} - ${document.getElementById('mdElemen')?.value||''}`;
 
-    toast('✅ Konten modul berhasil di-generate oleh AI! Silakan review dan sesuaikan.', 'success');
+    toast('✅ Konten berhasil di-generate oleh AI! Silakan review dan sesuaikan.', 'success');
   } catch(e) {
     toast('Gagal generate: ' + e.message, 'error');
     console.error('[mdGenerateWithAI]', e);
@@ -15507,6 +15598,46 @@ Pastikan:
     btn.textContent = '✨ Generate dengan Claude AI';
     if (status) status.style.display = 'none';
   }
+}
+
+// ── LKPD: Upload gambar dengan kompresi (mirip pola foto Progkol) ──
+let mdLkpdGambarList = [];
+function mdTambahGambarLKPD(input) {
+  const files = Array.from(input.files || []);
+  if (files.length === 0) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height, maxPx = 900;
+        if (w > maxPx || h > maxPx) { if (w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;} }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        let q=0.75, b64=canvas.toDataURL('image/jpeg',q);
+        while (b64.length > 300*1024*1.37 && q>0.3) { q-=0.1; b64=canvas.toDataURL('image/jpeg',q); }
+        mdLkpdGambarList.push(b64);
+        mdRenderGambarLKPD();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+function mdRenderGambarLKPD() {
+  const el = document.getElementById('mdLkpdImgList');
+  if (!el) return;
+  el.innerHTML = mdLkpdGambarList.map((g,i) => `
+    <div style="position:relative;display:inline-block;margin:4px" id="mdLkpdImgWrap_${i}">
+      <img src="${g}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+      <button onclick="mdHapusGambarLKPD(${i})" type="button" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button>
+    </div>`).join('');
+}
+function mdHapusGambarLKPD(idx) {
+  mdLkpdGambarList.splice(idx, 1);
+  mdRenderGambarLKPD();
 }
 
 function mdHandleFile(input) {
@@ -15581,6 +15712,8 @@ function mdCollectData() {
       pertemuan_ke: document.getElementById('mdPertemuan')?.value.trim()||null,
       tujuan: document.getElementById('mdTujuan')?.value.trim()||null,
       petunjuk: document.getElementById('mdPetunjuk')?.value.trim()||null,
+      deskripsi_lkpd: document.getElementById('mdDeskripsiLkpd')?.value.trim()||null,
+      gambar: mdLkpdGambarList.length>0 ? mdLkpdGambarList : null,
       soal: document.getElementById('mdSoal')?.value.trim()||null,
       jawaban: document.getElementById('mdJawaban')?.value.trim()||null,
       penilaian: document.getElementById('mdPenilaian')?.value.trim()||null
@@ -15679,7 +15812,8 @@ function mdRenderDetail(jenis, dj) {
   } else if (jenis==='atp') {
     return sec('ELEMEN / DOMAIN', dj.elemen) + sec('CAPAIAN PEMBELAJARAN', dj.capaian) + sec('ALUR TUJUAN PEMBELAJARAN', dj.tujuan) + sec('ALOKASI WAKTU', dj.alokasi) + sec('PROFIL PELAJAR PANCASILA', dj.profil) + sec('CATATAN', dj.catatan);
   } else if (jenis==='lkpd') {
-    return sec('TUJUAN PEMBELAJARAN', dj.tujuan) + sec('PETUNJUK PENGERJAAN', dj.petunjuk) + sec('SOAL / TUGAS', dj.soal) + (dj.jawaban?sec('KOLOM JAWABAN',dj.jawaban):'') + sec('PENILAIAN / RUBRIK', dj.penilaian);
+    const gambarHTML = (dj.gambar && dj.gambar.length>0) ? `<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--primary);margin-bottom:8px">🖼️ GAMBAR / ILUSTRASI</div><div style="display:flex;flex-wrap:wrap;gap:8px">${dj.gambar.map(g=>`<img src="${g}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="window.open('${g}','_blank')">`).join('')}</div></div>` : '';
+    return sec('TUJUAN PEMBELAJARAN', dj.tujuan) + sec('PETUNJUK PENGERJAAN', dj.petunjuk) + sec('DESKRIPSI / WACANA', dj.deskripsi_lkpd) + gambarHTML + sec('SOAL / TUGAS', dj.soal) + (dj.jawaban?sec('KOLOM JAWABAN',dj.jawaban):'') + sec('PENILAIAN / RUBRIK', dj.penilaian);
   } else {
     return sec('JENIS KEGIATAN', dj.jenis_keg) + sec('KELAS SASARAN', dj.sasaran) + sec('WAKTU PELAKSANAAN', dj.waktu) + sec('PENANGGUNG JAWAB', dj.pj) + sec('DESKRIPSI', dj.deskripsi) + sec('TUJUAN', dj.tujuan) + sec('PROFIL PELAJAR PANCASILA', dj.profil);
   }
@@ -15690,6 +15824,7 @@ async function mdEditModul(id) {
     const { data } = await db.from('modul_sekolah').select('*').eq('id',id).single();
     mdCurrentId = id;
     mdCurrentJenis = data.jenis;
+    mdLkpdGambarList = (data.data_json && data.data_json.gambar) ? [...data.data_json.gambar] : [];
     const el = document.getElementById('mdFormContent');
     el.innerHTML = mdBuildForm(data.jenis, data);
     goPage('modul-form');
