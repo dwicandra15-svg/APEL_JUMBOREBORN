@@ -307,7 +307,16 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 #page-modul-list.active > div,
 #page-jadwalMGMP.active > div,
 #page-trackingSiswa.active > div,
-#page-absensiku.active > div {
+#page-absensiku.active > div,
+#page-ummiTingkatan.active > div,
+#page-ummi7.active > div,
+#page-ummi8.active > div,
+#page-ummi9.active > div,
+#page-ummiProgress.active > div,
+#page-ummiProgress-jilid.active > div,
+#page-ummiProgress-prestasi.active > div,
+#page-ummiProgress-munaqasyah.active > div,
+#page-ummiProgress-sertifikat.active > div {
   padding-top: 56px !important;
   padding-left: 16px !important;
   padding-right: 16px !important;
@@ -1509,7 +1518,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 .mp-header-sub   { font-size:12px; color:rgba(255,255,255,.65); margin-top:2px; }
 
 /* Mapel grid on beranda */
-.mapel-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mapel-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .mapel-card {
   background:#fff; border-radius:18px; border:1.5px solid var(--border);
   padding:20px 14px 16px; min-height:120px;
@@ -2563,6 +2572,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             <div class="mh-card" data-id="ummi7" onclick="goPage('ummi7')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi7')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-green" id="ico-ummi7">📗</div><div class="mh-card-lbl" id="lbl-ummi7">UMMI Kelas 7</div></div>
             <div class="mh-card" data-id="ummi8" onclick="goPage('ummi8')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi8')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-blue" id="ico-ummi8">📘</div><div class="mh-card-lbl" id="lbl-ummi8">UMMI Kelas 8</div></div>
             <div class="mh-card" data-id="ummi9" onclick="goPage('ummi9')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummi9')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-orange" id="ico-ummi9">📙</div><div class="mh-card-lbl" id="lbl-ummi9">UMMI Kelas 9</div></div>
+            <div class="mh-card" data-id="ummiProgress" onclick="goPage('ummiProgress')"><button class="mh-card-dots" onclick="event.stopPropagation();ecmOpen(event,'ummiProgress')" title="Edit kartu">⋯</button><div class="mh-card-ico ic-teal" id="ico-ummiProgress">📈</div><div class="mh-card-lbl" id="lbl-ummiProgress">UMMI Progress</div></div>
           </div>
         </div><!-- /hbn-ummi -->
 
@@ -7196,6 +7206,11 @@ function showPage(name) {
     'modul':'Modul', 'modul-list':'Modul', 'modul-form':'Tambah Modul', 'modul-detail':'Detail Modul',
     'kurikulum':'Kurikulum', 'kurikulum-jadwal':'Jadwal Mengajar',
     'kurikulum-guru':'Data Guru',
+    'ummiProgress':'UMMI Progress',
+    'ummiProgress-jilid':'Progress Jilid',
+    'ummiProgress-prestasi':'Buku Prestasi',
+    'ummiProgress-munaqasyah':'Munaqasyah',
+    'ummiProgress-sertifikat':'Sertifikat Khatam',
     'kurikulum-supervisi':'Supervisi Kelas', 'kurikulum-pkg':'PKG Guru',
     'kurikulum-kkm':'KKM', 'kurikulum-kalender':'Kalender Akademik',
     'absensiku':'AbsensiKu',
@@ -7233,6 +7248,10 @@ function showPage(name) {
   if (name==='kurikulum') { kurLoadDashboard(); }
   if (name==='kurikulum-jadwal') { kurLoadJadwal(); }
   if (name==='kurikulum-guru') { kurLoadGuru(); }
+  if (name==='ummiProgress-jilid') { upLoadJilid(); }
+  if (name==='ummiProgress-prestasi') { upLoadPrestasi(); }
+  if (name==='ummiProgress-munaqasyah') { upLoadMunaqasyah(); }
+  if (name==='ummiProgress-sertifikat') { upLoadSertifikat(); }
   if (name==='kurikulum-supervisi') { kurLoadSupervisi(); }
   if (name==='kurikulum-pkg') { kurLoadPKG(); }
   if (name==='kurikulum-kkm') { kurLoadKKM(); }
@@ -8387,6 +8406,14 @@ function goPage(name) {
     return;
   }
   if (name === 'kurikulum' || name.startsWith('kurikulum-')) {
+    showPage(name);
+    const tb = document.getElementById('mainTopbar');
+    if (tb) tb.style.display = '';
+    const bb = document.getElementById('backBtn');
+    if (bb) bb.classList.add('visible');
+    return;
+  }
+  if (name === 'ummiProgress' || name.startsWith('ummiProgress-')) {
     showPage(name);
     const tb = document.getElementById('mainTopbar');
     if (tb) tb.style.display = '';
@@ -11828,6 +11855,260 @@ function chatAutoResize(el){
 </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PAGE: UMMI PROGRESS — Hub                                -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="page-ummiProgress" class="page">
+<div style="padding:0 0 100px">
+  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:16px;margin-bottom:18px;color:#fff">
+    <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:4px">📖 METODE UMMI</div>
+    <div style="font-size:16px;font-weight:800">Progress Belajar Al-Qur'an Siswa</div>
+    <div style="font-size:12px;opacity:0.85;margin-top:4px">Jilid 1–6 · Al-Qur'an · Gharib · Tajwid Dasar</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="kur-nav-card" onclick="goPage('ummiProgress-jilid')">
+      <div class="kur-nav-ico" style="background:#dbeafe;color:#1d4ed8">📊</div>
+      <div class="kur-nav-text"><div class="title">Progress Jilid Siswa</div><div class="sub">Tracking jilid & halaman terakhir per siswa</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('ummiProgress-prestasi')">
+      <div class="kur-nav-ico" style="background:#d1fae5;color:#065f46">📖</div>
+      <div class="kur-nav-text"><div class="title">Buku Prestasi Digital</div><div class="sub">Nilai harian tadarus per siswa</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('ummiProgress-munaqasyah')">
+      <div class="kur-nav-ico" style="background:#fef3c7;color:#92400e">🎓</div>
+      <div class="kur-nav-text"><div class="title">Jadwal Munaqasyah</div><div class="sub">Ujian kenaikan jilid</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+    <div class="kur-nav-card" onclick="goPage('ummiProgress-sertifikat')">
+      <div class="kur-nav-ico" style="background:#fce7f3;color:#9d174d">🏆</div>
+      <div class="kur-nav-text"><div class="title">Sertifikat Khatam</div><div class="sub">Generate sertifikat kelulusan otomatis</div></div>
+      <div style="margin-left:auto;color:var(--text-light)">›</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PAGE: PROGRESS JILID -->
+<div id="page-ummiProgress-jilid" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+    <div><div class="section-title">📊 Progress Jilid Siswa</div><div class="section-sub">Tracking jilid & halaman per siswa</div></div>
+    <button onclick="upShowModalJilid()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="upJilidFilterKelas" onchange="upLoadJilid()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Kelas</option>
+    </select>
+    <select id="upJilidFilterJilid" onchange="upLoadJilid()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Jilid</option>
+    </select>
+  </div>
+  <div id="upJilidList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- PAGE: BUKU PRESTASI -->
+<div id="page-ummiProgress-prestasi" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+    <div><div class="section-title">📖 Buku Prestasi Digital</div><div class="section-sub">Nilai harian tadarus siswa</div></div>
+    <button onclick="upShowModalPrestasi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="upPrestasiFilterKelas" onchange="upLoadPrestasi()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Kelas</option>
+    </select>
+    <select id="upPrestasiFilterNilai" onchange="upLoadPrestasi()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Nilai</option>
+      <option value="Tashih">Tashih</option><option value="Lancar">Lancar</option><option value="Lancar Plus">Lancar Plus</option>
+    </select>
+  </div>
+  <div id="upPrestasiList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- PAGE: MUNAQASYAH -->
+<div id="page-ummiProgress-munaqasyah" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+    <div><div class="section-title">🎓 Jadwal Munaqasyah</div><div class="section-sub">Ujian kenaikan jilid siswa</div></div>
+    <button onclick="upShowModalMunaqasyah()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <select id="upMunaqasyahFilterStatus" onchange="upLoadMunaqasyah()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
+      <option value="">Semua Status</option>
+      <option value="rencana">📋 Rencana</option><option value="lulus">✅ Lulus</option>
+      <option value="tidak_lulus">❌ Tidak Lulus</option><option value="mengulang">🔁 Mengulang</option>
+    </select>
+  </div>
+  <div id="upMunaqasyahList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- PAGE: SERTIFIKAT KHATAM -->
+<div id="page-ummiProgress-sertifikat" class="page">
+<div style="padding:0 0 100px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+    <div><div class="section-title">🏆 Sertifikat Khatam</div><div class="section-sub">Sertifikat kelulusan metode Ummi</div></div>
+    <button onclick="upShowModalSertifikat()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  </div>
+  <div id="upSertifikatList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
+</div>
+</div>
+
+<!-- ══ MODAL PROGRESS JILID ══ -->
+<div id="upModalJilid" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="upJilidModalTitle">➕ Tambah Progress</div>
+    <button onclick="upCloseModal('upModalJilid')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+      <select id="upJKelas" class="form-control" onchange="upPopulateSiswaDropdown('upJKelas','upJSiswa')"><option value="">-- Pilih Kelas --</option></select>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Siswa *</label>
+      <select id="upJSiswa" class="form-control"><option value="">-- Pilih Kelas dulu --</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jilid Saat Ini *</label>
+        <select id="upJJilid" class="form-control">
+          <option value="">-- Pilih --</option>
+          <option>Jilid 1</option><option>Jilid 2</option><option>Jilid 3</option>
+          <option>Jilid 4</option><option>Jilid 5</option><option>Jilid 6</option>
+          <option>Al-Qur'an</option><option>Gharib</option><option>Tajwid Dasar</option><option>Khatam</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Halaman Terakhir</label><input type="number" id="upJHalaman" class="form-control" min="0" placeholder="cth: 15"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="upJCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan progress..."></textarea></div>
+  </div>
+  <input type="hidden" id="upJEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="upCloseModal('upModalJilid')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="upSimpanJilid()" class="btn btn-primary" style="flex:2" id="upJSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL BUKU PRESTASI ══ -->
+<div id="upModalPrestasi" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="upPrestasiModalTitle">➕ Tambah Nilai Harian</div>
+    <button onclick="upCloseModal('upModalPrestasi')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+      <select id="upPKelas" class="form-control" onchange="upPopulateSiswaDropdown('upPKelas','upPSiswa')"><option value="">-- Pilih Kelas --</option></select>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Siswa *</label>
+      <select id="upPSiswa" class="form-control"><option value="">-- Pilih Kelas dulu --</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal *</label><input type="date" id="upPTanggal" class="form-control"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jilid</label>
+        <select id="upPJilid" class="form-control">
+          <option>Jilid 1</option><option>Jilid 2</option><option>Jilid 3</option>
+          <option>Jilid 4</option><option>Jilid 5</option><option>Jilid 6</option>
+          <option>Al-Qur'an</option><option>Gharib</option><option>Tajwid Dasar</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Halaman</label><input type="text" id="upPHalaman" class="form-control" placeholder="cth: 12-15"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nilai *</label>
+        <select id="upPNilai" class="form-control">
+          <option value="Tashih">Tashih</option><option value="Lancar">Lancar</option><option value="Lancar Plus">Lancar Plus</option>
+        </select>
+      </div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Guru Penguji</label><input type="text" id="upPGuru" class="form-control" placeholder="Nama guru..."></div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="upPCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan..."></textarea></div>
+  </div>
+  <input type="hidden" id="upPEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="upCloseModal('upModalPrestasi')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="upSimpanPrestasi()" class="btn btn-primary" style="flex:2" id="upPSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL MUNAQASYAH ══ -->
+<div id="upModalMunaqasyah" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)" id="upMunaqasyahModalTitle">➕ Tambah Munaqasyah</div>
+    <button onclick="upCloseModal('upModalMunaqasyah')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+      <select id="upMKelas" class="form-control" onchange="upPopulateSiswaDropdown('upMKelas','upMSiswa')"><option value="">-- Pilih Kelas --</option></select>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Siswa *</label>
+      <select id="upMSiswa" class="form-control"><option value="">-- Pilih Kelas dulu --</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Jilid yang Diuji *</label>
+        <select id="upMJilid" class="form-control">
+          <option value="">-- Pilih --</option>
+          <option>Jilid 1</option><option>Jilid 2</option><option>Jilid 3</option>
+          <option>Jilid 4</option><option>Jilid 5</option><option>Jilid 6</option>
+          <option>Al-Qur'an</option><option>Gharib</option><option>Tajwid Dasar</option>
+        </select>
+      </div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal Ujian *</label><input type="date" id="upMTanggal" class="form-control"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Penguji</label><input type="text" id="upMPenguji" class="form-control" placeholder="Nama penguji..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nilai (0-100)</label><input type="number" id="upMNilai" class="form-control" min="0" max="100"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Status</label>
+        <select id="upMStatus" class="form-control">
+          <option value="rencana">📋 Rencana</option><option value="lulus">✅ Lulus</option>
+          <option value="tidak_lulus">❌ Tidak Lulus</option><option value="mengulang">🔁 Mengulang</option>
+        </select>
+      </div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="upMCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan hasil ujian..."></textarea></div>
+  </div>
+  <input type="hidden" id="upMEditId">
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="upCloseModal('upModalMunaqasyah')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="upSimpanMunaqasyah()" class="btn btn-primary" style="flex:2" id="upMSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL SERTIFIKAT KHATAM ══ -->
+<div id="upModalSertifikat" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
+<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:800;color:var(--text)">🏆 Tambah Sertifikat Khatam</div>
+    <button onclick="upCloseModal('upModalSertifikat')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:11px">
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
+      <select id="upSKelas" class="form-control" onchange="upPopulateSiswaDropdown('upSKelas','upSSiswa')"><option value="">-- Pilih Kelas --</option></select>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Siswa *</label>
+      <select id="upSSiswa" class="form-control"><option value="">-- Pilih Kelas dulu --</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tanggal Khatam *</label><input type="date" id="upSTanggal" class="form-control"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">No. Sertifikat</label><input type="text" id="upSNomor" class="form-control" placeholder="Otomatis jika kosong"></div>
+    </div>
+    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nama Kepala Sekolah</label><input type="text" id="upSKepsek" class="form-control" placeholder="Untuk tanda tangan sertifikat"></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button onclick="upCloseModal('upModalSertifikat')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
+    <button onclick="upSimpanSertifikat()" class="btn btn-primary" style="flex:2" id="upSSimpanBtn">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
 <!-- PAGE: JADWAL MENGAJAR -->
 <div id="page-kurikulum-jadwal" class="page">
 <div style="padding:16px 0 100px">
@@ -16399,6 +16680,395 @@ function kurAutoFillGuru(selectId, mapelTargetId, nipTargetId) {
   if (mapelTargetId) { const m=document.getElementById(mapelTargetId); if(m && mapel) m.value=mapel; }
   if (nipTargetId) { const n=document.getElementById(nipTargetId); if(n && nip) n.value=nip; }
 }
+
+// ════════════════════════════════════════════════════════════
+// UMMI PROGRESS — Jilid, Prestasi, Munaqasyah, Sertifikat
+// ════════════════════════════════════════════════════════════
+const UP_STATUS_CFG = {
+  rencana:{label:'📋 Rencana',bg:'#f1f5f9',color:'#64748b'},
+  lulus:{label:'✅ Lulus',bg:'#d1fae5',color:'#065f46'},
+  tidak_lulus:{label:'❌ Tidak Lulus',bg:'#fee2e2',color:'#dc2626'},
+  mengulang:{label:'🔁 Mengulang',bg:'#fef3c7',color:'#92400e'}
+};
+const UP_NILAI_CFG = {
+  'Tashih':{color:'#dc2626',bg:'#fee2e2'},
+  'Lancar':{color:'#2563eb',bg:'#dbeafe'},
+  'Lancar Plus':{color:'#16a34a',bg:'#d1fae5'}
+};
+
+function upPopulateKelasDropdown(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Semua Kelas</option>' + APP_DATA.kelas.map(k=>`<option value="${k.id}">${k.nama}</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+async function upPopulateSiswaDropdown(kelasSelectId, siswaSelectId) {
+  const kelasId = document.getElementById(kelasSelectId)?.value;
+  const sSel = document.getElementById(siswaSelectId);
+  if (!sSel) return;
+  if (!kelasId) { sSel.innerHTML = '<option value="">-- Pilih Kelas dulu --</option>'; return; }
+  sSel.innerHTML = '<option value="">⏳ Memuat...</option>';
+  try {
+    const {data} = await db.from('siswa').select('id,nama').eq('kelas_id', kelasId).order('nama');
+    sSel.innerHTML = '<option value="">-- Pilih Siswa --</option>' + (data||[]).map(s=>`<option value="${s.id}" data-nama="${s.nama}">${s.nama}</option>`).join('');
+  } catch(e) { sSel.innerHTML = '<option value="">Gagal memuat siswa</option>'; }
+}
+
+function upGetKelasNama(kelasId) {
+  return APP_DATA.kelas.find(k=>String(k.id)===String(kelasId))?.nama || '-';
+}
+function upGetSiswaNama(selectId) {
+  const sel = document.getElementById(selectId);
+  return sel?.options[sel.selectedIndex]?.dataset?.nama || sel?.options[sel.selectedIndex]?.textContent || '';
+}
+
+// ── PROGRESS JILID ───────────────────────────────────────────
+async function upLoadJilid() {
+  if (!db) return;
+  upPopulateKelasDropdown('upJilidFilterKelas');
+  const el = document.getElementById('upJilidList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const jilidSel = document.getElementById('upJilidFilterJilid');
+  if (jilidSel && jilidSel.options.length<=1) {
+    ['Jilid 1','Jilid 2','Jilid 3','Jilid 4','Jilid 5','Jilid 6',"Al-Qur'an",'Gharib','Tajwid Dasar','Khatam'].forEach(j=>{
+      jilidSel.innerHTML += `<option value="${j}">${j}</option>`;
+    });
+  }
+  const fKelas = document.getElementById('upJilidFilterKelas')?.value||'';
+  const fJilid = document.getElementById('upJilidFilterJilid')?.value||'';
+  try {
+    let q = db.from('ummi_progress_jilid').select('*').order('kelas_nama').order('siswa_nama');
+    if (fKelas) q = q.eq('kelas_id', fKelas);
+    if (fJilid) q = q.eq('jilid_saat_ini', fJilid);
+    const {data,error} = await q;
+    if (error) throw error;
+    if (!data||data.length===0) { el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📊</div><div style="font-weight:700">Belum ada data progress</div></div>`; return; }
+    el.innerHTML = data.map(p=>{
+      const isLanjut = ['Al-Qur\'an','Gharib','Tajwid Dasar','Khatam'].includes(p.jilid_saat_ini);
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="width:42px;height:42px;border-radius:10px;background:${isLanjut?'#d1fae5':'#dbeafe'};color:${isLanjut?'#065f46':'#1d4ed8'};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0">${p.jilid_saat_ini.replace('Jilid ','J')}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;color:var(--text)">${p.siswa_nama}</div>
+          <div style="font-size:11px;color:var(--text-light)">${p.kelas_nama} · ${p.jilid_saat_ini}${p.halaman_terakhir?' · Hal. '+p.halaman_terakhir:''}</div>
+          ${p.catatan?`<div style="font-size:10px;color:var(--text-light);font-style:italic;margin-top:2px">${p.catatan}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button onclick="upEditJilid('${p.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">✏️</button>
+          <button onclick="upHapusJilid('${p.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel ummi_progress_jilid sudah dibuat</small></div>`; }
+}
+
+function upShowModalJilid(data) {
+  upPopulateKelasDropdown('upJKelas');
+  if (!data) {
+    document.getElementById('upJilidModalTitle').textContent='➕ Tambah Progress';
+    document.getElementById('upJEditId').value='';
+    document.getElementById('upJKelas').value='';
+    document.getElementById('upJSiswa').innerHTML='<option value="">-- Pilih Kelas dulu --</option>';
+    document.getElementById('upJJilid').value='';
+    document.getElementById('upJHalaman').value='';
+    document.getElementById('upJCatatan').value='';
+  } else {
+    document.getElementById('upJilidModalTitle').textContent='✏️ Edit Progress';
+    document.getElementById('upJEditId').value=data.id;
+    document.getElementById('upJKelas').value=data.kelas_id||'';
+    upPopulateSiswaDropdown('upJKelas','upJSiswa').then(()=>{ document.getElementById('upJSiswa').value=data.siswa_id||''; });
+    document.getElementById('upJJilid').value=data.jilid_saat_ini||'';
+    document.getElementById('upJHalaman').value=data.halaman_terakhir||'';
+    document.getElementById('upJCatatan').value=data.catatan||'';
+  }
+  document.getElementById('upModalJilid').style.display='block';
+}
+async function upEditJilid(id){const{data}=await db.from('ummi_progress_jilid').select('*').eq('id',id).single();if(data)upShowModalJilid(data);}
+async function upSimpanJilid(){
+  const kelasId=document.getElementById('upJKelas')?.value;
+  const siswaId=document.getElementById('upJSiswa')?.value;
+  const jilid=document.getElementById('upJJilid')?.value;
+  if(!kelasId||!siswaId)return toast('Kelas dan Siswa wajib dipilih','error');
+  if(!jilid)return toast('Jilid wajib dipilih','error');
+  const editId=document.getElementById('upJEditId').value;
+  const payload={kelas_id:kelasId,kelas_nama:upGetKelasNama(kelasId),siswa_id:siswaId,siswa_nama:upGetSiswaNama('upJSiswa'),jilid_saat_ini:jilid,halaman_terakhir:parseInt(document.getElementById('upJHalaman')?.value)||null,catatan:document.getElementById('upJCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('upJSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('ummi_progress_jilid').update(payload).eq('id',editId):await db.from('ummi_progress_jilid').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');upCloseModal('upModalJilid');upLoadJilid();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function upHapusJilid(id){if(!confirm('Hapus data progress ini?'))return;try{await db.from('ummi_progress_jilid').delete().eq('id',id);toast('Dihapus','success');upLoadJilid();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── BUKU PRESTASI ─────────────────────────────────────────────
+async function upLoadPrestasi() {
+  if (!db) return;
+  upPopulateKelasDropdown('upPrestasiFilterKelas');
+  const el = document.getElementById('upPrestasiList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fKelas = document.getElementById('upPrestasiFilterKelas')?.value||'';
+  const fNilai = document.getElementById('upPrestasiFilterNilai')?.value||'';
+  try {
+    let q = db.from('ummi_prestasi').select('*').order('tanggal',{ascending:false});
+    if (fKelas) q = q.eq('kelas_id', fKelas);
+    if (fNilai) q = q.eq('nilai', fNilai);
+    const {data,error} = await q;
+    if (error) throw error;
+    if (!data||data.length===0) { el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📖</div><div style="font-weight:700">Belum ada data prestasi</div></div>`; return; }
+    el.innerHTML = data.map(p=>{
+      const nc = UP_NILAI_CFG[p.nilai]||{color:'#64748b',bg:'#f1f5f9'};
+      const tgl = p.tanggal?new Date(p.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">${p.siswa_nama}</div>
+            <div style="font-size:11px;color:var(--text-light)">${p.kelas_nama} · ${p.jilid||''}${p.halaman?' · Hal. '+p.halaman:''}</div>
+            <div style="font-size:11px;color:var(--text-light)">📅 ${tgl}${p.guru_penguji?' · '+p.guru_penguji:''}</div>
+            ${p.catatan?`<div style="font-size:10px;color:var(--text-light);font-style:italic;margin-top:2px">${p.catatan}</div>`:''}
+          </div>
+          <span style="font-size:10px;font-weight:700;border-radius:6px;padding:3px 9px;background:${nc.bg};color:${nc.color};flex-shrink:0">${p.nilai}</span>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:8px;justify-content:flex-end">
+          <button onclick="upEditPrestasi('${p.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:4px 9px;font-size:10px;cursor:pointer">✏️ Edit</button>
+          <button onclick="upHapusPrestasi('${p.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:4px 9px;font-size:10px;cursor:pointer">🗑️ Hapus</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel ummi_prestasi sudah dibuat</small></div>`; }
+}
+
+function upShowModalPrestasi(data) {
+  upPopulateKelasDropdown('upPKelas');
+  if (!data) {
+    document.getElementById('upPrestasiModalTitle').textContent='➕ Tambah Nilai Harian';
+    document.getElementById('upPEditId').value='';
+    document.getElementById('upPKelas').value='';
+    document.getElementById('upPSiswa').innerHTML='<option value="">-- Pilih Kelas dulu --</option>';
+    document.getElementById('upPTanggal').value=new Date().toISOString().slice(0,10);
+    document.getElementById('upPHalaman').value='';
+    document.getElementById('upPNilai').value='Lancar';
+    document.getElementById('upPGuru').value=CONFIG.guru||'';
+    document.getElementById('upPCatatan').value='';
+  } else {
+    document.getElementById('upPrestasiModalTitle').textContent='✏️ Edit Nilai';
+    document.getElementById('upPEditId').value=data.id;
+    document.getElementById('upPKelas').value=data.kelas_id||'';
+    upPopulateSiswaDropdown('upPKelas','upPSiswa').then(()=>{ document.getElementById('upPSiswa').value=data.siswa_id||''; });
+    document.getElementById('upPTanggal').value=data.tanggal||'';
+    document.getElementById('upPJilid').value=data.jilid||'';
+    document.getElementById('upPHalaman').value=data.halaman||'';
+    document.getElementById('upPNilai').value=data.nilai||'Lancar';
+    document.getElementById('upPGuru').value=data.guru_penguji||'';
+    document.getElementById('upPCatatan').value=data.catatan||'';
+  }
+  document.getElementById('upModalPrestasi').style.display='block';
+}
+async function upEditPrestasi(id){const{data}=await db.from('ummi_prestasi').select('*').eq('id',id).single();if(data)upShowModalPrestasi(data);}
+async function upSimpanPrestasi(){
+  const kelasId=document.getElementById('upPKelas')?.value;
+  const siswaId=document.getElementById('upPSiswa')?.value;
+  const tanggal=document.getElementById('upPTanggal')?.value;
+  if(!kelasId||!siswaId)return toast('Kelas dan Siswa wajib dipilih','error');
+  if(!tanggal)return toast('Tanggal wajib diisi','error');
+  const editId=document.getElementById('upPEditId').value;
+  const payload={kelas_id:kelasId,kelas_nama:upGetKelasNama(kelasId),siswa_id:siswaId,siswa_nama:upGetSiswaNama('upPSiswa'),tanggal,jilid:document.getElementById('upPJilid')?.value||null,halaman:document.getElementById('upPHalaman')?.value.trim()||null,nilai:document.getElementById('upPNilai')?.value||'Lancar',guru_penguji:document.getElementById('upPGuru')?.value.trim()||null,catatan:document.getElementById('upPCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('upPSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('ummi_prestasi').update(payload).eq('id',editId):await db.from('ummi_prestasi').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');upCloseModal('upModalPrestasi');upLoadPrestasi();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function upHapusPrestasi(id){if(!confirm('Hapus nilai ini?'))return;try{await db.from('ummi_prestasi').delete().eq('id',id);toast('Dihapus','success');upLoadPrestasi();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── MUNAQASYAH ────────────────────────────────────────────────
+async function upLoadMunaqasyah() {
+  if (!db) return;
+  const el = document.getElementById('upMunaqasyahList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const fStatus = document.getElementById('upMunaqasyahFilterStatus')?.value||'';
+  try {
+    let q = db.from('ummi_munaqasyah').select('*').order('tanggal_ujian',{ascending:false});
+    if (fStatus) q = q.eq('status', fStatus);
+    const {data,error} = await q;
+    if (error) throw error;
+    if (!data||data.length===0) { el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">🎓</div><div style="font-weight:700">Belum ada jadwal munaqasyah</div></div>`; return; }
+    el.innerHTML = data.map(m=>{
+      const sc = UP_STATUS_CFG[m.status]||UP_STATUS_CFG.rencana;
+      const tgl = m.tanggal_ujian?new Date(m.tanggal_ujian).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">${m.siswa_nama}</div>
+            <div style="font-size:11px;color:var(--primary)">${m.kelas_nama} · Uji ${m.jilid_diuji}</div>
+            <div style="font-size:11px;color:var(--text-light)">📅 ${tgl}${m.penguji?' · Penguji: '+m.penguji:''}</div>
+            ${m.nilai?`<div style="font-size:11px;font-weight:700;color:var(--text);margin-top:3px">Nilai: ${m.nilai}/100</div>`:''}
+            ${m.catatan?`<div style="font-size:10px;color:var(--text-light);font-style:italic;margin-top:2px">${m.catatan}</div>`:''}
+          </div>
+          <span style="font-size:10px;font-weight:700;border-radius:6px;padding:3px 9px;background:${sc.bg};color:${sc.color};flex-shrink:0;white-space:nowrap">${sc.label}</span>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:8px;justify-content:flex-end">
+          <button onclick="upEditMunaqasyah('${m.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:4px 9px;font-size:10px;cursor:pointer">✏️ Edit</button>
+          <button onclick="upHapusMunaqasyah('${m.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:4px 9px;font-size:10px;cursor:pointer">🗑️ Hapus</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel ummi_munaqasyah sudah dibuat</small></div>`; }
+}
+
+function upShowModalMunaqasyah(data) {
+  upPopulateKelasDropdown('upMKelas');
+  if (!data) {
+    document.getElementById('upMunaqasyahModalTitle').textContent='➕ Tambah Munaqasyah';
+    document.getElementById('upMEditId').value='';
+    document.getElementById('upMKelas').value='';
+    document.getElementById('upMSiswa').innerHTML='<option value="">-- Pilih Kelas dulu --</option>';
+    document.getElementById('upMJilid').value='';
+    document.getElementById('upMTanggal').value=new Date().toISOString().slice(0,10);
+    document.getElementById('upMPenguji').value='';
+    document.getElementById('upMNilai').value='';
+    document.getElementById('upMStatus').value='rencana';
+    document.getElementById('upMCatatan').value='';
+  } else {
+    document.getElementById('upMunaqasyahModalTitle').textContent='✏️ Edit Munaqasyah';
+    document.getElementById('upMEditId').value=data.id;
+    document.getElementById('upMKelas').value=data.kelas_id||'';
+    upPopulateSiswaDropdown('upMKelas','upMSiswa').then(()=>{ document.getElementById('upMSiswa').value=data.siswa_id||''; });
+    document.getElementById('upMJilid').value=data.jilid_diuji||'';
+    document.getElementById('upMTanggal').value=data.tanggal_ujian||'';
+    document.getElementById('upMPenguji').value=data.penguji||'';
+    document.getElementById('upMNilai').value=data.nilai||'';
+    document.getElementById('upMStatus').value=data.status||'rencana';
+    document.getElementById('upMCatatan').value=data.catatan||'';
+  }
+  document.getElementById('upModalMunaqasyah').style.display='block';
+}
+async function upEditMunaqasyah(id){const{data}=await db.from('ummi_munaqasyah').select('*').eq('id',id).single();if(data)upShowModalMunaqasyah(data);}
+async function upSimpanMunaqasyah(){
+  const kelasId=document.getElementById('upMKelas')?.value;
+  const siswaId=document.getElementById('upMSiswa')?.value;
+  const jilid=document.getElementById('upMJilid')?.value;
+  const tanggal=document.getElementById('upMTanggal')?.value;
+  if(!kelasId||!siswaId)return toast('Kelas dan Siswa wajib dipilih','error');
+  if(!jilid)return toast('Jilid yang diuji wajib dipilih','error');
+  if(!tanggal)return toast('Tanggal ujian wajib diisi','error');
+  const editId=document.getElementById('upMEditId').value;
+  const payload={kelas_id:kelasId,kelas_nama:upGetKelasNama(kelasId),siswa_id:siswaId,siswa_nama:upGetSiswaNama('upMSiswa'),jilid_diuji:jilid,tanggal_ujian:tanggal,penguji:document.getElementById('upMPenguji')?.value.trim()||null,nilai:parseInt(document.getElementById('upMNilai')?.value)||null,status:document.getElementById('upMStatus')?.value||'rencana',catatan:document.getElementById('upMCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('upMSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=editId?await db.from('ummi_munaqasyah').update(payload).eq('id',editId):await db.from('ummi_munaqasyah').insert(payload);if(error)throw error;
+    toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');
+    // Jika lulus jilid terakhir bisa lanjut update progress jilid otomatis (opsional, guru manual update)
+    upCloseModal('upModalMunaqasyah');upLoadMunaqasyah();
+  }
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function upHapusMunaqasyah(id){if(!confirm('Hapus data munaqasyah ini?'))return;try{await db.from('ummi_munaqasyah').delete().eq('id',id);toast('Dihapus','success');upLoadMunaqasyah();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+// ── SERTIFIKAT KHATAM ────────────────────────────────────────
+async function upLoadSertifikat() {
+  if (!db) return;
+  const el = document.getElementById('upSertifikatList');
+  if (el) el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  try {
+    const {data,error} = await db.from('ummi_sertifikat').select('*').order('tanggal_khatam',{ascending:false});
+    if (error) throw error;
+    if (!data||data.length===0) { el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">🏆</div><div style="font-weight:700">Belum ada sertifikat</div></div>`; return; }
+    el.innerHTML = data.map(s=>{
+      const tgl = s.tanggal_khatam?new Date(s.tanggal_khatam).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">🏆 ${s.siswa_nama}</div>
+            <div style="font-size:11px;color:var(--text-light)">${s.kelas_nama} · Khatam: ${tgl}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:2px">No. ${s.nomor_sertifikat||'-'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button onclick="upCetakSertifikat('${s.id}')" style="flex:1;background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer">🖨️ Cetak PDF</button>
+          <button onclick="upHapusSertifikat('${s.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:8px;padding:8px 12px;font-size:11px;cursor:pointer">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel ummi_sertifikat sudah dibuat</small></div>`; }
+}
+
+function upShowModalSertifikat() {
+  upPopulateKelasDropdown('upSKelas');
+  document.getElementById('upSKelas').value='';
+  document.getElementById('upSSiswa').innerHTML='<option value="">-- Pilih Kelas dulu --</option>';
+  document.getElementById('upSTanggal').value=new Date().toISOString().slice(0,10);
+  document.getElementById('upSNomor').value='';
+  document.getElementById('upSKepsek').value=CONFIG.kepsek||'';
+  document.getElementById('upModalSertifikat').style.display='block';
+}
+async function upSimpanSertifikat(){
+  const kelasId=document.getElementById('upSKelas')?.value;
+  const siswaId=document.getElementById('upSSiswa')?.value;
+  const tanggal=document.getElementById('upSTanggal')?.value;
+  if(!kelasId||!siswaId)return toast('Kelas dan Siswa wajib dipilih','error');
+  if(!tanggal)return toast('Tanggal khatam wajib diisi','error');
+  let nomor=document.getElementById('upSNomor')?.value.trim();
+  if(!nomor) {
+    const rand = Math.floor(Math.random()*9000+1000);
+    nomor = `UMMI/${new Date(tanggal).getFullYear()}/${rand}`;
+  }
+  const payload={kelas_id:kelasId,kelas_nama:upGetKelasNama(kelasId),siswa_id:siswaId,siswa_nama:upGetSiswaNama('upSSiswa'),tanggal_khatam:tanggal,nomor_sertifikat:nomor,kepala_sekolah:document.getElementById('upSKepsek')?.value.trim()||null,user_id:currentUser?.id||null};
+  const btn=document.getElementById('upSSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
+  try{const{error}=await db.from('ummi_sertifikat').insert(payload);if(error)throw error;toast('✅ Sertifikat berhasil dibuat!','success');upCloseModal('upModalSertifikat');upLoadSertifikat();}
+  catch(e){toast('Gagal: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+}
+async function upHapusSertifikat(id){if(!confirm('Hapus sertifikat ini?'))return;try{await db.from('ummi_sertifikat').delete().eq('id',id);toast('Dihapus','success');upLoadSertifikat();}catch(e){toast('Gagal: '+e.message,'error');}}
+
+async function upCetakSertifikat(id) {
+  try {
+    const {data:s,error} = await db.from('ummi_sertifikat').select('*').eq('id',id).single();
+    if (error) throw error;
+    const school = CONFIG.school||'NAMA SEKOLAH';
+    const tgl = s.tanggal_khatam?new Date(s.tanggal_khatam).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      body{font-family:'Times New Roman',serif;margin:0;padding:0;}
+      .cert{width:100%;min-height:100vh;padding:50px 60px;box-sizing:border-box;border:14px double #b8860b;position:relative;text-align:center;background:linear-gradient(135deg,#fffdf5,#fff8e7);}
+      .cert::before{content:'';position:absolute;inset:22px;border:2px solid #d4af37;}
+      .isi{position:relative;z-index:1;padding:30px 20px}
+      .judul{font-size:32px;font-weight:900;color:#8b6914;letter-spacing:3px;margin-bottom:6px}
+      .sub{font-size:14px;color:#666;margin-bottom:30px;letter-spacing:1px}
+      .diberikan{font-size:14px;color:#444;margin-bottom:10px}
+      .nama{font-size:30px;font-weight:900;color:#1e3a8a;margin:14px 0;border-bottom:2px solid #d4af37;display:inline-block;padding:0 30px 8px}
+      .desk{font-size:14px;color:#444;line-height:1.9;max-width:560px;margin:20px auto}
+      .ttd{display:flex;justify-content:center;gap:100px;margin-top:60px}
+      .ttd div{text-align:center;font-size:13px}
+      .ttd .garis{margin-top:50px;border-top:1.5px solid #333;padding-top:6px;font-weight:700}
+      .nomor{position:absolute;bottom:24px;left:0;right:0;font-size:10px;color:#999}
+      @page{margin:0;size:A4 landscape}
+    </style></head><body>
+    <div class="cert"><div class="isi">
+      <div style="font-size:11px;color:#8b6914;font-weight:700;margin-bottom:20px">${school.toUpperCase()}</div>
+      <div class="judul">SERTIFIKAT KHATAM</div>
+      <div class="sub">METODE UMMI — Al-Qur'an</div>
+      <div class="diberikan">Diberikan kepada:</div>
+      <div class="nama">${s.siswa_nama}</div>
+      <div style="font-size:13px;color:#666;margin-bottom:10px">Kelas ${s.kelas_nama}</div>
+      <div class="desk">Yang telah berhasil menyelesaikan seluruh jenjang pembelajaran Al-Qur'an
+      Metode Ummi meliputi Jilid 1–6, Al-Qur'an, Gharib, dan Tajwid Dasar
+      dengan baik dan lancar, pada tanggal <strong>${tgl}</strong>.</div>
+      <div class="ttd">
+        <div>Kepala Sekolah<div class="garis">${s.kepala_sekolah||'.......................'}</div></div>
+        <div>Koordinator UMMI<div class="garis">.......................</div></div>
+      </div>
+    </div>
+    <div class="nomor">No. Sertifikat: ${s.nomor_sertifikat}</div>
+    </div>
+    </body></html>`;
+    const win = window.open('','_blank','width=900,height=650');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(()=>win.print(), 800);
+  } catch(e) { toast('Gagal cetak: '+e.message,'error'); }
+}
+
+function upCloseModal(id){document.getElementById(id).style.display='none';}
+// ════════════════════ END UMMI PROGRESS ════════════════════
 
 function kurCloseModal(id){document.getElementById(id).style.display='none';}
 // ════════════════════ END KURIKULUM ════════════════════
