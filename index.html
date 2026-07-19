@@ -17006,6 +17006,14 @@ async function kurImportGuruWali(input) {
 
       if (payload.length === 0) { toast('Tidak ada data yang bisa diimport. Pastikan format file sesuai.','error'); if(statusEl) statusEl.textContent=''; return; }
 
+      if (!confirm(`Ditemukan ${payload.length} baris siswa. Import ulang akan MENGHAPUS data guru wali lama dan menggantinya dengan yang baru. Lanjutkan?`)) {
+        if (statusEl) statusEl.textContent = '';
+        return;
+      }
+
+      if (statusEl) statusEl.textContent = `⏳ Menghapus data lama...`;
+      await db.from('guru_wali_siswa').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
       if (statusEl) statusEl.textContent = `⏳ Menyimpan ${payload.length} data...`;
       // Insert per-batch (Supabase limit aman ~500/insert)
       const batchSize = 200;
@@ -17018,8 +17026,18 @@ async function kurImportGuruWali(input) {
       }
       const jumlahGuru = new Set(payload.map(p=>p.guru_nama)).size;
       const matched = payload.filter(p=>p.siswa_id).length;
-      toast(`✅ ${inserted} siswa berhasil diimport untuk ${jumlahGuru} guru wali! (${matched} cocok dengan data siswa)`, 'success');
-      if (statusEl) statusEl.textContent = `✅ Terakhir: ${inserted} siswa, ${jumlahGuru} guru wali`;
+      const unmatched = payload.filter(p=>!p.siswa_id);
+
+      toast(`✅ ${inserted} baris siswa diimport untuk ${jumlahGuru} guru wali (${matched} cocok, ${unmatched.length} tidak ditemukan di Data Siswa)`, unmatched.length>0 ? 'warning' : 'success');
+
+      let statusHTML = `✅ Terakhir: ${inserted} baris | ${jumlahGuru} guru wali | <strong>${matched} cocok</strong>, <strong style="color:#dc2626">${unmatched.length} tidak cocok</strong>`;
+      if (unmatched.length > 0) {
+        statusHTML += `<div style="margin-top:6px;padding:8px;background:#fef2f2;border-radius:6px;color:#991b1b;max-height:120px;overflow-y:auto">
+          <div style="font-weight:700;margin-bottom:4px">⚠️ Nama berikut tidak ditemukan di Data Siswa (cek ejaan/belum diinput):</div>
+          ${unmatched.map(u=>`• ${u.siswa_nama} (${u.kelas_nama||'-'}) — wali: ${u.guru_nama}`).join('<br>')}
+        </div>`;
+      }
+      if (statusEl) statusEl.innerHTML = statusHTML;
     } catch(err) {
       toast('Gagal import: '+err.message,'error');
       if (statusEl) statusEl.textContent = '❌ Gagal: '+err.message;
