@@ -317,17 +317,17 @@ body.guest-mode .page.active:not(#page-home) { padding-top: 96px; }
 #page-ummiProgress-prestasi.active > div,
 #page-ummiProgress-munaqasyah.active > div,
 #page-ummiProgress-sertifikat.active > div {
-  padding-top: 56px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
+  padding-top: 64px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
   box-sizing: border-box !important;
 }
 #page-progkol-program.active > div,
 #page-modul-form.active > div,
 #page-modul-detail.active > div {
-  padding-top: 56px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
+  padding-top: 64px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
   box-sizing: border-box !important;
 }
 
@@ -11770,7 +11770,7 @@ function chatAutoResize(el){
 <div id="page-kurikulum" class="page">
 <div style="padding:16px 0 100px">
   <!-- Header info hari -->
-  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:16px;margin-bottom:18px;color:#fff">
+  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:18px 20px;margin-bottom:20px;color:#fff">
     <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:4px">📐 MODUL KURIKULUM</div>
     <div style="font-size:18px;font-weight:800" id="kurHariIni">Senin, 16 Juli 2026</div>
     <div style="font-size:12px;opacity:0.85;margin-top:4px" id="kurInfoJam">Hari ini: maksimal 9 jam pelajaran</div>
@@ -11819,7 +11819,7 @@ function chatAutoResize(el){
 <!-- PAGE: DATA GURU -->
 <div id="page-kurikulum-guru" class="page">
 <div style="padding:0 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
     <div><div class="section-title">👨‍🏫 Data Guru</div><div class="section-sub">Master data guru untuk semua fitur Kurikulum</div></div>
   </div>
   <div style="display:flex;gap:8px;margin-bottom:14px">
@@ -11860,7 +11860,7 @@ function chatAutoResize(el){
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="page-ummiProgress" class="page">
 <div style="padding:0 0 100px">
-  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:16px;margin-bottom:18px;color:#fff">
+  <div style="background:linear-gradient(135deg,#0f766e,#0d9488);border-radius:14px;padding:18px 20px;margin-bottom:20px;color:#fff">
     <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:4px">📖 METODE UMMI</div>
     <div style="font-size:16px;font-weight:800">Progress Belajar Al-Qur'an Siswa</div>
     <div style="font-size:12px;opacity:0.85;margin-top:4px">Jilid 1–6 · Al-Qur'an · Gharib · Tajwid Dasar</div>
@@ -11893,9 +11893,9 @@ function chatAutoResize(el){
 <!-- PAGE: PROGRESS JILID -->
 <div id="page-ummiProgress-jilid" class="page">
 <div style="padding:0 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
     <div><div class="section-title">📊 Progress Jilid Siswa</div><div class="section-sub">Tracking jilid & halaman per siswa</div></div>
-    <button onclick="upShowModalJilid()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="upShowModalJilid()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="upJilidFilterKelas" onchange="upLoadJilid()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -11912,9 +11912,9 @@ function chatAutoResize(el){
 <!-- PAGE: BUKU PRESTASI -->
 <div id="page-ummiProgress-prestasi" class="page">
 <div style="padding:0 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
     <div><div class="section-title">📖 Buku Prestasi Digital</div><div class="section-sub">Nilai harian tadarus siswa</div></div>
-    <button onclick="upShowModalPrestasi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="upShowModalPrestasi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="upPrestasiFilterKelas" onchange="upLoadPrestasi()" style="flex:1;min-width:120px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -11932,9 +11932,9 @@ function chatAutoResize(el){
 <!-- PAGE: MUNAQASYAH -->
 <div id="page-ummiProgress-munaqasyah" class="page">
 <div style="padding:0 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
     <div><div class="section-title">🎓 Jadwal Munaqasyah</div><div class="section-sub">Ujian kenaikan jilid siswa</div></div>
-    <button onclick="upShowModalMunaqasyah()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="upShowModalMunaqasyah()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="upMunaqasyahFilterStatus" onchange="upLoadMunaqasyah()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -11950,9 +11950,9 @@ function chatAutoResize(el){
 <!-- PAGE: SERTIFIKAT KHATAM -->
 <div id="page-ummiProgress-sertifikat" class="page">
 <div style="padding:0 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px">
     <div><div class="section-title">🏆 Sertifikat Khatam</div><div class="section-sub">Sertifikat kelulusan metode Ummi</div></div>
-    <button onclick="upShowModalSertifikat()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="upShowModalSertifikat()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div id="upSertifikatList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
 </div>
@@ -12114,7 +12114,7 @@ function chatAutoResize(el){
 <div style="padding:16px 0 100px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">📅 Jadwal Mengajar</div><div class="section-sub">Kelola jadwal per guru, mapel, dan kelas</div></div>
-    <button onclick="kurShowModalJadwal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="kurShowModalJadwal()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <!-- Filter -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -12135,7 +12135,7 @@ function chatAutoResize(el){
 <div style="padding:16px 0 100px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">🔍 Supervisi Kelas</div><div class="section-sub">Observasi dan penilaian kegiatan belajar mengajar</div></div>
-    <button onclick="kurShowModalSupervisi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="kurShowModalSupervisi()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="kurSupervisiFilterStatus" onchange="kurLoadSupervisi()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -12153,7 +12153,7 @@ function chatAutoResize(el){
 <div style="padding:16px 0 100px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">⭐ PKG Guru</div><div class="section-sub">Penilaian Kinerja Guru per semester</div></div>
-    <button onclick="kurShowModalPKG()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="kurShowModalPKG()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="kurPKGFilterSmt" onchange="kurLoadPKG()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -12168,7 +12168,7 @@ function chatAutoResize(el){
 <div style="padding:16px 0 100px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">📊 KKM</div><div class="section-sub">Kriteria Ketuntasan Minimal per mata pelajaran</div></div>
-    <button onclick="kurShowModalKKM()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="kurShowModalKKM()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div id="kurKKMList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
 </div>
@@ -12178,7 +12178,7 @@ function chatAutoResize(el){
 <div style="padding:16px 0 100px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">🗓️ Kalender Akademik</div><div class="section-sub">Agenda kegiatan & jadwal sekolah</div></div>
-    <button onclick="kurShowModalKalender()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+    <button onclick="kurShowModalKalender()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
     <select id="kurKalenderFilterKat" onchange="kurLoadKalender()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--card);color:var(--text)">
@@ -15222,7 +15222,7 @@ function mdBuildForm(jenis, data) {
         <div style="display:flex;flex-direction:column;gap:7px">${dlCheckboxes}</div>
       </div>
       <!-- AI GENERATE BUTTON -->
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:18px 20px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate Isi Modul dengan AI</div>
         <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas, Elemen, Jumlah Pertemuan & pilih kriteria Deep Learning terlebih dahulu, lalu klik Generate. AI akan mengisi semua bagian modul secara otomatis.</div>
         <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">
@@ -15264,7 +15264,7 @@ function mdBuildForm(jenis, data) {
       </div>`;
   } else if (jenis === 'atp') {
     formFields = `${identitas}
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:18px 20px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate ATP dengan AI</div>
         <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas dan Elemen/Domain terlebih dahulu, lalu klik Generate.</div>
         <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
@@ -15290,7 +15290,7 @@ function mdBuildForm(jenis, data) {
         <button onclick="mdHapusGambarLKPD(${i})" type="button" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button>
       </div>`).join('');
     formFields = `${identitas}
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:18px 20px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate LKPD dengan AI</div>
         <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Identitas dan Pertemuan ke- terlebih dahulu, lalu klik Generate.</div>
         <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
@@ -15316,7 +15316,7 @@ function mdBuildForm(jenis, data) {
       </div>`;
   } else { // co_kurikuler
     formFields = `${identitas}
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:12px;padding:18px 20px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:6px">✨ Generate dengan AI</div>
         <div style="font-size:11px;color:#c7d2fe;margin-bottom:12px">Isi Judul, Jenis Kegiatan, dan Kelas Sasaran dulu, lalu klik Generate.</div>
         <button onclick="mdGenerateWithAI()" id="mdGenBtn" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">✨ Generate dengan Claude AI</button>
