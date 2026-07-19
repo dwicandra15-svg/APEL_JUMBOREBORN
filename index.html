@@ -3040,7 +3040,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     <div id="page-bimbingan" class="page">
       <div id="mapelShortcutBimbingan" class="mapel-shortcut-bar"></div>
       <div class="section-header">
-        <div><div class="section-title">Bimbingan Wali Kelas</div></div>
+        <div><div class="section-title">Bimbingan Guru Wali</div></div>
         <div style="display:flex;gap:10px">
           <button class="btn btn-primary" onclick="showAddBimbingan()">+ Catat Bimbingan</button>
           <button class="btn btn-print" onclick="cetakBimbingan()">🖨️ Cetak PDF</button>
@@ -3771,7 +3771,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 <div class="modal-overlay" id="modalBimbingan">
   <div class="modal">
     <div class="modal-header">
-      <h3>Pencatatan Bimbingan Wali</h3>
+      <h3>Pencatatan Bimbingan Guru Wali</h3>
       <button class="btn-close" onclick="closeModal('modalBimbingan')">✕</button>
     </div>
     <div class="modal-body">
@@ -6323,7 +6323,7 @@ async function cetakBimbingan() {
   const kop = getKopData();
   addKopToPdf(doc, kop);
   doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text('CATATAN BIMBINGAN WALI KELAS', 105, 40, {align:'center'});
+  doc.text('CATATAN BIMBINGAN GURU WALI', 105, 40, {align:'center'});
   const { data } = await db.from('bimbingan').select('*').order('tanggal',{ascending:false});
   const rows = (data||[]).map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,30), (b.solusi||'').substring(0,30)]);
   doc.autoTable({ startY:44, head:[['Tanggal','Siswa','Kategori','Masalah','Solusi']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[26,86,219]} });
