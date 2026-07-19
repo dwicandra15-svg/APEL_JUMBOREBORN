@@ -82,13 +82,14 @@ body {
 
 /* WATERMARK */
 body::after {
-  content: 'Created & Developed by D.D Candra';
+  content: 'Developed by D.D Candra © 2021';
   position: fixed;
   bottom: 18px;
   right: 22px;
   font-size: 10px;
   color: rgba(100,116,139,0.45);
   font-style: italic;
+  font-weight: 700;
   font-family: var(--font);
   pointer-events: none;
   z-index: 9999;
@@ -1226,7 +1227,7 @@ tr:hover td { background: #f8fafc; }
 textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 @media(max-width:480px) { .piket-row-2 { grid-template-columns:1fr; } }
 
-.mh-footer { text-align:center; padding:20px 0 40px; font-size:11px; color:var(--text-light); font-style:italic; }
+.mh-footer { text-align:center; padding:20px 0 40px; font-size:11px; color:var(--text-light); font-style:italic; font-weight:700; }
 
 
 /* ===== EDIT ICON MODAL ===== */
@@ -2436,8 +2437,8 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     </div>
   </nav>
   <div class="sidebar-footer">
-    <div style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center">
-      Created & Developed by D.D Candra
+    <div style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-weight:700;font-style:italic">
+      Developed by D.D Candra © 2021
     </div>
     <button class="btn-logout" onclick="doLogout()">⇠ Keluar</button>
   </div>
@@ -2588,7 +2589,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           </div>
         </div><!-- /hbn-lainnya -->
 
-        <div class="mh-footer">Created &amp; Developed by D.D Candra</div>
+        <div class="mh-footer">Developed by D.D Candra © 2021</div>
       </div>
     </div>
 
@@ -6240,8 +6241,9 @@ function addKopToPdf(doc, kop) {
   doc.setDrawColor(255,255,255); doc.setLineWidth(0.3); doc.line(0, 30, pgW, 30);
   doc.setTextColor(30,30,30);
   // watermark
-  doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', pgW/2, pgH-3, {align:'center'});
+  doc.setFontSize(7); doc.setTextColor(180,180,180); doc.setFont('helvetica','bolditalic');
+  doc.text('Developed by D.D Candra © 2021', pgW/2, pgH-3, {align:'center'});
+  doc.setFont('helvetica','normal');
   doc.setTextColor(30,30,30);
 }
 
@@ -6274,8 +6276,9 @@ function cetakAbsensi() {
     rows.push(cells);
   });
   doc.autoTable({ startY:30, head:[['Nama','Kelas','Jml Hari','H','S','I','A','% Hadir']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
-  doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
+  doc.setFontSize(7); doc.setTextColor(180,180,180); doc.setFont('helvetica','bolditalic');
+  doc.text('Developed by D.D Candra © 2021', 148,200,{align:'center'});
+  doc.setFont('helvetica','normal');
   savePdf(doc,'rekap-absensi.pdf');
 }
 
@@ -6295,8 +6298,9 @@ function cetakNilai() {
     rows.push(cells);
   });
   doc.autoTable({ startY:30, head:[['Nama','PR','HRN','TGS','PRJ','PFT','SUM','STS','SAS','AVG']], body:rows, styles:{fontSize:9}, headStyles:{fillColor:[26,86,219]} });
-  doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148,200,{align:'center'});
+  doc.setFontSize(7); doc.setTextColor(180,180,180); doc.setFont('helvetica','bolditalic');
+  doc.text('Developed by D.D Candra © 2021', 148,200,{align:'center'});
+  doc.setFont('helvetica','normal');
   savePdf(doc,'rekap-nilai.pdf');
 }
 
@@ -6663,8 +6667,9 @@ function cetakUmmi(lvl) {
     headStyles: { fillColor: [26,86,219] },
     columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 15 } }
   });
-  doc.setFontSize(7); doc.setTextColor(180,180,180);
-  doc.text('Created & Developed by D.D Candra', 148, 200, {align:'center'});
+  doc.setFontSize(7); doc.setTextColor(180,180,180); doc.setFont('helvetica','bolditalic');
+  doc.text('Developed by D.D Candra © 2021', 148, 200, {align:'center'});
+  doc.setFont('helvetica','normal');
   savePdf(doc,`rekap-ummi-${lvl}.pdf`);
   toast('PDF UMMI berhasil diunduh!', 'success');
 }
