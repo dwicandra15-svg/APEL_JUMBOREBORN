@@ -5671,14 +5671,67 @@ async function loadBimbingan() {
   `).join('') : '<div class="empty-state"><div class="empty-icon">💙</div><h3>Belum Ada Catatan Bimbingan</h3></div>';
 }
 
-function showAddBimbingan() {
+async function showAddBimbingan() {
   editingId = null;
   document.getElementById('editBimbinganId').value = '';
-  document.getElementById('bimbinganSiswa').innerHTML = APP_DATA.siswa.map(s=>`<option value="${s.id}">${s.nama} (${getKelasName(s.kelas_id)})</option>`).join('');
+  const sel = document.getElementById('bimbinganSiswa');
+  sel.innerHTML = '<option value="">⏳ Memuat daftar siswa...</option>';
   document.getElementById('bimbinganTgl').value = new Date().toISOString().split('T')[0];
   document.getElementById('bimbinganMasalah').value = '';
   document.getElementById('bimbinganSolusi').value = '';
   openModal('modalBimbingan');
+  await bimbinganPopulateSiswaWali();
+}
+
+// Normalisasi nama untuk matching (hapus gelar, spasi berlebih, huruf besar/kecil)
+function bimbinganNormalizeNama(nama) {
+  if (!nama) return '';
+  return String(nama)
+    .toUpperCase()
+    .replace(/,?\s*(S\.PD|S\.AG|S\.SI|M\.PD|S\.KOM|S\.E|S\.SOS|S\.OR|S\.T|M\.SI|GR)\.?\s*$/gi, '')
+    .replace(/[.,]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Populate dropdown siswa di form Bimbingan Wali — terfilter sesuai guru wali yang login
+async function bimbinganPopulateSiswaWali() {
+  const sel = document.getElementById('bimbinganSiswa');
+  if (!sel) return;
+  const namaGuruLogin = bimbinganNormalizeNama(CONFIG.guru || '');
+
+  if (!namaGuruLogin || !db) {
+    sel.innerHTML = APP_DATA.siswa.map(s=>`<option value="${s.id}">${s.nama} (${getKelasName(s.kelas_id)})</option>`).join('');
+    return;
+  }
+
+  try {
+    const { data, error } = await db.from('guru_wali_siswa').select('*');
+    if (error) throw error;
+    const cocok = (data||[]).filter(g => bimbinganNormalizeNama(g.guru_nama) === namaGuruLogin);
+
+    if (cocok.length === 0) {
+      // Tidak ada data wali untuk guru ini -> tampilkan semua siswa (fallback)
+      sel.innerHTML = `<option value="">-- Semua Siswa (data wali belum diimport) --</option>` +
+        APP_DATA.siswa.map(s=>`<option value="${s.id}">${s.nama} (${getKelasName(s.kelas_id)})</option>`).join('');
+      return;
+    }
+
+    // Urutkan berdasarkan nama
+    cocok.sort((a,b) => a.siswa_nama.localeCompare(b.siswa_nama));
+    sel.innerHTML = cocok.map(g => {
+      const siswaMatch = g.siswa_id ? APP_DATA.siswa.find(s => String(s.id)===String(g.siswa_id)) : null;
+      const kelasLabel = siswaMatch ? getKelasName(siswaMatch.kelas_id) : (g.kelas_nama || '');
+      // Jika siswa_id ada (match dengan tabel siswa), pakai itu sebagai value. Jika tidak, tetap tampil tapi tidak bisa disimpan (beri tanda)
+      if (g.siswa_id) {
+        return `<option value="${g.siswa_id}">${g.siswa_nama}${kelasLabel?' ('+kelasLabel+')':''}</option>`;
+      }
+      return `<option value="" disabled>${g.siswa_nama} — ⚠️ belum ada di Data Siswa</option>`;
+    }).join('');
+  } catch(e) {
+    // Gagal ambil data wali -> fallback semua siswa
+    sel.innerHTML = APP_DATA.siswa.map(s=>`<option value="${s.id}">${s.nama} (${getKelasName(s.kelas_id)})</option>`).join('');
+  }
 }
 
 async function saveBimbingan() {
@@ -11826,8 +11879,15 @@ function chatAutoResize(el){
     <button onclick="kurShowModalGuru()" style="flex:1;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">➕ Tambah Guru</button>
     <button onclick="kurDownloadTemplateGuru()" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">📥 Template Excel</button>
   </div>
-  <button onclick="document.getElementById('kurGuruUploadFile').click()" style="width:100%;background:var(--card);color:var(--primary);border:1.5px dashed var(--primary);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font)">📤 Import dari Excel</button>
+  <button onclick="document.getElementById('kurGuruUploadFile').click()" style="width:100%;background:var(--card);color:var(--primary);border:1.5px dashed var(--primary);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px;font-family:var(--font)">📤 Import dari Excel</button>
   <input type="file" id="kurGuruUploadFile" accept=".xlsx,.xls" style="display:none" onchange="kurImportGuru(this)">
+  <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px 14px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:800;color:#5b21b6;margin-bottom:6px">👨‍👩‍👧 Import SK Guru Wali & Bimbingan Siswa</div>
+    <div style="font-size:10px;color:#7c3aed;margin-bottom:8px">Upload file Excel "Lampiran SK Guru Wali" — otomatis membagi siswa ke setiap guru wali untuk fitur Bimbingan Wali</div>
+    <button onclick="document.getElementById('kurWaliUploadFile').click()" style="width:100%;background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">📤 Import SK Guru Wali</button>
+    <input type="file" id="kurWaliUploadFile" accept=".xlsx,.xls" style="display:none" onchange="kurImportGuruWali(this)">
+    <div id="kurWaliStatus" style="font-size:10px;color:#7c3aed;margin-top:6px"></div>
+  </div>
   <div id="kurGuruList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
 </div>
 </div>
@@ -16888,6 +16948,81 @@ async function kurImportGuru(input) {
       kurLoadGuru();
     } catch(err) {
       toast('Gagal import: '+err.message,'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+// ── Import SK Guru Wali (format merged cell: Lampiran SK) ─────
+async function kurImportGuruWali(input) {
+  const file = input.files[0]; if (!file) return;
+  if (typeof XLSX==='undefined') return toast('Library Excel belum siap, coba lagi','error');
+  const statusEl = document.getElementById('kurWaliStatus');
+  if (statusEl) statusEl.textContent = '⏳ Memproses file...';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+
+      // Cari baris header "NO / NAMA GURU / DAFTAR PESERTA DIDIK"
+      let startIdx = rows.findIndex(r => r.some(c => String(c||'').toUpperCase().includes('NAMA GURU')));
+      if (startIdx === -1) startIdx = 7; // fallback posisi umum
+      const dataRows = rows.slice(startIdx + 1);
+
+      // Ambil daftar siswa existing untuk matching nama -> id
+      let siswaExisting = [];
+      try {
+        const { data: sData } = await db.from('siswa').select('id,nama,kelas_id');
+        siswaExisting = sData || [];
+      } catch(e){}
+      const siswaMap = {};
+      siswaExisting.forEach(s => { siswaMap[String(s.nama).trim().toUpperCase()] = s; });
+
+      let currentGuru = null;
+      const payload = [];
+      dataRows.forEach(r => {
+        const namaGuru = r[1] ? String(r[1]).trim() : null;
+        const namaSiswa = r[2] ? String(r[2]).trim() : null;
+        const noInduk = r[3] ? String(r[3]).trim() : null;
+        const nisn = r[4] ? String(r[4]).trim() : null;
+        const kelas = r[5] ? String(r[5]).trim() : null;
+        if (namaGuru) currentGuru = namaGuru;
+        if (!namaSiswa || !currentGuru) return;
+        const match = siswaMap[namaSiswa.toUpperCase()];
+        payload.push({
+          guru_nama: currentGuru,
+          siswa_nama: namaSiswa,
+          siswa_id: match ? String(match.id) : null,
+          kelas_nama: kelas || (match ? null : null),
+          no_induk: noInduk,
+          nisn: nisn,
+          user_id: currentUser?.id || null
+        });
+      });
+
+      if (payload.length === 0) { toast('Tidak ada data yang bisa diimport. Pastikan format file sesuai.','error'); if(statusEl) statusEl.textContent=''; return; }
+
+      if (statusEl) statusEl.textContent = `⏳ Menyimpan ${payload.length} data...`;
+      // Insert per-batch (Supabase limit aman ~500/insert)
+      const batchSize = 200;
+      let inserted = 0;
+      for (let i=0; i<payload.length; i+=batchSize) {
+        const batch = payload.slice(i, i+batchSize);
+        const { error } = await db.from('guru_wali_siswa').insert(batch);
+        if (error) throw error;
+        inserted += batch.length;
+      }
+      const jumlahGuru = new Set(payload.map(p=>p.guru_nama)).size;
+      const matched = payload.filter(p=>p.siswa_id).length;
+      toast(`✅ ${inserted} siswa berhasil diimport untuk ${jumlahGuru} guru wali! (${matched} cocok dengan data siswa)`, 'success');
+      if (statusEl) statusEl.textContent = `✅ Terakhir: ${inserted} siswa, ${jumlahGuru} guru wali`;
+    } catch(err) {
+      toast('Gagal import: '+err.message,'error');
+      if (statusEl) statusEl.textContent = '❌ Gagal: '+err.message;
     }
   };
   reader.readAsArrayBuffer(file);
