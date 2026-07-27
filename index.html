@@ -5402,12 +5402,17 @@ async function jurnalAutoPertemuan() {
   if (hintTxt) hintTxt.textContent = '⏳ Mengecek...';
   if (badge) badge.style.display = 'none';
 
-  // Query jurnal terakhir untuk kombinasi kelas + mapel ini
-  const { data, error } = await db.from('jurnal')
+  // Query jurnal terakhir untuk kombinasi kelas + mapel + TAHUN PELAJARAN AKTIF
+  const tpAktif = CONFIG.tahunPelajaran || null;
+  let pertQuery = db.from('jurnal')
     .select('pertemuan, tanggal, materi')
     .eq('kelas_id', kelasId)
     .eq('mapel_id', mapelId)
-    .not('pertemuan', 'is', null)
+    .not('pertemuan', 'is', null);
+  // Hanya hitung jurnal dari tahun pelajaran yang sama dengan yang aktif sekarang.
+  // Jurnal lama tanpa tahun_pelajaran (data sebelum fitur ini ada) diabaikan agar counter tidak "kebawa" dari histori lama.
+  if (tpAktif) pertQuery = pertQuery.eq('tahun_pelajaran', tpAktif);
+  const { data, error } = await pertQuery
     .order('pertemuan', { ascending: false })
     .limit(1);
 
@@ -5510,6 +5515,7 @@ async function saveJurnal() {
     jam_mulai   : document.getElementById('jurnalJamMulai').value || null,
     jam_selesai : document.getElementById('jurnalJamSelesai').value || null,
     catatan     : document.getElementById('jurnalCatatan').value.trim(),
+    tahun_pelajaran: CONFIG.tahunPelajaran || null,
     user_id     : currentUser.id
   };
 
