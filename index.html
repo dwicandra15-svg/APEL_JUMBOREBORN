@@ -619,6 +619,12 @@ tr:hover td { background: #f8fafc; }
   font-size: 18px; opacity: 0.5; pointer-events: none; transition: opacity 0.2s;
 }
 .float-group input:focus ~ .field-icon { opacity: 0.9; }
+.float-group .field-icon-toggle {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 17px; opacity: 0.55; cursor: pointer; pointer-events: auto;
+  transition: opacity 0.2s; user-select: none; background: none; border: none; padding: 4px;
+}
+.float-group .field-icon-toggle:hover { opacity: 0.9; }
 
 .btn-login {
   width: 100%; padding: 15px; border: none; cursor: pointer;
@@ -2290,7 +2296,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     <div class="float-group">
       <input type="password" id="loginPass" placeholder="password" autocomplete="current-password">
       <label>Password</label>
-      <span class="field-icon">🔒</span>
+      <span class="field-icon-toggle" id="loginPassToggle" onclick="togglePasswordVisibility('loginPass','loginPassToggle')" title="Lihat/sembunyikan password">👁️</span>
     </div>
     <button class="btn-login" onclick="doLogin()">
       <span id="loginBtnText">Masuk →</span>
@@ -4077,6 +4083,20 @@ function initSupabase() {
 }
 
 // ===================== AUTH =====================
+// Toggle lihat/sembunyikan password
+function togglePasswordVisibility(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (icon) icon.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    if (icon) icon.textContent = '👁️';
+  }
+}
+
 async function doLogin() {
   const email = document.getElementById('loginEmail').value;
   const pass = document.getElementById('loginPass').value;
