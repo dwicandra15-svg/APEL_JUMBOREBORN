@@ -2220,13 +2220,13 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
 /* ── Lab modal ── */
 .lab-modal-overlay {
   position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
-  z-index:400;display:flex;align-items:flex-end;justify-content:center;
+  z-index:1500;display:flex;align-items:flex-end;justify-content:center;
   opacity:0;pointer-events:none;transition:opacity .2s;
 }
 .lab-modal-overlay.active { opacity:1;pointer-events:all; }
 .lab-modal-box {
   background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:600px;
-  max-height:90vh;overflow-y:auto;padding:24px;
+  max-height:90vh;overflow-y:auto;padding:24px 24px calc(24px + env(safe-area-inset-bottom, 0px));
   transform:translateY(40px);transition:transform .25s;
 }
 .lab-modal-overlay.active .lab-modal-box { transform:translateY(0); }
@@ -5011,6 +5011,7 @@ async function loadRekapAbsen() {
   
   let query = db.from('absensi').select('*');
   if (kelasId) query = query.eq('kelas_id', kelasId);
+  if (mapelId) query = query.eq('mapel_id', mapelId);
   if (bulan) {
     const yr = new Date().getFullYear();
     const lastDay4560 = new Date(yr, parseInt(bulan), 0).getDate();
