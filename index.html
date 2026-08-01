@@ -7297,7 +7297,7 @@ function showPage(name) {
     'ummiProgress-munaqasyah':'Munaqasyah',
     'ummiProgress-sertifikat':'Sertifikat Khatam',
     'kurikulum-supervisi':'Supervisi Kelas', 'kurikulum-pkg':'PKG Guru',
-    'kurikulum-kkm':'KKM', 'kurikulum-kalender':'Kalender Akademik',
+    'kurikulum-kkm':'KKTP', 'kurikulum-kalender':'Kalender Akademik',
     'absensiku':'AbsensiKu',
     'labInventaris':'Inventaris Lab IPA','labPeminjaman':'Peminjaman Alat Lab','labPresensi':'Presensi Laboratorium'
   };
@@ -11890,7 +11890,7 @@ function chatAutoResize(el){
     </div>
     <div class="kur-nav-card" onclick="goPage('kurikulum-kkm')">
       <div class="kur-nav-ico" style="background:#ede9fe;color:#5b21b6">📊</div>
-      <div class="kur-nav-text"><div class="title">KKM</div><div class="sub">Kriteria Ketuntasan Minimal per mapel</div></div>
+      <div class="kur-nav-text"><div class="title">KKTP</div><div class="sub">Kriteria Ketercapaian Tujuan Pembelajaran per mapel</div></div>
       <div style="margin-left:auto;color:var(--text-light)">›</div>
     </div>
     <div class="kur-nav-card" onclick="goPage('kurikulum-kalender')">
@@ -12258,9 +12258,12 @@ function chatAutoResize(el){
 <!-- PAGE: KKM -->
 <div id="page-kurikulum-kkm" class="page">
 <div style="padding:16px 0 100px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
-    <div><div class="section-title">📊 KKM</div><div class="section-sub">Kriteria Ketuntasan Minimal per mata pelajaran</div></div>
-    <button onclick="kurShowModalKKM()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
+  <div style="margin-bottom:16px">
+    <div class="section-title">📊 KKTP</div>
+    <div class="section-sub">Kriteria Ketercapaian Tujuan Pembelajaran per mata pelajaran</div>
+  </div>
+  <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#5b21b6">
+    💡 Isi nilai KKTP untuk tiap mapel, lalu klik <strong>Simpan</strong> pada baris masing-masing. Berlaku untuk semua guru.
   </div>
   <div id="kurKKMList"><div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div></div>
 </div>
@@ -12268,6 +12271,7 @@ function chatAutoResize(el){
 <!-- PAGE: KALENDER AKADEMIK -->
 <div id="page-kurikulum-kalender" class="page">
 <div style="padding:16px 0 100px">
+
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px">
     <div><div class="section-title">🗓️ Kalender Akademik</div><div class="section-sub">Agenda kegiatan & jadwal sekolah</div></div>
     <button onclick="kurShowModalKalender()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)">➕ Tambah</button>
@@ -12424,41 +12428,8 @@ function chatAutoResize(el){
 </div>
 </div>
 
-<!-- ══ MODAL KKM ══ -->
-<div id="kurModalKKM" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
-<div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <div style="font-size:15px;font-weight:800;color:var(--text)" id="kurKKMModalTitle">➕ Tambah KKM</div>
-    <button onclick="kurCloseModal('kurModalKKM')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)">✕</button>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:11px">
-    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Mata Pelajaran *</label>
-      <input type="text" id="kurKKMMapel" class="form-control" list="kurKKMMapelList" placeholder="Pilih/ketik mapel...">
-      <datalist id="kurKKMMapelList"></datalist>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Kelas *</label>
-        <select id="kurKKMKelas" class="form-control"><option value="">-- Pilih Kelas --</option>
-          <option>VII</option><option>VIII</option><option>IX</option><option>Semua Kelas</option>
-        </select>
-      </div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Nilai KKM *</label><input type="number" id="kurKKMNilai" class="form-control" min="0" max="100" placeholder="75"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Tahun Pelajaran</label><input type="text" id="kurKKMTP" class="form-control" placeholder="2025/2026"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Semester</label><select id="kurKKMSmt" class="form-control"><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></div>
-    </div>
-    <div><label style="font-size:11px;font-weight:600;color:var(--text-light);display:block;margin-bottom:3px">Catatan</label><textarea id="kurKKMCatatan" rows="2" class="form-control" style="resize:vertical" placeholder="Catatan penetapan KKM..."></textarea></div>
-  </div>
-  <input type="hidden" id="kurKKMEditId">
-  <div style="display:flex;gap:10px;margin-top:18px">
-    <button onclick="kurCloseModal('kurModalKKM')" class="btn" style="flex:1;background:var(--border);color:var(--text)">Batal</button>
-    <button onclick="kurSimpanKKM()" class="btn btn-primary" style="flex:2" id="kurKKMSimpanBtn">💾 Simpan</button>
-  </div>
-</div>
-</div>
-
 <!-- ══ MODAL KALENDER ══ -->
+
 <div id="kurModalKalender" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;overflow-y:auto;padding:16px">
 <div style="background:var(--card);border-radius:16px;max-width:440px;margin:0 auto;padding:22px 18px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -16718,74 +16689,114 @@ async function kurSimpanPKG(){
 async function kurHapusPKG(id){if(!confirm('Hapus data PKG ini?'))return;try{await db.from('pkg_guru').delete().eq('id',id);toast('Dihapus','success');kurLoadPKG();}catch(e){toast('Gagal: '+e.message,'error');}}
 
 // ── KKM ──────────────────────────────────────────────────────
+// ── KKTP — 12 Mapel tetap (urutan tetap, nama bisa diubah admin) ──
+const KUR_KKTP_DEFAULT = [
+  'Pendidikan Agama dan Budi Pekerti',
+  'Pendidikan Pancasila',
+  'Bahasa Indonesia',
+  'Matematika',
+  'Ilmu Pengetahuan Alam (IPA)',
+  'Ilmu Pengetahuan Sosial (IPS)',
+  'Bahasa Inggris',
+  'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)',
+  'Informatika',
+  'Seni Budaya',
+  'Prakarya',
+  'Mulok (Bahasa Daerah)'
+];
+const KUR_KKTP_GRADES = ['7','8','9'];
+
 async function kurLoadKKM() {
   if (!db) return;
-  const el=document.getElementById('kurKKMList');
-  if(el)el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
-  // Populate datalist
-  const dl=document.getElementById('kurKKMMapelList');
-  if(dl)dl.innerHTML=APP_DATA.mapel.map(m=>`<option value="${m.nama}">`).join('');
-  try{
-    const{data,error}=await db.from('kkm_mapel').select('*').order('mapel').order('kelas');
-    if(error)throw error;
-    if(!data||data.length===0){el.innerHTML=`<div style="text-align:center;padding:50px 20px;color:var(--text-light)"><div style="font-size:36px;margin-bottom:10px">📊</div><div style="font-weight:700">Belum ada data KKM</div></div>`;return;}
-    // Group by mapel
-    const byMapel={};data.forEach(k=>{if(!byMapel[k.mapel])byMapel[k.mapel]=[];byMapel[k.mapel].push(k);});
-    el.innerHTML=Object.entries(byMapel).map(([mapel,kkms])=>`
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:10px">📚 ${mapel}</div>
-        <div style="display:flex;flex-direction:column;gap:7px">
-          ${kkms.map(k=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:8px">
-            <div style="flex:1">
-              <span style="font-size:12px;font-weight:700;color:var(--text)">${k.kelas}</span>
-              <span style="font-size:11px;color:var(--text-light);margin-left:8px">${k.semester||''} ${k.tahun_pelajaran||''}</span>
-              ${k.catatan?`<div style="font-size:10px;color:var(--text-light)">${k.catatan}</div>`:''}
-            </div>
-            <div style="font-size:16px;font-weight:900;color:${k.kkm>=75?'#16a34a':'#d97706'}">${k.kkm}</div>
-            <button onclick="kurEditKKM('${k.id}')" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">✏️</button>
-            <button onclick="kurHapusKKM('${k.id}')" style="background:#fff0f0;color:var(--danger);border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🗑️</button>
-          </div>`).join('')}
+  const el = document.getElementById('kurKKMList');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">⏳ Memuat...</div>';
+  const isAdmin = currentUser?.email === ADMIN_EMAIL;
+  try {
+    let { data: mapelData, error: e1 } = await db.from('kktp_mapel').select('*').order('urutan');
+    if (e1) throw e1;
+    if (!mapelData || mapelData.length === 0) {
+      const seed = KUR_KKTP_DEFAULT.map((nama, i) => ({ urutan: i+1, nama_mapel: nama }));
+      await db.from('kktp_mapel').upsert(seed, { onConflict: 'urutan' });
+      const reload = await db.from('kktp_mapel').select('*').order('urutan');
+      mapelData = reload.data || [];
+    }
+
+    let { data: nilaiData, error: e2 } = await db.from('kktp_nilai').select('*');
+    if (e2) throw e2;
+    const nilaiMap = {};
+    (nilaiData||[]).forEach(n => { nilaiMap[`${n.urutan}_${n.grade}`] = n; });
+
+    el.innerHTML = mapelData.map(k => {
+      const headId = `kktpHead_${k.urutan}`;
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+          <span id="${headId}_nama" style="font-size:13px;font-weight:800;color:var(--text);flex:1">${k.nama_mapel}</span>
+          ${isAdmin ? `<button onclick="kurRenameMapel(${k.urutan},'${headId}')" title="Ubah nama mapel (khusus admin)" style="background:none;border:none;color:var(--text-light);font-size:12px;cursor:pointer;flex-shrink:0;padding:2px">✏️</button>` : ''}
         </div>
-      </div>`).join('');
-  }catch(e){el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}</div>`;}
+        <div style="display:grid;grid-template-columns:46px 1fr 1fr 34px;gap:8px;padding:0 2px 6px;font-size:9px;font-weight:800;color:var(--text-light);letter-spacing:0.3px">
+          <div>GRADE</div><div style="text-align:center">KKTP 2025</div><div style="text-align:center">KKTP 2026</div><div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${KUR_KKTP_GRADES.map(grade => {
+            const rowId = `kktpRow_${k.urutan}_${grade}`;
+            const n = nilaiMap[`${k.urutan}_${grade}`] || {};
+            return `<div style="display:grid;grid-template-columns:46px 1fr 1fr 34px;gap:8px;align-items:center" id="${rowId}">
+              <div style="font-size:12px;font-weight:800;color:var(--primary);background:var(--primary-light);border-radius:7px;padding:6px 0;text-align:center">${grade}</div>
+              <input type="number" min="0" max="100" value="${n.kktp_2025 ?? ''}" placeholder="-" id="${rowId}_25" style="width:100%;padding:7px 4px;text-align:center;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:700;color:var(--text);background:var(--bg)">
+              <input type="number" min="0" max="100" value="${n.kktp_2026 ?? ''}" placeholder="-" id="${rowId}_26" style="width:100%;padding:7px 4px;text-align:center;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:700;color:var(--text);background:var(--bg)">
+              <button onclick="kurSimpanKKTPRow(${k.urutan},'${grade}','${rowId}')" title="Simpan" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:7px;width:34px;height:34px;font-size:14px;cursor:pointer">💾</button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--danger)">❌ ${e.message}<br><small>Pastikan tabel kktp_mapel & kktp_nilai sudah dibuat</small></div>`;
+  }
 }
 
-function kurShowModalKKM(data) {
-  if (!data) {
-    document.getElementById('kurKKMModalTitle').textContent='➕ Tambah KKM';
-    document.getElementById('kurKKMEditId').value='';
-    ['kurKKMMapel','kurKKMNilai','kurKKMCatatan'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-    document.getElementById('kurKKMKelas').value='';
-    document.getElementById('kurKKMTP').value=CONFIG.tahunPelajaran||'';
-    document.getElementById('kurKKMSmt').value='Ganjil';
-  } else {
-    document.getElementById('kurKKMModalTitle').textContent='✏️ Edit KKM';
-    document.getElementById('kurKKMEditId').value=data.id;
-    document.getElementById('kurKKMMapel').value=data.mapel||'';
-    document.getElementById('kurKKMKelas').value=data.kelas||'';
-    document.getElementById('kurKKMNilai').value=data.kkm||'';
-    document.getElementById('kurKKMTP').value=data.tahun_pelajaran||'';
-    document.getElementById('kurKKMSmt').value=data.semester||'Ganjil';
-    document.getElementById('kurKKMCatatan').value=data.catatan||'';
+async function kurSimpanKKTPRow(urutan, grade, rowId) {
+  const v25 = document.getElementById(`${rowId}_25`)?.value;
+  const v26 = document.getElementById(`${rowId}_26`)?.value;
+  const payload = {
+    urutan, grade,
+    kktp_2025: v25 !== '' ? parseInt(v25) : null,
+    kktp_2026: v26 !== '' ? parseInt(v26) : null,
+    user_id: currentUser?.id || null,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const { error } = await db.from('kktp_nilai').upsert(payload, { onConflict: 'urutan,grade' });
+    if (error) throw error;
+    toast(`✅ KKTP Kelas ${grade} tersimpan`, 'success');
+  } catch(e) {
+    toast('Gagal: ' + e.message, 'error');
   }
-  document.getElementById('kurModalKKM').style.display='block';
 }
-async function kurEditKKM(id){const{data}=await db.from('kkm_mapel').select('*').eq('id',id).single();if(data)kurShowModalKKM(data);}
-async function kurSimpanKKM(){
-  const mapel=document.getElementById('kurKKMMapel')?.value.trim();
-  const kelas=document.getElementById('kurKKMKelas')?.value;
-  const nilai=parseInt(document.getElementById('kurKKMNilai')?.value);
-  if(!mapel)return toast('Mapel wajib diisi','error');
-  if(!kelas)return toast('Kelas wajib dipilih','error');
-  if(!nilai||nilai<0||nilai>100)return toast('Nilai KKM 0-100','error');
-  const editId=document.getElementById('kurKKMEditId').value;
-  const payload={mapel,kelas,kkm:nilai,tahun_pelajaran:document.getElementById('kurKKMTP')?.value.trim()||null,semester:document.getElementById('kurKKMSmt')?.value||'Ganjil',catatan:document.getElementById('kurKKMCatatan')?.value.trim()||null,user_id:currentUser?.id||null};
-  const btn=document.getElementById('kurKKMSimpanBtn');btn.disabled=true;btn.textContent='⏳...';
-  try{const{error}=editId?await db.from('kkm_mapel').update(payload).eq('id',editId):await db.from('kkm_mapel').insert(payload);if(error)throw error;toast(editId?'✅ Diperbarui!':'✅ Disimpan!','success');kurCloseModal('kurModalKKM');kurLoadKKM();}
-  catch(e){toast('Gagal: '+e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='💾 Simpan';}
+
+// Ubah nama mapel — khusus admin (dwicandra)
+function kurRenameMapel(urutan, headId) {
+  if (currentUser?.email !== ADMIN_EMAIL) { toast('🔒 Hanya admin yang bisa mengubah nama mapel', 'warning'); return; }
+  const namaEl = document.getElementById(`${headId}_nama`);
+  if (!namaEl) return;
+  const namaLama = namaEl.textContent;
+  const namaBaru = prompt('Ubah nama mata pelajaran:', namaLama);
+  if (namaBaru === null || !namaBaru.trim() || namaBaru.trim() === namaLama) return;
+  kurSimpanNamaMapel(urutan, namaBaru.trim(), namaEl);
 }
-async function kurHapusKKM(id){if(!confirm('Hapus data KKM ini?'))return;try{await db.from('kkm_mapel').delete().eq('id',id);toast('Dihapus','success');kurLoadKKM();}catch(e){toast('Gagal: '+e.message,'error');}}
+async function kurSimpanNamaMapel(urutan, namaBaru, namaEl) {
+  try {
+    const { error } = await db.from('kktp_mapel').upsert(
+      { urutan, nama_mapel: namaBaru, updated_at: new Date().toISOString() },
+      { onConflict: 'urutan' }
+    );
+    if (error) throw error;
+    namaEl.textContent = namaBaru;
+    toast('✅ Nama mapel diperbarui', 'success');
+  } catch(e) {
+    toast('Gagal: ' + e.message, 'error');
+  }
+}
 
 // ── KALENDER AKADEMIK ─────────────────────────────────────────
 async function kurLoadKalender() {
