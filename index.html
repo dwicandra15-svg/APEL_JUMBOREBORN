@@ -12560,7 +12560,10 @@ function chatAutoResize(el){
       <button class="pk-tab-btn" onclick="pkSwitchJangka('panjang',this)">🎯 Panjang</button>
     </div>
     <button onclick="pkTambahProgram()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">➕ Tambah Program</button>
-    <button onclick="pkGenerateLaporan()" style="width:100%;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:16px;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">📄 Generate Laporan Program</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="pkGenerateLaporan()" style="flex:1;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;border-radius:12px;padding:10px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px">📋 Laporan Perencanaan</button>
+      <button onclick="pkGenerateLaporanPelaksanaan()" style="flex:1;background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px">📸 Laporan Pelaksanaan</button>
+    </div>
     <div id="pkProgramList"><div style="text-align:center;padding:40px;color:var(--text-light)">⏳ Memuat...</div></div>
   </div>
 </div>
@@ -16028,11 +16031,31 @@ async function pkGenerateLaporan() {
     window._pkLaporanPrograms = programs;
     window._pkLaporanCfg = cfg;
     window._pkLaporanJangkaLabel = jangkaLabel;
-    pkShowSetupModal(programs.length, cfg.label + ' - ' + jangkaLabel);
+    window._pkLaporanJenis = 'perencanaan';
+    pkShowSetupModal(programs.length, cfg.label + ' - ' + jangkaLabel, 'Perencanaan');
   } catch(e) { toast('Gagal: '+e.message,'error'); }
 }
 
-function pkShowSetupModal(total, label) {
+async function pkGenerateLaporanPelaksanaan() {
+  if (!db) return;
+  const cfg = PK_WAKA_CFG[pkCurrentWaka];
+  const jangkaLabel = {pendek:'Jangka Pendek',menengah:'Jangka Menengah',panjang:'Jangka Panjang'}[pkCurrentJangka];
+  try {
+    const { data: programs } = await db.from('program_sekolah').select('*')
+      .eq('waka', pkCurrentWaka).eq('jangka', pkCurrentJangka)
+      .in('status', ['berjalan','selesai'])
+      .order('tanggal_mulai');
+    if (!programs || programs.length === 0) { toast('Belum ada program yang sedang berjalan / selesai','error'); return; }
+    window._pkLaporanPrograms = programs;
+    window._pkLaporanCfg = cfg;
+    window._pkLaporanJangkaLabel = jangkaLabel;
+    window._pkLaporanJenis = 'pelaksanaan';
+    pkShowSetupModal(programs.length, cfg.label + ' - ' + jangkaLabel, 'Pelaksanaan');
+  } catch(e) { toast('Gagal: '+e.message,'error'); }
+}
+
+function pkShowSetupModal(total, label, jenisLap) {
+  jenisLap = jenisLap || 'Perencanaan';
   const savedKota = localStorage.getItem('apel_laporan_kota') || '';
   const savedNama = localStorage.getItem('apel_laporan_nama_ttd') || CONFIG.guru || '';
   const savedNip = localStorage.getItem('apel_laporan_nip_ttd') || '';
@@ -16041,7 +16064,7 @@ function pkShowSetupModal(total, label) {
   modal.id = 'pkSetupDlg';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
   modal.innerHTML = `<div style="background:var(--card);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">📄 Setup Laporan ${label}</div>
+    <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">📄 Setup Laporan ${jenisLap} — ${label}</div>
     <div style="font-size:12px;color:var(--text-light);margin-bottom:16px">${total} program ditemukan.</div>
 
     <div style="font-size:11px;font-weight:800;color:var(--primary);margin:12px 0 8px">🏫 KOP SURAT</div>
@@ -16122,11 +16145,16 @@ async function pkLanjutkanLaporan() {
   const programs = window._pkLaporanPrograms;
   const cfg = window._pkLaporanCfg;
   const jangkaLabel = window._pkLaporanJangkaLabel;
+  const jenis = window._pkLaporanJenis || 'perencanaan';
   const ids = programs.map(p=>p.id);
   const { data: laporans } = await db.from('laporan_program').select('*').in('program_id', ids).order('tanggal_laporan');
 
-  const html = pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel, {tp,kota,sekolah,alamat,npsn,logo,namaTTD,nipTTD});
-  pkShowLaporanModal(html, programs.length, cfg.label + ' - ' + jangkaLabel);
+  const setupData = {tp,kota,sekolah,alamat,npsn,logo,namaTTD,nipTTD};
+  const html = jenis === 'pelaksanaan'
+    ? pkBuildLaporanPelaksanaanHTML(programs, laporans||[], cfg, jangkaLabel, setupData)
+    : pkBuildLaporanHTML(programs, laporans||[], cfg, jangkaLabel, setupData);
+  const labelJenis = jenis === 'pelaksanaan' ? 'Pelaksanaan' : 'Perencanaan';
+  pkShowLaporanModal(html, programs.length, `Laporan ${labelJenis} - ${cfg.label} - ${jangkaLabel}`);
 }
 
 function pkShowLaporanModal(html, total, label) {
@@ -16269,6 +16297,125 @@ function pkBuildLaporanHTML(programs, laporans, cfg, jangkaLabel, setup) {
       berjalan dengan baik. Dari ${programs.length} program yang direncanakan, 
       ${terlaksana>0?`<strong>${terlaksana} program telah berhasil terlaksana</strong> sesuai rencana`:'program belum ada yang selesai'}. 
       Diharapkan seluruh program dapat diselesaikan dengan baik demi peningkatan kualitas layanan pendidikan.
+    </p>
+  </div>
+  <div class="footer">
+    <div style="float:right;text-align:center;margin-top:10px">
+      <p style="margin:0">${kota}, ${now}</p>
+      <p style="margin:4px 0">Wakil Kepala Sekolah Bidang ${cfg.label}</p>
+      <br><br><br>
+      <p style="margin:0;border-bottom:1.5px solid #1e293b;display:inline-block;padding:0 20px 3px;font-weight:700">${namaTTD||'.................................'}</p>
+      <p style="margin:4px 0 0">NIP. ${nipTTD||'.................................'}</p>
+    </div>
+    <div style="clear:both"></div>
+  </div>
+  </body></html>`;
+}
+
+function pkBuildLaporanPelaksanaanHTML(programs, laporans, cfg, jangkaLabel, setup) {
+  setup = setup || {};
+  const school = setup.sekolah || CONFIG.school||'NAMA SEKOLAH';
+  const address = setup.alamat || CONFIG.address||'-';
+  const npsn = setup.npsn || CONFIG.npsn||'-';
+  const logo = setup.logo || CONFIG.logo || '';
+  const now = new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const tp = setup.tp || CONFIG.tahunPelajaran || '-';
+  const kota = setup.kota || 'Sampang';
+  const namaTTD = setup.namaTTD || CONFIG.guru || '';
+  const nipTTD = setup.nipTTD || '';
+
+  const selesai = programs.filter(p=>p.status==='selesai').length;
+  const berjalan = programs.filter(p=>p.status==='berjalan').length;
+
+  const narasi = `Laporan ini menyajikan detail pelaksanaan program kerja Wakil Kepala Sekolah Bidang <strong>${cfg.label}</strong>
+    untuk ${jangkaLabel} Tahun Pelajaran ${tp}, khusus untuk program yang <strong>sedang berjalan</strong> maupun
+    <strong>telah selesai</strong> dilaksanakan. Dari <strong>${programs.length} program</strong> yang ditampilkan,
+    sebanyak <strong>${selesai} program</strong> telah selesai dilaksanakan dan <strong>${berjalan} program</strong>
+    masih dalam proses pelaksanaan.
+    <br><br>
+    Setiap program dilengkapi dengan catatan pelaksanaan sebagai bentuk dokumentasi dan pertanggungjawaban kegiatan
+    yang telah dan sedang dilakukan.`;
+
+  const detailProgram = programs.map((p,i) => {
+    const lap = laporans.filter(l=>l.program_id===p.id);
+    const statusLabel = {berjalan:'Sedang Berjalan',selesai:'Selesai'}[p.status]||p.status;
+    const statusColor = p.status==='selesai' ? '#16a34a' : '#d97706';
+    const tglMulai = p.tanggal_mulai?new Date(p.tanggal_mulai).toLocaleDateString('id-ID'):'-';
+    const tglSelesai = p.tanggal_selesai?new Date(p.tanggal_selesai).toLocaleDateString('id-ID'):'-';
+
+    const lapHTML = lap.length > 0 ? lap.map(l => {
+      const tglLap = l.tanggal_laporan ? new Date(l.tanggal_laporan).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '-';
+      return `<div style="border-left:3px solid #1e3a8a;padding:8px 12px;margin-bottom:8px;background:#f8fafc">
+        <div style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-bottom:4px">📅 ${tglLap}</div>
+        <div style="font-size:11px;line-height:1.6;color:#334155;margin-bottom:6px">${l.catatan||'-'}</div>
+        ${l.foto_base64 ? `<img src="${l.foto_base64}" style="width:100%;max-width:320px;border-radius:6px;margin-bottom:6px;display:block">` : ''}
+        ${l.nama_pelapor ? `<div style="font-size:10px;color:#64748b">✍️ Dilaporkan oleh: ${l.nama_pelapor}</div>` : ''}
+      </div>`;
+    }).join('') : `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:8px 0">Belum ada catatan pelaksanaan untuk program ini.</div>`;
+
+    return `<div style="margin-bottom:20px;page-break-inside:avoid">
+      <div style="background:#1e3a8a;color:#fff;padding:8px 14px;font-size:12px;font-weight:bold;display:flex;justify-content:space-between;align-items:center">
+        <span>${i+1}. ${p.nama_program}</span>
+        <span style="background:${statusColor};padding:2px 10px;border-radius:10px;font-size:10px">${statusLabel}</span>
+      </div>
+      <div style="border:1px solid #ddd;border-top:none;padding:12px 14px">
+        ${p.deskripsi ? `<div style="font-size:11px;color:#475569;margin-bottom:8px;font-style:italic">${p.deskripsi}</div>` : ''}
+        <div style="display:flex;gap:16px;font-size:11px;color:#475569;margin-bottom:10px;flex-wrap:wrap">
+          <span>📅 Mulai: <strong>${tglMulai}</strong></span>
+          <span>🏁 Target Selesai: <strong>${tglSelesai}</strong></span>
+          ${p.penanggung_jawab ? `<span>👤 PJ: <strong>${p.penanggung_jawab}</strong></span>` : ''}
+        </div>
+        <div style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-bottom:8px;border-top:1px dashed #cbd5e1;padding-top:8px">📝 CATATAN PELAKSANAAN (${lap.length})</div>
+        ${lapHTML}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body { font-family: 'Times New Roman', serif; margin: 0; padding: 0; font-size:12px; color:#1e293b; }
+    .kop { display:flex; align-items:center; gap:16px; padding:14px 24px; border-bottom:4px double #1e3a8a; margin-bottom:0; }
+    .kop-text { flex:1; text-align:center; }
+    h1.school { font-size:16px; font-weight:900; margin:0 0 3px; text-transform:uppercase; }
+    h2.school { font-size:12px; font-weight:bold; margin:0 0 2px; }
+    h3.school { font-size:11px; margin:0; font-weight:normal; }
+    .judul-lap { text-align:center; padding:16px 24px 10px; }
+    .judul-lap h2 { font-size:14px; font-weight:900; text-transform:uppercase; margin:0 0 4px; }
+    .judul-lap p { font-size:12px; margin:2px 0; }
+    .section { padding:10px 24px; margin-bottom:8px; }
+    .section-title { font-size:13px; font-weight:bold; margin-bottom:6px; background:#1e3a8a; color:#fff; padding:6px 12px; }
+    .footer { padding:16px 24px; font-size:11px; }
+    @page { margin:2cm; }
+  </style></head><body>
+  <div class="kop">
+    ${logo?`<img src="${logo}" style="width:70px;height:70px;object-fit:cover">`:'<div style="width:70px;height:70px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px">🏫</div>'}
+    <div class="kop-text">
+      <h1 class="school">${school}</h1>
+      <h2 class="school">Naskah Laporan Pelaksanaan Program Kerja Wakasek</h2>
+      <h3 class="school">${address} &nbsp;|&nbsp; NPSN: ${npsn}</h3>
+    </div>
+  </div>
+  <div class="judul-lap">
+    <h2>LAPORAN PELAKSANAAN PROGRAM KERJA</h2>
+    <p>Wakil Kepala Sekolah Bidang <strong>${cfg.label}</strong></p>
+    <p>${jangkaLabel} &nbsp;|&nbsp; Tahun Pelajaran ${tp}</p>
+    <p style="font-size:11px;color:#64748b">Dicetak pada: ${now}</p>
+  </div>
+  <div class="section">
+    <div class="section-title">I. PENDAHULUAN</div>
+    <p style="text-align:justify;line-height:1.8;font-size:12px">${narasi}</p>
+  </div>
+  <div class="section">
+    <div class="section-title">II. DETAIL PELAKSANAAN PROGRAM</div>
+    ${detailProgram}
+  </div>
+  <div class="section">
+    <div class="section-title">III. KESIMPULAN</div>
+    <p style="text-align:justify;line-height:1.8;font-size:12px">
+      Pelaksanaan program kerja Wakasek Bidang ${cfg.label} ${jangkaLabel} Tahun Pelajaran ${tp}
+      berjalan sesuai dengan catatan pelaksanaan yang terdokumentasi di atas. Dari ${programs.length} program yang
+      sedang berjalan/selesai, ${selesai} program telah tuntas dilaksanakan. Diharapkan program yang masih berjalan
+      dapat diselesaikan dengan baik sesuai target yang telah ditetapkan.
     </p>
   </div>
   <div class="footer">
