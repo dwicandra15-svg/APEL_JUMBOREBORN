@@ -12615,19 +12615,14 @@ function chatAutoResize(el){
       <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Catatan Pelaksanaan *</label><textarea id="pkLapCatatan" rows="4" class="form-control" placeholder="Deskripsi pelaksanaan, kendala, hasil..." style="resize:vertical"></textarea></div>
       <div><label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Nama Pelapor</label><input type="text" id="pkLapPelapor" class="form-control" placeholder="Nama guru pelapor..."></div>
       <div>
-        <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">📸 Foto Kegiatan</label>
+        <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">📸 Foto Kegiatan <span style="font-weight:400;color:var(--text-light)">(bisa lebih dari 1, maks 4 foto)</span></label>
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <button onclick="pkAmbilFoto()" class="btn btn-outline" style="flex:1;font-size:12px;padding:8px">📷 Kamera</button>
           <button onclick="document.getElementById('pkFotoFile').click()" class="btn btn-outline" style="flex:1;font-size:12px;padding:8px">🖼️ Galeri</button>
         </div>
-        <input type="file" id="pkFotoFile" accept="image/*" style="display:none" onchange="pkHandleFoto(this)">
+        <input type="file" id="pkFotoFile" accept="image/*" multiple style="display:none" onchange="pkHandleFoto(this)">
         <input type="file" id="pkFotoCamera" accept="image/*" capture="environment" style="display:none" onchange="pkHandleFoto(this)">
-        <div id="pkFotoPreview" style="display:none;margin-top:8px;position:relative">
-          <img id="pkFotoImg" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">
-          <button onclick="pkHapusFoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px">✕</button>
-          <div id="pkFotoInfo" style="font-size:10px;color:var(--text-light);margin-top:4px;text-align:center"></div>
-        </div>
-        <input type="hidden" id="pkFotoBase64">
+        <div id="pkFotoPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
       </div>
     </div>
     <input type="hidden" id="pkLapProgramId">
@@ -14773,7 +14768,7 @@ async function pkBukaProgram(id) {
             <button onclick="pkHapusLaporan('${lap.id}','${p.id}')" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer">🗑️</button>
           </div>
           <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">${lap.catatan}</div>
-          ${lap.foto_base64?`<img src="${lap.foto_base64}" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;margin-bottom:8px">`:''}
+          ${(lap.foto_list && lap.foto_list.length > 0) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${lap.foto_list.map(f=>`<img src="${f}" style="width:calc(50% - 3px);height:110px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="window.open('${f}','_blank')">`).join('')}</div>` : (lap.foto_base64?`<img src="${lap.foto_base64}" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;margin-bottom:8px">`:'')}
           ${lap.nama_pelapor?`<div style="font-size:10px;color:#94a3b8">✍️ ${lap.nama_pelapor}</div>`:''}
         </div>`).join('')
       : `<div style="text-align:center;padding:30px;color:var(--text-light);background:var(--card);border-radius:12px;border:1px solid var(--border)"><div style="font-size:28px;margin-bottom:8px">📝</div><div style="font-size:12px">Belum ada laporan pelaksanaan</div></div>`}
@@ -14873,7 +14868,8 @@ function pkBukaModalLaporan(programId, namaProg) {
   document.getElementById('pkLapTanggal').value = new Date().toISOString().slice(0,10);
   document.getElementById('pkLapCatatan').value = '';
   document.getElementById('pkLapPelapor').value = CONFIG.guru || '';
-  pkHapusFoto();
+  pkFotoList = [];
+  pkRenderFotoPreview();
   document.getElementById('pkModalLaporan').style.display = 'block';
 }
 
@@ -14887,7 +14883,8 @@ async function pkSimpanLaporan() {
   const payload = {
     program_id: programId, tanggal_laporan: tanggal, catatan,
     nama_pelapor: document.getElementById('pkLapPelapor').value.trim() || null,
-    foto_base64: document.getElementById('pkFotoBase64').value || null,
+    foto_base64: pkFotoList.length > 0 ? pkFotoList[0] : null, // kompat lama: foto pertama
+    foto_list: pkFotoList.length > 0 ? pkFotoList : null,
     user_id: currentUser?.id || null
   };
   try {
@@ -14908,35 +14905,62 @@ async function pkHapusLaporan(lapId, programId) {
   } catch(e) { toast('Gagal: ' + e.message, 'error'); }
 }
 
+// ── Foto Kegiatan: multi-upload (maks 4) dengan kompresi ──────
+let pkFotoList = [];
+const PK_FOTO_MAX = 4;
+
 function pkAmbilFoto() { document.getElementById('pkFotoCamera').click(); }
+
 function pkHandleFoto(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height, maxPx = 1200;
-      if (w > maxPx || h > maxPx) { if (w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;} }
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      let q = 0.8, b64 = canvas.toDataURL('image/jpeg', q);
-      while (b64.length > 400*1024*1.37 && q > 0.3) { q-=0.1; b64=canvas.toDataURL('image/jpeg',q); }
-      document.getElementById('pkFotoImg').src = b64;
-      document.getElementById('pkFotoBase64').value = b64;
-      document.getElementById('pkFotoPreview').style.display = 'block';
-      document.getElementById('pkFotoInfo').textContent = `📦 ~${Math.round(b64.length*0.75/1024)} KB (q=${Math.round(q*100)}%)`;
+  const files = Array.from(input.files || []); if (files.length === 0) return;
+  const sisaSlot = PK_FOTO_MAX - pkFotoList.length;
+  if (sisaSlot <= 0) { toast(`Maksimal ${PK_FOTO_MAX} foto`, 'warning'); input.value=''; return; }
+  const filesToProcess = files.slice(0, sisaSlot);
+  if (files.length > sisaSlot) toast(`Hanya ${sisaSlot} foto pertama yang ditambahkan (maks ${PK_FOTO_MAX})`, 'warning');
+
+  let processed = 0;
+  filesToProcess.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height, maxPx = 1200;
+        if (w > maxPx || h > maxPx) { if (w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;} }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        let q = 0.8, b64 = canvas.toDataURL('image/jpeg', q);
+        while (b64.length > 400*1024*1.37 && q > 0.3) { q-=0.1; b64=canvas.toDataURL('image/jpeg',q); }
+        pkFotoList.push(b64);
+        processed++;
+        pkRenderFotoPreview();
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
   input.value = '';
 }
-function pkHapusFoto() {
-  document.getElementById('pkFotoBase64').value = '';
-  document.getElementById('pkFotoPreview').style.display = 'none';
-  document.getElementById('pkFotoImg').src = '';
+
+function pkRenderFotoPreview() {
+  const el = document.getElementById('pkFotoPreview');
+  if (!el) return;
+  el.innerHTML = pkFotoList.map((b64, i) => `
+    <div style="position:relative;width:calc(50% - 4px)">
+      <img src="${b64}" style="width:100%;height:100px;object-fit:cover;border-radius:10px;display:block">
+      <button onclick="pkHapusSatuFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px">✕</button>
+      <div style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:2px 6px;border-radius:6px">${Math.round(b64.length*0.75/1024)} KB</div>
+    </div>`).join('') + (pkFotoList.length < PK_FOTO_MAX ? `
+    <div style="width:calc(50% - 4px);height:100px;border:1.5px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:11px;text-align:center">
+      ${pkFotoList.length}/${PK_FOTO_MAX}<br>foto
+    </div>` : '');
 }
+
+function pkHapusSatuFoto(idx) {
+  pkFotoList.splice(idx, 1);
+  pkRenderFotoPreview();
+}
+
 function pkCloseModal(id) { document.getElementById(id).style.display = 'none'; }
 // ════════════════════ END PROGKOL ════════════════════
 
@@ -16348,7 +16372,7 @@ function pkBuildLaporanPelaksanaanHTML(programs, laporans, cfg, jangkaLabel, set
       return `<div style="border-left:3px solid #1e3a8a;padding:8px 12px;margin-bottom:8px;background:#f8fafc">
         <div style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-bottom:4px">📅 ${tglLap}</div>
         <div style="font-size:11px;line-height:1.6;color:#334155;margin-bottom:6px">${l.catatan||'-'}</div>
-        ${l.foto_base64 ? `<img src="${l.foto_base64}" style="width:100%;max-width:320px;border-radius:6px;margin-bottom:6px;display:block">` : ''}
+        ${(l.foto_list && l.foto_list.length > 0) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${l.foto_list.map(f=>`<img src="${f}" style="width:calc(50% - 3px);max-width:155px;border-radius:6px;display:block">`).join('')}</div>` : (l.foto_base64 ? `<img src="${l.foto_base64}" style="width:100%;max-width:320px;border-radius:6px;margin-bottom:6px;display:block">` : '')}
         ${l.nama_pelapor ? `<div style="font-size:10px;color:#64748b">✍️ Dilaporkan oleh: ${l.nama_pelapor}</div>` : ''}
       </div>`;
     }).join('') : `<div style="font-size:11px;color:#94a3b8;font-style:italic;padding:8px 0">Belum ada catatan pelaksanaan untuk program ini.</div>`;
