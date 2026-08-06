@@ -4829,13 +4829,13 @@ async function hapusSemuaSiswa() {
 
   // Konfirmasi berlapis
   const pesan1 = kelasId
-    ? `⚠️ Anda akan menghapus SEMUA siswa di ${kelasNama}.\n\nLanjutkan?`
-    : `⚠️ PERINGATAN!\n\nAnda akan menghapus SELURUH data siswa dari semua kelas.\n\nTindakan ini TIDAK DAPAT DIBATALKAN!\n\nLanjutkan?`;
+    ? `⚠️ Anda akan menghapus SEMUA siswa di ${kelasNama}.\n\n❗ Nilai, Absensi, dan Bimbingan Wali milik siswa-siswa ini JUGA AKAN IKUT TERHAPUS (tidak bisa dipulihkan).\n\nLanjutkan?`
+    : `⚠️ PERINGATAN KERAS!\n\nAnda akan menghapus SELURUH data siswa dari semua kelas.\n\n❗ Semua riwayat NILAI, ABSENSI, dan BIMBINGAN WALI yang terhubung ke siswa-siswa ini JUGA AKAN IKUT TERHAPUS PERMANEN.\n\nTindakan ini TIDAK DAPAT DIBATALKAN!\n\nJika hanya ingin memperbarui data siswa (misal update kelas/NIS), gunakan tombol "Import dari Excel" — sistem akan otomatis memperbarui data yang sudah ada tanpa menghapus riwayat Nilai/Absensi.\n\nLanjutkan hapus semua?`;
   if (!confirm(pesan1)) return;
 
   // Konfirmasi kedua untuk hapus semua
   if (!kelasId) {
-    const pesan2 = confirm('Ketik OK untuk konfirmasi hapus semua data siswa.');
+    const pesan2 = confirm('KONFIRMASI TERAKHIR:\n\nNilai dan Absensi seluruh siswa akan ikut hilang permanen. Yakin lanjutkan?');
     if (!pesan2) return;
   }
 
@@ -4988,8 +4988,11 @@ async function simpanAbsen() {
     user_id: currentUser.id
   }));
   if (!rows.length) return toast('Tidak ada siswa', 'error');
-  // Upsert (delete then insert)
-  await db.from('absensi').delete().eq('tanggal', tanggal).eq('kelas_id', kelasId);
+  // Upsert (delete then insert) — filter mapel_id juga agar tidak menghapus absensi mapel lain
+  let delQuery = db.from('absensi').delete().eq('tanggal', tanggal).eq('kelas_id', kelasId);
+  if (mapelId) { delQuery = delQuery.eq('mapel_id', mapelId); }
+  else { delQuery = delQuery.is('mapel_id', null); }
+  await delQuery;
   const { error } = await db.from('absensi').insert(rows);
   if (error) return toast(error.message, 'error');
   toast('Absensi disimpan!', 'success');
@@ -6106,9 +6109,19 @@ async function uploadExcelSiswa(input) {
       }
       
       document.getElementById('uploadStatusText').textContent = `Memproses ${dataRows.length} siswa...`;
+
+      // Ambil SEMUA siswa existing untuk pencocokan (update, bukan tambah baru)
+      // Cocok berdasarkan NIS (prioritas), fallback ke Nama+Kelas kalau NIS kosong
+      const { data: existingSiswa } = await db.from('siswa').select('*');
+      const byNis = {};
+      const byNamaKelas = {};
+      (existingSiswa || []).forEach(s => {
+        if (s.nis) byNis[String(s.nis).trim()] = s;
+        const key = `${String(s.nama).trim().toLowerCase()}_${s.kelas_id}`;
+        byNamaKelas[key] = s;
+      });
       
-      let success = 0;
-      let failed = 0;
+      let success = 0, updated = 0, failed = 0;
       const errors = [];
       
       for (let i = 0; i < dataRows.length; i++) {
@@ -6131,14 +6144,13 @@ async function uploadExcelSiswa(input) {
         if (!kelas && kelasNama) {
           errors.push(`Baris ${i+2}: Kelas "${kelasNama}" tidak ditemukan`);
           failed++;
-          // Update progress
           const pct = Math.round((i+1) / dataRows.length * 100);
           document.getElementById('uploadProgressBar').style.width = pct + '%';
           document.getElementById('uploadCount').textContent = `${i+1}/${dataRows.length}`;
           continue;
         }
         
-        const insertRow = {
+        const rowData = {
           nis: nisn,
           nama: nama,
           kelas_id: kelas ? kelas.id : null,
@@ -6146,8 +6158,24 @@ async function uploadExcelSiswa(input) {
           bimbingan: bimbingan,
           user_id: currentUser.id
         };
-        
-        const { error } = await db.from('siswa').insert(insertRow);
+
+        // Cari siswa existing: prioritas NIS, fallback Nama+Kelas
+        let existing = nisn ? byNis[nisn] : null;
+        if (!existing) {
+          const key = `${nama.toLowerCase()}_${kelas ? kelas.id : null}`;
+          existing = byNamaKelas[key];
+        }
+
+        let error;
+        if (existing) {
+          // UPDATE — ID tetap sama, riwayat Nilai/Absensi/Bimbingan tetap terhubung
+          ({ error } = await db.from('siswa').update(rowData).eq('id', existing.id));
+          if (!error) updated++;
+        } else {
+          // INSERT — siswa baru yang belum pernah ada
+          ({ error } = await db.from('siswa').insert(rowData));
+        }
+
         if (error) { 
           failed++; 
           errors.push(`Baris ${i+2}: ${nama} - ${error.message}`);
@@ -6159,12 +6187,13 @@ async function uploadExcelSiswa(input) {
         const pct = Math.round((i+1) / dataRows.length * 100);
         document.getElementById('uploadProgressBar').style.width = pct + '%';
         document.getElementById('uploadCount').textContent = `${i+1}/${dataRows.length}`;
-        document.getElementById('uploadStatusText').textContent = `Mengupload: ${nama}...`;
+        document.getElementById('uploadStatusText').textContent = `Memproses: ${nama}...`;
       }
       
       // Done
       document.getElementById('uploadProgressBar').style.width = '100%';
-      document.getElementById('uploadStatusText').textContent = `✅ Selesai! ${success} siswa berhasil, ${failed} gagal.`;
+      const tambahBaru = success - updated;
+      document.getElementById('uploadStatusText').textContent = `✅ Selesai! ${tambahBaru} siswa baru, ${updated} diperbarui, ${failed} gagal.`;
       
       if (errors.length > 0) {
         console.warn('Upload errors:', errors);
@@ -6173,7 +6202,7 @@ async function uploadExcelSiswa(input) {
         }, 500);
       }
       
-      toast(`✅ ${success} siswa berhasil diimport!`, 'success');
+      toast(`✅ ${tambahBaru} siswa baru ditambahkan, ${updated} diperbarui (data lama tetap aman)`, 'success');
       
       // Reload data
       await loadSiswaAll();
