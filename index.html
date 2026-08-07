@@ -3325,6 +3325,15 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
 
+      <div class="card admin-only-field" style="margin-top:20px;border:1.5px solid #86efac">
+        <div class="card-header"><span class="card-title">💾 Backup Data</span></div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;line-height:1.6">
+          Unduh cadangan seluruh data (Siswa, Kelas, Absensi, Nilai, Jurnal, Bimbingan, Progkol, Kurikulum, UMMI, dll) ke satu file. Simpan file ini di tempat aman (Google Drive, dsb). Sangat disarankan backup rutin, misalnya tiap akhir bulan.
+        </div>
+        <button onclick="backupSemuaData()" id="btnBackupData" style="width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px">💾 Backup Semua Data Sekarang</button>
+        <div id="backupStatus" style="font-size:11px;color:var(--text-light);margin-top:8px;text-align:center"></div>
+      </div>
+
       <div class="card admin-only-field" style="margin-top:20px">
         <div class="card-header"><span class="card-title">📚 Manajemen Mata Pelajaran</span></div>
         <div style="display:flex;gap:10px;margin-bottom:14px">
@@ -4167,6 +4176,67 @@ async function doRegister() {
     if (error) throw error;
     toast('Pendaftaran berhasil! Cek email untuk verifikasi.', 'success');
   } catch(e) { toast(e.message || 'Gagal daftar', 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// BACKUP DATA — Unduh semua tabel jadi satu file JSON
+// ════════════════════════════════════════════════════════════
+const BACKUP_TABLES = [
+  'siswa','kelas','mapel','absensi','nilai','jurnal','bimbingan',
+  'integrasi','ummi_tingkatan','ummi','kinerja',
+  'jadwal_mgmp','program_sekolah','laporan_program','modul_sekolah',
+  'data_guru','guru_wali_siswa','jadwal_mengajar','supervisi_kelas',
+  'pkg_guru','kktp_mapel','kktp_nilai','kalender_akademik',
+  'ummi_progress_jilid','ummi_prestasi','ummi_munaqasyah','ummi_sertifikat',
+  'app_settings'
+];
+
+async function backupSemuaData() {
+  if (!db) return toast('Supabase belum tersambung', 'error');
+  const btn = document.getElementById('btnBackupData');
+  const status = document.getElementById('backupStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyiapkan backup...';
+
+  const result = { _meta: {
+    dibuat_pada: new Date().toISOString(),
+    sekolah: CONFIG.school || '-',
+    tahun_pelajaran: CONFIG.tahunPelajaran || '-',
+    catatan: 'File ini adalah cadangan seluruh data APEL JUMBO. Simpan di tempat aman. Untuk restore, kirim file ini ke developer/Claude untuk dipulihkan ke Supabase.'
+  }};
+  let totalRows = 0;
+  let gagal = [];
+
+  for (let i = 0; i < BACKUP_TABLES.length; i++) {
+    const t = BACKUP_TABLES[i];
+    status.textContent = `⏳ Mengambil data: ${t} (${i+1}/${BACKUP_TABLES.length})`;
+    try {
+      const { data, error } = await db.from(t).select('*');
+      if (error) throw error;
+      result[t] = data || [];
+      totalRows += (data || []).length;
+    } catch(e) {
+      result[t] = [];
+      gagal.push(t);
+    }
+  }
+
+  const json = JSON.stringify(result, null, 0);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const tgl = new Date().toISOString().slice(0,10);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `APEL_JUMBO_Backup_${tgl}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  const ukuranMB = (json.length / 1024 / 1024).toFixed(2);
+  status.innerHTML = `✅ Backup selesai! <strong>${totalRows} baris data</strong> dari ${BACKUP_TABLES.length} tabel (${ukuranMB} MB).${gagal.length>0 ? `<br><span style="color:#dc2626">⚠️ ${gagal.length} tabel gagal diambil: ${gagal.join(', ')}</span>` : ''}`;
+  toast(`✅ Backup berhasil diunduh! (${totalRows} baris data)`, 'success');
+
+  btn.disabled = false;
+  btn.textContent = '💾 Backup Semua Data Sekarang';
 }
 
 async function doLogout() {
