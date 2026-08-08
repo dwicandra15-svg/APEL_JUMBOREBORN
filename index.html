@@ -3061,10 +3061,13 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Filter Kategori</label>
+            <label class="form-label">Filter Aspek Pendampingan</label>
             <select id="filterBimbinganKat" class="form-control" onchange="loadBimbingan()">
-              <option value="">Semua Kategori</option>
-              <option>Akademik</option><option>Sosial</option><option>Pribadi</option><option>Karir</option>
+              <option value="">Semua Aspek</option>
+              <option>Pendampingan Akademik</option>
+              <option>Pengembangan Kompetensi</option>
+              <option>Pengembangan Keterampilan</option>
+              <option>Pengembangan Karakter</option>
             </select>
           </div>
         </div>
@@ -3791,6 +3794,9 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="editBimbinganId">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#1e40af">
+        📘 Sesuai Permendikdasmen No. 11 Tahun 2025 Pasal 9 — pendampingan Guru Wali mencakup 4 aspek: akademik, kompetensi, keterampilan, dan karakter murid secara berkelanjutan.
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Nama Murid</label>
@@ -3802,18 +3808,33 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Kategori</label>
+        <label class="form-label">Aspek Pendampingan *</label>
         <select id="bimbinganKat" class="form-control">
-          <option>Akademik</option><option>Sosial</option><option>Pribadi</option><option>Karir</option>
+          <option value="Pendampingan Akademik">📚 Pendampingan Akademik</option>
+          <option value="Pengembangan Kompetensi">🧩 Pengembangan Kompetensi</option>
+          <option value="Pengembangan Keterampilan">🛠️ Pengembangan Keterampilan</option>
+          <option value="Pengembangan Karakter">🌱 Pengembangan Karakter</option>
         </select>
+        <small style="color:var(--text-light);font-size:11px">Pilih salah satu aspek utama sesuai Pasal 9 ayat (2)</small>
       </div>
       <div class="form-group">
-        <label class="form-label">Hasil Konseling / Masalah</label>
-        <textarea id="bimbinganMasalah" class="form-control" placeholder="Uraikan masalah atau hasil konseling..."></textarea>
+        <label class="form-label">Uraian Kondisi / Perkembangan Murid</label>
+        <textarea id="bimbinganMasalah" class="form-control" placeholder="Uraikan kondisi, kendala, atau perkembangan murid yang diamati pada aspek di atas..."></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Tindak Lanjut / Solusi</label>
-        <textarea id="bimbinganSolusi" class="form-control" placeholder="Tindak lanjut yang akan dilakukan..."></textarea>
+        <label class="form-label">Bentuk Pendampingan / Tindak Lanjut</label>
+        <textarea id="bimbinganSolusi" class="form-control" placeholder="Uraikan bentuk pendampingan yang diberikan dan rencana tindak lanjut..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kolaborasi dengan</label>
+        <select id="bimbinganKolaborasi" class="form-control">
+          <option value="">— Tidak ada —</option>
+          <option value="Guru BK">Guru Bimbingan dan Konseling (BK)</option>
+          <option value="Wali Kelas">Guru Wali Kelas</option>
+          <option value="Guru BK & Wali Kelas">Guru BK & Wali Kelas</option>
+          <option value="Orang Tua/Wali Murid">Orang Tua/Wali Murid</option>
+        </select>
+        <small style="color:var(--text-light);font-size:11px">Sesuai Pasal 9 ayat (5) — Guru Wali berkolaborasi dengan pihak terkait bila diperlukan</small>
       </div>
     </div>
     <div class="modal-footer">
@@ -5754,6 +5775,7 @@ async function loadBimbingan() {
   if (siswaId) query = query.eq('siswa_id', siswaId);
   if (kat) query = query.eq('kategori', kat);
   const { data } = await query;
+  const ASPEK_ICON = {'Pendampingan Akademik':'📚','Pengembangan Kompetensi':'🧩','Pengembangan Keterampilan':'🛠️','Pengembangan Karakter':'🌱'};
   document.getElementById('bimbinganList').innerHTML = (data||[]).length ? (data||[]).map(b=>`
     <div class="bimbingan-item">
       <div style="display:flex;justify-content:space-between">
@@ -5761,10 +5783,11 @@ async function loadBimbingan() {
           <div class="bimbingan-meta">
             <span>${b.tanggal}</span>
             <span class="badge badge-primary">${getSiswaName(b.siswa_id)}</span>
-            <span class="badge badge-warning">${b.kategori}</span>
+            <span class="badge badge-warning">${ASPEK_ICON[b.kategori]||''} ${b.kategori}</span>
           </div>
-          <div class="bimbingan-desc">Masalah: ${b.masalah||''}</div>
+          <div class="bimbingan-desc">Uraian: ${b.masalah||''}</div>
           <div class="bimbingan-sol">→ Tindak Lanjut: ${b.solusi||''}</div>
+          ${b.kolaborasi ? `<div style="font-size:11px;color:var(--text-light);margin-top:4px">🤝 Kolaborasi: ${b.kolaborasi}</div>` : ''}
         </div>
         <div><button class="btn btn-sm btn-danger" onclick="deleteBimbingan(${b.id})">🗑️</button></div>
       </div>
@@ -5778,8 +5801,10 @@ async function showAddBimbingan() {
   const sel = document.getElementById('bimbinganSiswa');
   sel.innerHTML = '<option value="">⏳ Memuat daftar siswa...</option>';
   document.getElementById('bimbinganTgl').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bimbinganKat').value = 'Pendampingan Akademik';
   document.getElementById('bimbinganMasalah').value = '';
   document.getElementById('bimbinganSolusi').value = '';
+  document.getElementById('bimbinganKolaborasi').value = '';
   openModal('modalBimbingan');
   await bimbinganPopulateSiswaWali();
 }
@@ -5843,6 +5868,7 @@ async function saveBimbingan() {
     kategori: document.getElementById('bimbinganKat').value,
     masalah: document.getElementById('bimbinganMasalah').value,
     solusi: document.getElementById('bimbinganSolusi').value,
+    kolaborasi: document.getElementById('bimbinganKolaborasi').value || null,
     user_id: currentUser.id
   };
   const { error } = await db.from('bimbingan').insert(row);
@@ -6450,9 +6476,11 @@ async function cetakBimbingan() {
   addKopToPdf(doc, kop);
   doc.setFontSize(12); doc.setFont('helvetica','bold');
   doc.text('CATATAN BIMBINGAN GURU WALI', 105, 40, {align:'center'});
+  doc.setFontSize(8); doc.setFont('helvetica','italic');
+  doc.text('Sesuai Permendikdasmen No. 11 Tahun 2025 tentang Pemenuhan Beban Kerja Guru', 105, 45, {align:'center'});
   const { data } = await db.from('bimbingan').select('*').order('tanggal',{ascending:false});
-  const rows = (data||[]).map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,30), (b.solusi||'').substring(0,30)]);
-  doc.autoTable({ startY:44, head:[['Tanggal','Siswa','Kategori','Masalah','Solusi']], body:rows, styles:{fontSize:8}, headStyles:{fillColor:[26,86,219]} });
+  const rows = (data||[]).map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,25), (b.solusi||'').substring(0,25), b.kolaborasi||'-']);
+  doc.autoTable({ startY:50, head:[['Tanggal','Siswa','Aspek Pendampingan','Uraian Kondisi','Tindak Lanjut','Kolaborasi']], body:rows, styles:{fontSize:7}, headStyles:{fillColor:[26,86,219]} });
   savePdf(doc,'catatan-bimbingan.pdf');
 }
 
@@ -7092,6 +7120,7 @@ CREATE TABLE IF NOT EXISTS bimbingan (
   kategori TEXT,
   masalah TEXT,
   solusi TEXT,
+  kolaborasi TEXT,
   user_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
