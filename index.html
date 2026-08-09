@@ -4437,8 +4437,8 @@ document.addEventListener('click', function(e) {
   const btn = e.target.closest('button, a[onclick]');
   if (!btn) return;
 
-  // Boleh: tombol di halaman / modal Jadwal MGMP
-  if (btn.closest('#page-jadwalMGMP') || btn.closest('#mgmpModal')) return;
+  // Boleh: tombol di halaman / modal Jadwal MGMP, dan modal Setup Profil Guest
+  if (btn.closest('#page-jadwalMGMP') || btn.closest('#mgmpModal') || btn.closest('#guestSetupOverlay')) return;
 
   // Boleh: tombol navigasi & keluar
   const txt = (btn.textContent || '').trim().toLowerCase();
