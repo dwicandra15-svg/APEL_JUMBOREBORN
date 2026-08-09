@@ -2780,6 +2780,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <select id="filterKelasS" class="form-control" style="width:140px" onchange="loadSiswa()">
             <option value="">Semua Kelas</option>
           </select>
+          <span id="siswaJumlahBadge" style="background:var(--primary-light);color:var(--primary);font-weight:800;font-size:12px;border-radius:20px;padding:6px 14px;white-space:nowrap">0 Siswa</span>
           <button class="btn btn-outline" onclick="downloadTemplateSiswa()" title="Download template Excel">
             📥 Template Excel
           </button>
@@ -4887,6 +4888,13 @@ function loadSiswa() {
   let filtered = kelasFilter 
     ? APP_DATA.siswa.filter(s => String(s.kelas_id) === String(kelasFilter))
     : APP_DATA.siswa;
+
+  // Update badge jumlah siswa (total, atau per kelas kalau filter aktif)
+  const badge = document.getElementById('siswaJumlahBadge');
+  if (badge) {
+    const label = kelasFilter ? getKelasName(kelasFilter) : 'Semua Kelas';
+    badge.textContent = `${filtered.length} Siswa${kelasFilter ? ' — ' + label : ''}`;
+  }
 
   const isMob = window.innerWidth < 700;
   const tbody = document.getElementById('siswaTbody');
