@@ -2470,7 +2470,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       </div>
       <div class="form-group">
         <label class="form-label">Nama Guru *</label>
-        <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: Dwi Denia Candra, S.Pd">
+        <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: Nurlaily, S.Pd">
       </div>
       <div class="form-group">
         <label class="form-label">Mata Pelajaran yang Diajar *</label>
@@ -17432,6 +17432,13 @@ async function kurImportGuruWali(input) {
 
       let currentGuru = null;
       const payload = [];
+      let skipped = 0;
+      // Pola baris footer/tanda tangan surat SK yang HARUS diabaikan (bukan nama siswa)
+      const isJunkRow = (txt) => {
+        const t = txt.toUpperCase();
+        return /DITETAPKAN|PADA TANGGAL|MENGETAHUI|^NIP\.?|KEPALA (UPTD|SEKOLAH|SMP)|S\.PD|M\.PD|S\.AG|S\.SI|S\.KOM|S\.E\b|M\.SI|,\s*(S\.|M\.)/i.test(t)
+          || /^[A-Z\s]+,\s*\d{1,2}\s+(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)/i.test(t);
+      };
       dataRows.forEach(r => {
         const namaGuru = r[1] ? String(r[1]).trim() : null;
         const namaSiswa = r[2] ? String(r[2]).trim() : null;
@@ -17440,6 +17447,7 @@ async function kurImportGuruWali(input) {
         const kelas = r[5] ? String(r[5]).trim() : null;
         if (namaGuru) currentGuru = namaGuru;
         if (!namaSiswa || !currentGuru) return;
+        if (isJunkRow(namaSiswa)) { skipped++; return; } // lewati baris footer surat (tanda tangan, NIP, tanggal, dll)
         const match = siswaMap[namaSiswa.toUpperCase()];
         payload.push({
           guru_nama: currentGuru,
@@ -17476,9 +17484,9 @@ async function kurImportGuruWali(input) {
       const matched = payload.filter(p=>p.siswa_id).length;
       const unmatched = payload.filter(p=>!p.siswa_id);
 
-      toast(`✅ ${inserted} baris siswa diimport untuk ${jumlahGuru} guru wali (${matched} cocok, ${unmatched.length} tidak ditemukan di Data Siswa)`, unmatched.length>0 ? 'warning' : 'success');
+      toast(`✅ ${inserted} baris siswa diimport untuk ${jumlahGuru} guru wali (${matched} cocok, ${unmatched.length} tidak ditemukan${skipped>0?`, ${skipped} baris footer surat diabaikan`:''})`, unmatched.length>0 ? 'warning' : 'success');
 
-      let statusHTML = `✅ Terakhir: ${inserted} baris | ${jumlahGuru} guru wali | <strong>${matched} cocok</strong>, <strong style="color:#dc2626">${unmatched.length} tidak cocok</strong>`;
+      let statusHTML = `✅ Terakhir: ${inserted} baris | ${jumlahGuru} guru wali | <strong>${matched} cocok</strong>, <strong style="color:#dc2626">${unmatched.length} tidak cocok</strong>${skipped>0?` | <span style="color:#7c3aed">${skipped} baris footer diabaikan</span>`:''}`;
       if (unmatched.length > 0) {
         statusHTML += `<div style="margin-top:6px;padding:8px;background:#fef2f2;border-radius:6px;color:#991b1b;max-height:120px;overflow-y:auto">
           <div style="font-weight:700;margin-bottom:4px">⚠️ Nama berikut tidak ditemukan di Data Siswa (cek ejaan/belum diinput):</div>
