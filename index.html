@@ -2456,8 +2456,33 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
   <div id="guestBanner">
     👤 <strong>Guest Mode</strong>
     <span class="gb-desc" style="font-weight:400;font-size:11px;opacity:0.85">— Read-Only · hanya bisa tambah Jadwal MGMP</span>
+    <button class="gb-exit" onclick="guestShowSetupModal(false)" style="margin-right:6px" title="Ubah Nama Guru / Mapel">✏️ Profil</button>
     <button class="gb-exit" onclick="exitGuestMode()">✕ Keluar</button>
   </div>
+
+  <!-- MODAL SETUP GUEST — wajib diisi sebelum bisa akses fitur lain -->
+  <div id="guestSetupOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:5000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:24px 22px;max-height:90vh;overflow-y:auto">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:32px;margin-bottom:8px">👋</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">Selamat Datang, Guru Guest!</div>
+        <div style="font-size:12px;color:var(--text-light);margin-top:4px">Lengkapi data berikut agar fitur Mapel dan Bimbingan Wali sesuai dengan Anda</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Guru *</label>
+        <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: Nurlaily, S.Pd">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mata Pelajaran yang Diajar *</label>
+        <div id="guestMapelCheckboxWrap" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
+          <div style="text-align:center;color:var(--text-light);font-size:12px;padding:10px">⏳ Memuat daftar mapel...</div>
+        </div>
+        <small style="color:var(--text-light);font-size:11px">Boleh pilih lebih dari satu jika mengajar beberapa mapel</small>
+      </div>
+      <button onclick="guestSaveSetupProfile()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:800;cursor:pointer;margin-top:14px;font-family:var(--font)">✅ Simpan & Lanjutkan</button>
+    </div>
+  </div>
+
   <div class="topbar" id="mainTopbar" style="display:none">
     <button id="backBtn" onclick="goHome()">← Kembali</button>
     <div class="topbar-title">
@@ -4290,11 +4315,30 @@ async function afterLoginGuest() {
   // Set tanggal di dashboard
   const dd = document.getElementById('dashDate');
   if (dd) dd.textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  // Set nama di topbar
-  const guruEl = document.getElementById('guruTopbar');
-  if (guruEl) guruEl.innerHTML = '<span style="background:#7c3aed;color:#fff;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:0.3px">👤 Guest</span>';
   // Load jadwal MGMP saja untuk guest
   try { loadJadwalMGMP(); } catch(e){}
+  // Load data master (mapel, kelas, siswa) agar checkbox mapel & filter Bimbingan Wali siap
+  try { await loadMapel(); } catch(e){}
+  try { await loadKelas(); } catch(e){}
+  try { await loadSiswaAll(); } catch(e){}
+
+  // Cek apakah profil guru (nama + mapel) sudah diisi sebelumnya
+  const savedProfile = localStorage.getItem('apel_guest_profile');
+  if (savedProfile) {
+    try {
+      const p = JSON.parse(savedProfile);
+      CONFIG.guru = p.nama || '';
+      CONFIG.guestMapelIds = p.mapelIds || [];
+      guestUpdateTopbarBadge();
+    } catch(e){}
+  }
+
+  // Jika belum ada profil tersimpan -> WAJIB isi dulu sebelum lanjut
+  if (!savedProfile) {
+    guestShowSetupModal(true);
+    return; // tunda navigasi sampai profil diisi
+  }
+
   // Restore halaman terakhir sebelum refresh
   const lastPage = localStorage.getItem('apel_last_page');
   if (lastPage && lastPage !== 'home' && document.getElementById('page-' + lastPage)) {
@@ -4306,11 +4350,68 @@ async function afterLoginGuest() {
   toast('Mode Guest aktif — akses terbatas (read-only)', 'info');
 }
 
+// Badge nama guru di topbar (menggantikan badge generic "Guest" polos)
+function guestUpdateTopbarBadge() {
+  const guruEl = document.getElementById('guruTopbar');
+  if (!guruEl) return;
+  const nama = CONFIG.guru ? CONFIG.guru.split(',')[0].trim() : 'Guest';
+  guruEl.innerHTML = `<span style="background:#7c3aed;color:#fff;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:0.3px">👤 ${nama}</span>`;
+}
+
+// Tampilkan modal setup profil guest (nama guru + mapel diajar)
+function guestShowSetupModal(isOptionalEdit) {
+  const overlay = document.getElementById('guestSetupOverlay');
+  if (!overlay) return;
+  document.getElementById('guestNamaGuru').value = CONFIG.guru || '';
+
+  const wrap = document.getElementById('guestMapelCheckboxWrap');
+  const mapels = APP_DATA.mapel || [];
+  const selectedIds = (CONFIG.guestMapelIds || []).map(String);
+  if (mapels.length === 0) {
+    wrap.innerHTML = '<div style="text-align:center;color:var(--text-light);font-size:12px;padding:10px">Belum ada data mapel. Hubungi admin.</div>';
+  } else {
+    wrap.innerHTML = mapels.map(m => `
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
+        <input type="checkbox" value="${m.id}" class="guest-mapel-chk" ${selectedIds.includes(String(m.id))?'checked':''} style="width:16px;height:16px;accent-color:var(--primary)">
+        ${m.nama}
+      </label>`).join('');
+  }
+  overlay.style.display = 'flex';
+  overlay._mandatory = !!isOptionalEdit && !CONFIG.guru; // dianggap wajib hanya kalau memang belum pernah isi
+}
+
+function guestSaveSetupProfile() {
+  const nama = document.getElementById('guestNamaGuru').value.trim();
+  const checked = [...document.querySelectorAll('.guest-mapel-chk:checked')].map(c => c.value);
+  if (!nama) { toast('Nama guru wajib diisi', 'error'); return; }
+  if (checked.length === 0) { toast('Pilih minimal 1 mata pelajaran yang diajar', 'error'); return; }
+
+  CONFIG.guru = nama;
+  CONFIG.guestMapelIds = checked;
+  localStorage.setItem('apel_guest_profile', JSON.stringify({ nama, mapelIds: checked }));
+
+  document.getElementById('guestSetupOverlay').style.display = 'none';
+  guestUpdateTopbarBadge();
+  try { mpRenderHomeGrid(); } catch(e){}
+
+  toast(`✅ Profil tersimpan — mapel & bimbingan wali sudah disesuaikan`, 'success');
+
+  // Jika ini pengisian pertama kali (baru login), lanjutkan ke beranda
+  const lastPage = localStorage.getItem('apel_last_page');
+  if (lastPage && lastPage !== 'home' && document.getElementById('page-' + lastPage)) {
+    goPage(lastPage);
+  } else {
+    goHome();
+    hbnShow();
+  }
+}
+
 function exitGuestMode() {
   isGuestMode = false;
   currentUser = null;
   localStorage.removeItem('apel_session_type');
   localStorage.removeItem('apel_last_page');
+  localStorage.removeItem('apel_guest_profile');
   document.getElementById('guestBanner')?.classList.remove('show');
   document.body.classList.remove('guest-mode');
   location.reload();
@@ -9042,7 +9143,12 @@ function mpRenderHomeGrid() {
   const container = document.getElementById('mapelGridHome');
   if (!container) return;
 
-  const mapels = APP_DATA.mapel || [];
+  let mapels = APP_DATA.mapel || [];
+  // Guest mode: hanya tampilkan mapel yang sudah dipilih sebagai mapel yang diajar
+  if (isGuestMode && Array.isArray(CONFIG.guestMapelIds) && CONFIG.guestMapelIds.length > 0) {
+    const allowedIds = CONFIG.guestMapelIds.map(String);
+    mapels = mapels.filter(m => allowedIds.includes(String(m.id)));
+  }
   if (!mapels.length) {
     // Tampilkan skeleton loading jika data belum siap
     const isLoading = !window._mapelLoaded;
