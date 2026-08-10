@@ -2470,7 +2470,7 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
       </div>
       <div class="form-group">
         <label class="form-label">Nama Guru *</label>
-        <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: DWI DENIA CANDRA, S.Pd">
+        <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: Nurlaily, S.Pd">
       </div>
       <div class="form-group">
         <label class="form-label">Mata Pelajaran yang Diajar *</label>
@@ -6583,14 +6583,70 @@ async function cetakBimbingan() {
   const doc = new jsPDF();
   const kop = getKopData();
   addKopToPdf(doc, kop);
+
   doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text('CATATAN BIMBINGAN GURU WALI', 105, 40, {align:'center'});
+  doc.text('LAPORAN PELAKSANAAN BIMBINGAN GURU WALI', 105, 40, {align:'center'});
   doc.setFontSize(8); doc.setFont('helvetica','italic');
-  doc.text('Sesuai Permendikdasmen No. 11 Tahun 2025 tentang Pemenuhan Beban Kerja Guru', 105, 45, {align:'center'});
+  doc.text('Berdasarkan Peraturan Menteri Pendidikan Dasar dan Menengah Republik Indonesia Nomor 11 Tahun 2025', 105, 45, {align:'center'});
+
   const { data } = await db.from('bimbingan').select('*').order('tanggal',{ascending:false});
-  const rows = (data||[]).map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,25), (b.solusi||'').substring(0,25), b.kolaborasi||'-']);
-  doc.autoTable({ startY:50, head:[['Tanggal','Siswa','Aspek Pendampingan','Uraian Kondisi','Tindak Lanjut','Kolaborasi']], body:rows, styles:{fontSize:7}, headStyles:{fillColor:[26,86,219]} });
-  savePdf(doc,'catatan-bimbingan.pdf');
+  const rows = data || [];
+  const namaGuru = CONFIG.guru || currentUser?.email?.split('@')[0] || '-';
+  const tp = CONFIG.tahunPelajaran || '-';
+  const jmlSiswa = new Set(rows.map(r=>r.siswa_id)).size;
+  const perAspek = {'Pendampingan Akademik':0,'Pengembangan Kompetensi':0,'Pengembangan Keterampilan':0,'Pengembangan Karakter':0};
+  rows.forEach(r => { if (perAspek[r.kategori] !== undefined) perAspek[r.kategori]++; });
+
+  // ── Narasi Pembuka ──
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  const narasi1 = `Sesuai dengan Peraturan Menteri Pendidikan Dasar dan Menengah Republik Indonesia Nomor 11 Tahun 2025 Pasal 9, setiap guru yang ditunjuk sebagai Guru Wali bertugas memberikan pendampingan secara berkelanjutan kepada murid yang menjadi tanggung jawabnya sejak murid diterima hingga menyelesaikan pendidikan pada satuan pendidikan, meliputi 4 (empat) aspek utama yaitu pendampingan akademik, pengembangan kompetensi, pengembangan keterampilan, dan pengembangan karakter murid.`;
+  const narasi1Lines = doc.splitTextToSize(narasi1, 178);
+  doc.text(narasi1Lines, 16, 55);
+  let yPos = 55 + (narasi1Lines.length * 4.2) + 4;
+
+  const narasi2 = `Laporan ini disusun sebagai bentuk dokumentasi dan pertanggungjawaban pelaksanaan tugas Guru Wali atas nama ${namaGuru} pada Tahun Pelajaran ${tp}, yang telah melaksanakan pendampingan kepada ${jmlSiswa} murid dengan total ${rows.length} kali catatan pendampingan.`;
+  const narasi2Lines = doc.splitTextToSize(narasi2, 178);
+  doc.text(narasi2Lines, 16, yPos);
+  yPos += (narasi2Lines.length * 4.2) + 6;
+
+  // ── Ringkasan per aspek ──
+  doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('Ringkasan Pendampingan per Aspek:', 16, yPos);
+  yPos += 5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  Object.entries(perAspek).forEach(([aspek, jml]) => {
+    doc.text(`•  ${aspek}  :  ${jml} catatan`, 20, yPos);
+    yPos += 4.5;
+  });
+  yPos += 3;
+
+  // ── Tabel Detail ──
+  doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('Rincian Pelaksanaan Bimbingan:', 16, yPos);
+  yPos += 3;
+  const tableRows = rows.map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,25), (b.solusi||'').substring(0,25), b.kolaborasi||'-']);
+  doc.autoTable({ startY:yPos, head:[['Tanggal','Siswa','Aspek Pendampingan','Uraian Kondisi','Tindak Lanjut','Kolaborasi']], body:tableRows, styles:{fontSize:7}, headStyles:{fillColor:[26,86,219]} });
+
+  // ── Narasi Penutup + Tanda Tangan ──
+  let finalY = doc.lastAutoTable.finalY + 8;
+  if (finalY > 255) { doc.addPage(); finalY = 20; }
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  const penutup = `Demikian laporan pelaksanaan bimbingan Guru Wali ini disusun secara benar sebagai bukti pemenuhan tugas pendampingan murid sesuai dengan Peraturan Menteri Pendidikan Dasar dan Menengah Republik Indonesia Nomor 11 Tahun 2025 tentang Pemenuhan Beban Kerja Guru.`;
+  const penutupLines = doc.splitTextToSize(penutup, 178);
+  doc.text(penutupLines, 16, finalY);
+  finalY += (penutupLines.length * 4.2) + 12;
+
+  if (finalY > 255) { doc.addPage(); finalY = 20; }
+  const kota = localStorage.getItem('apel_laporan_kota') || 'Sampang';
+  const tglCetak = new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  doc.setFontSize(9);
+  doc.text(`${kota}, ${tglCetak}`, 140, finalY);
+  doc.text('Guru Wali,', 140, finalY+6);
+  doc.text(namaGuru, 140, finalY+26);
+  doc.setFont('helvetica','normal'); doc.setLineWidth(0.2);
+  doc.line(140, finalY+27, 190, finalY+27);
+
+  savePdf(doc,'laporan-bimbingan-guru-wali.pdf');
 }
 
 
