@@ -4318,10 +4318,13 @@ async function afterLoginGuest() {
   if (dd) dd.textContent = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   // Load jadwal MGMP saja untuk guest
   try { loadJadwalMGMP(); } catch(e){}
-  // Load data master (mapel, kelas, siswa) agar checkbox mapel & filter Bimbingan Wali siap
+  // Load data master (mapel, kelas, siswa) + pengaturan global (nama sekolah, logo, dll)
+  // agar mode guest sinkron sama seperti akun login biasa
   try { await loadMapel(); } catch(e){}
   try { await loadKelas(); } catch(e){}
   try { await loadSiswaAll(); } catch(e){}
+  try { await loadAppSettings(); } catch(e){}
+  try { applyConfig(); } catch(e){} // terapkan ulang nama sekolah/logo ke tampilan setelah sync
 
   // Cek apakah profil guru (nama + mapel) sudah diisi sebelumnya
   const savedProfile = localStorage.getItem('apel_guest_profile');
