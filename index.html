@@ -2473,11 +2473,15 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
         <input type="text" id="guestNamaGuru" class="form-control" placeholder="cth: Nurlaily, S.Pd">
       </div>
       <div class="form-group">
+        <label class="form-label">NIP <span style="color:var(--text-light);font-weight:400">(kosongkan jika GTT/belum ASN)</span></label>
+        <input type="text" id="guestNip" class="form-control" placeholder="cth: 198501012010011001">
+      </div>
+      <div class="form-group">
         <label class="form-label">Mata Pelajaran yang Diajar *</label>
         <div id="guestMapelCheckboxWrap" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
           <div style="text-align:center;color:var(--text-light);font-size:12px;padding:10px">⏳ Memuat daftar mapel...</div>
         </div>
-        <small style="color:var(--text-light);font-size:11px">Boleh pilih lebih dari satu jika mengajar beberapa mapel</small>
+        <small style="color:var(--text-light);font-size:11px">Boleh pilih lebih dari satu jika mengajar beberapa mapel — pilihan ini hanya untuk menyaring halaman Mapel, <strong>tidak memengaruhi</strong> daftar siswa di Bimbingan Wali (itu otomatis mengikuti Nama Guru di atas)</small>
       </div>
       <button onclick="guestSaveSetupProfile()" style="width:100%;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:800;cursor:pointer;margin-top:14px;font-family:var(--font)">✅ Simpan & Lanjutkan</button>
     </div>
@@ -3321,6 +3325,10 @@ textarea.piket-input { resize:vertical; min-height:70px; font-family:inherit; }
           <input type="text" id="setGuru" class="form-control" placeholder="Nama lengkap guru">
         </div>
         <div class="form-group">
+          <label class="form-label">NIP <span style="color:var(--text-light);font-weight:400">(kosongkan jika GTT/belum ASN)</span></label>
+          <input type="text" id="setNip" class="form-control" placeholder="cth: 198501012010011001">
+        </div>
+        <div class="form-group">
           <label class="form-label">Kelas yang Diampu (Wali)</label>
           <input type="text" id="setWali" class="form-control" placeholder="Kelas 7A">
         </div>
@@ -4103,6 +4111,8 @@ function applyConfig() {
     document.getElementById('setSupaUrl').value = CONFIG.supaUrl || '';
     document.getElementById('setSupaKey').value = CONFIG.supaKey || '';
     document.getElementById('setGuru').value = CONFIG.guru || '';
+    const setNipEl = document.getElementById('setNip');
+    if (setNipEl) setNipEl.value = CONFIG.nip || '';
     document.getElementById('setWali').value = CONFIG.wali || '';
     const setTP = document.getElementById('setTP');
     if (setTP) setTP.value = CONFIG.tahunPelajaran || '';
@@ -4332,6 +4342,7 @@ async function afterLoginGuest() {
     try {
       const p = JSON.parse(savedProfile);
       CONFIG.guru = p.nama || '';
+      CONFIG.nip = p.nip || '';
       CONFIG.guestMapelIds = p.mapelIds || [];
       guestUpdateTopbarBadge();
     } catch(e){}
@@ -4367,6 +4378,8 @@ function guestShowSetupModal(isOptionalEdit) {
   const overlay = document.getElementById('guestSetupOverlay');
   if (!overlay) return;
   document.getElementById('guestNamaGuru').value = CONFIG.guru || '';
+  const nipEl = document.getElementById('guestNip');
+  if (nipEl) nipEl.value = CONFIG.nip || '';
 
   const wrap = document.getElementById('guestMapelCheckboxWrap');
   const mapels = APP_DATA.mapel || [];
@@ -4386,13 +4399,15 @@ function guestShowSetupModal(isOptionalEdit) {
 
 function guestSaveSetupProfile() {
   const nama = document.getElementById('guestNamaGuru').value.trim();
+  const nip = document.getElementById('guestNip')?.value.trim() || '';
   const checked = [...document.querySelectorAll('.guest-mapel-chk:checked')].map(c => c.value);
   if (!nama) { toast('Nama guru wajib diisi', 'error'); return; }
   if (checked.length === 0) { toast('Pilih minimal 1 mata pelajaran yang diajar', 'error'); return; }
 
   CONFIG.guru = nama;
+  CONFIG.nip = nip;
   CONFIG.guestMapelIds = checked;
-  localStorage.setItem('apel_guest_profile', JSON.stringify({ nama, mapelIds: checked }));
+  localStorage.setItem('apel_guest_profile', JSON.stringify({ nama, nip, mapelIds: checked }));
 
   document.getElementById('guestSetupOverlay').style.display = 'none';
   guestUpdateTopbarBadge();
@@ -4579,6 +4594,7 @@ async function savePengaturan() {
   CONFIG.supaUrl = document.getElementById('setSupaUrl').value.trim();
   CONFIG.supaKey = document.getElementById('setSupaKey').value.trim();
   CONFIG.guru = document.getElementById('setGuru').value.trim();
+  CONFIG.nip = document.getElementById('setNip')?.value.trim() || '';
   CONFIG.wali = document.getElementById('setWali').value.trim();
   CONFIG.tahunPelajaran = document.getElementById('setTP').value.trim();
   CONFIG.absensiKuUrl  = document.getElementById('setAbsensiKuUrl')?.value.trim() || '';
@@ -4653,6 +4669,7 @@ async function loadAllData() {
   // Render UI setelah data inti siap
   populateAllSelects();
   mpRenderHomeGrid();
+  try { await autoFetchNipGuru(); } catch(e){}
   mhRefreshStats();
   mhRefreshInfo();
   loadDashboard();
@@ -6588,13 +6605,12 @@ async function cetakBimbingan() {
   addKopToPdf(doc, kop);
 
   doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text('LAPORAN PELAKSANAAN BIMBINGAN GURU WALI', 105, 40, {align:'center'});
-  doc.setFontSize(8); doc.setFont('helvetica','italic');
-  doc.text('Berdasarkan Peraturan Menteri Pendidikan Dasar dan Menengah Republik Indonesia Nomor 11 Tahun 2025', 105, 45, {align:'center'});
+  doc.text('LAPORAN PELAKSANAAN BIMBINGAN GURU WALI', 105, 42, {align:'center'});
 
   const { data } = await db.from('bimbingan').select('*').order('tanggal',{ascending:false});
   const rows = data || [];
   const namaGuru = CONFIG.guru || currentUser?.email?.split('@')[0] || '-';
+  const nipGuru = CONFIG.nip || '';
   const tp = CONFIG.tahunPelajaran || '-';
   const jmlSiswa = new Set(rows.map(r=>r.siswa_id)).size;
   const perAspek = {'Pendampingan Akademik':0,'Pengembangan Kompetensi':0,'Pengembangan Keterampilan':0,'Pengembangan Karakter':0};
@@ -6604,8 +6620,8 @@ async function cetakBimbingan() {
   doc.setFontSize(9); doc.setFont('helvetica','normal');
   const narasi1 = `Sesuai dengan Peraturan Menteri Pendidikan Dasar dan Menengah Republik Indonesia Nomor 11 Tahun 2025 Pasal 9, setiap guru yang ditunjuk sebagai Guru Wali bertugas memberikan pendampingan secara berkelanjutan kepada murid yang menjadi tanggung jawabnya sejak murid diterima hingga menyelesaikan pendidikan pada satuan pendidikan, meliputi 4 (empat) aspek utama yaitu pendampingan akademik, pengembangan kompetensi, pengembangan keterampilan, dan pengembangan karakter murid.`;
   const narasi1Lines = doc.splitTextToSize(narasi1, 178);
-  doc.text(narasi1Lines, 16, 55);
-  let yPos = 55 + (narasi1Lines.length * 4.2) + 4;
+  doc.text(narasi1Lines, 16, 52);
+  let yPos = 52 + (narasi1Lines.length * 4.2) + 4;
 
   const narasi2 = `Laporan ini disusun sebagai bentuk dokumentasi dan pertanggungjawaban pelaksanaan tugas Guru Wali atas nama ${namaGuru} pada Tahun Pelajaran ${tp}, yang telah melaksanakan pendampingan kepada ${jmlSiswa} murid dengan total ${rows.length} kali catatan pendampingan.`;
   const narasi2Lines = doc.splitTextToSize(narasi2, 178);
@@ -6645,9 +6661,15 @@ async function cetakBimbingan() {
   doc.setFontSize(9);
   doc.text(`${kota}, ${tglCetak}`, 140, finalY);
   doc.text('Guru Wali,', 140, finalY+6);
+  doc.setFont('helvetica','bold');
   doc.text(namaGuru, 140, finalY+26);
   doc.setFont('helvetica','normal'); doc.setLineWidth(0.2);
   doc.line(140, finalY+27, 190, finalY+27);
+  // NIP hanya ditampilkan jika terisi (opsional — guru non-ASN belum tentu punya NIP)
+  if (nipGuru) {
+    doc.setFontSize(8.5);
+    doc.text(`NIP. ${nipGuru}`, 140, finalY+32);
+  }
 
   savePdf(doc,'laporan-bimbingan-guru-wali.pdf');
 }
