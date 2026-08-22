@@ -5967,7 +5967,20 @@ async function bimbinganPopulateSiswaWali() {
 
     if (cocok.length === 0) {
       // Tidak ada data wali untuk guru ini -> tampilkan semua siswa (fallback)
-      sel.innerHTML = `<option value="">-- Semua Siswa (data wali belum diimport) --</option>` +
+      // + tampilkan pesan diagnostik supaya mudah ketahuan penyebabnya (nama tidak cocok / belum ada di SK)
+      const daftarNamaSK = [...new Set((data||[]).map(g => g.guru_nama))].sort();
+      const mungkinMirip = daftarNamaSK.filter(n => {
+        const nn = bimbinganNormalizeNama(n);
+        return nn.includes(namaGuruLogin.split(' ')[0]) || namaGuruLogin.includes(nn.split(' ')[0]);
+      });
+      let pesan = `⚠️ Nama "${CONFIG.guru}" tidak ditemukan di data SK Guru Wali. Menampilkan SEMUA siswa sebagai cadangan.`;
+      if (mungkinMirip.length > 0) {
+        pesan += ` Kemungkinan nama Anda di SK tertulis sebagai: "${mungkinMirip.join('", "')}" — coba samakan penulisan Nama Guru di Pengaturan/Profil.`;
+      } else {
+        pesan += ` Nama Anda kemungkinan belum ada di data SK yang diimport — hubungi admin untuk cek/tambahkan.`;
+      }
+      toast(pesan, 'warning');
+      sel.innerHTML = `<option value="">-- Semua Siswa (nama guru tidak cocok dengan data SK) --</option>` +
         APP_DATA.siswa.map(s=>`<option value="${s.id}">${s.nama} (${getKelasName(s.kelas_id)})</option>`).join('');
       return;
     }
