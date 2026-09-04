@@ -6656,8 +6656,22 @@ async function cetakBimbingan() {
   doc.setFont('helvetica','bold'); doc.setFontSize(9);
   doc.text('Rincian Pelaksanaan Bimbingan:', 16, yPos);
   yPos += 3;
-  const tableRows = rows.map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, (b.masalah||'').substring(0,25), (b.solusi||'').substring(0,25), b.kolaborasi||'-']);
-  doc.autoTable({ startY:yPos, head:[['Tanggal','Siswa','Aspek Pendampingan','Uraian Kondisi','Tindak Lanjut','Kolaborasi']], body:tableRows, styles:{fontSize:7}, headStyles:{fillColor:[26,86,219]} });
+  const tableRows = rows.map(b=>[b.tanggal, getSiswaName(b.siswa_id), b.kategori, b.masalah||'-', b.solusi||'-', b.kolaborasi||'-']);
+  doc.autoTable({
+    startY:yPos,
+    head:[['Tanggal','Siswa','Aspek Pendampingan','Uraian Kondisi','Tindak Lanjut','Kolaborasi']],
+    body:tableRows,
+    styles:{ fontSize:7, cellPadding:2, overflow:'linebreak', valign:'top' },
+    headStyles:{ fillColor:[26,86,219] },
+    columnStyles: {
+      0: { cellWidth: 16 },   // Tanggal
+      1: { cellWidth: 26 },   // Siswa
+      2: { cellWidth: 22 },   // Aspek Pendampingan
+      3: { cellWidth: 46 },   // Uraian Kondisi — teks penuh, wrap otomatis
+      4: { cellWidth: 46 },   // Tindak Lanjut — teks penuh, wrap otomatis
+      5: { cellWidth: 22 }    // Kolaborasi
+    }
+  });
 
   // ── Narasi Penutup + Tanda Tangan ──
   let finalY = doc.lastAutoTable.finalY + 8;
